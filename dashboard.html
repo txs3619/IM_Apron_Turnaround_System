@@ -4,61 +4,46 @@
 <meta charset="UTF-8">
 <title>Apron Dashboard - Admin</title>
 <style>
-  :root { --bg: #0b1117; --card: #161b22; --text: #c9d1d9; --border: #30363d; --primary: #58a6ff; --sel-bg: #21262d; }
-  [data-theme='light'] { --bg: #f0f2f5; --card: #ffffff; --text: #333; --border: #ddd; --primary: #1a237e; --sel-bg: #fff; }
-  
-  body { font-family: 'Segoe UI', sans-serif; background: var(--bg); color: var(--text); margin: 0; transition: 0.3s; padding-bottom: 60px; }
+  :root { --bg: #0b1117; --card: #161b22; --text: #c9d1d9; --border: #30363d; --primary: #58a6ff; }
+  [data-theme='light'] { --bg: #f0f2f5; --card: #ffffff; --text: #333; --border: #ddd; --primary: #1a237e; }
+  body { font-family: 'Segoe UI', sans-serif; background: var(--bg); color: var(--text); margin: 0; padding-bottom: 60px; }
   .header { display: flex; justify-content: space-between; align-items: center; padding: 15px 20px; background: var(--card); border-bottom: 1px solid var(--border); position: sticky; top:0; z-index: 1000; }
   .btn { padding: 8px 14px; border-radius: 6px; border: none; font-weight: bold; cursor: pointer; }
   .btn-success { background: #238636; color: white; }
   .btn-danger { background: #da3633; color: white; }
   .btn-primary { background: var(--primary); color: white; }
-  .btn-gray { background: #666; color: white; }
-  
-  .card { background: var(--card); border-radius: 12px; padding: 20px; margin: 15px; border: 1px solid var(--border); position: relative; overflow: hidden; }
-  .priority-bar { position: absolute; left: 0; top: 0; bottom: 0; width: 8px; }
+  .card { background: var(--card); border-radius: 12px; padding: 20px; margin: 15px; border: 1px solid var(--border); position: relative; }
   .overlay { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.85); z-index: 3000; padding: 20px; overflow-y: auto; }
-  
-  .log-panel { background: rgba(128,128,128,0.1); margin-top: 10px; padding: 12px; border-radius: 8px; font-size: 12px; }
-  .log-section { margin-bottom: 10px; max-height: 150px; overflow-y: auto; background: rgba(0,0,0,0.1); padding: 5px; border-radius: 5px; }
-  .log-line { border-bottom: 1px solid var(--border); padding: 4px 0; }
-  
-  input { background: var(--sel-bg); color: var(--text); border: 1px solid var(--border); padding: 8px; border-radius: 6px; }
-  
+  .log-panel { background: rgba(128,128,128,0.1); margin-top: 10px; padding: 10px; border-radius: 8px; font-size: 12px; }
+  .log-section { max-height: 100px; overflow-y: auto; margin-bottom: 5px; background: rgba(0,0,0,0.2); padding: 5px; }
   .bin-item, .user-item { display: flex; justify-content: space-between; align-items: center; padding: 10px; border-bottom: 1px solid var(--border); }
-  .bin-actions { display: flex; gap: 10px; margin-bottom: 15px; background: rgba(128,128,128,0.1); padding: 10px; border-radius: 8px; }
+  input { background: #21262d; color: white; border: 1px solid var(--border); padding: 8px; border-radius: 6px; }
 </style>
 </head>
 <body data-theme="dark">
 
 <div class="header">
-    <div style="display:flex; gap:12px; align-items:center">
-        <h2>Admin Dashboard</h2>
-        <div>
-            <button onclick="toggleSelectAll()" class="btn btn-primary" id="selBtn">Select All</button>
-            <button onclick="bulkDel()" class="btn btn-danger" id="bDel" style="display:none">Move to Bin</button>
-        </div>
-        <button onclick="openRecycleBin()" class="btn btn-gray">🗑️ Recycle Bin</button>
-        <button onclick="openUserMgmt()" class="btn btn-gray">👥 User Mgmt</button>
-        <button onclick="document.getElementById('addFModal').style.display='block'" class="btn btn-success">+ Flight</button>
+    <div style="display:flex; gap:10px; align-items:center">
+        <h2>Admin</h2>
+        <button onclick="toggleSelectAll()" class="btn btn-primary" id="selBtn">Select All</button>
+        <button onclick="bulkDel()" class="btn btn-danger" id="bDel" style="display:none">Delete Selected</button>
+        <button onclick="openRecycleBin()" class="btn" style="background:#444; color:white">🗑️ Bin</button>
+        <button onclick="openUserMgmt()" class="btn" style="background:#444; color:white">👥 Users</button>
     </div>
     <div style="display:flex; gap:10px">
-        <button onclick="toggleTheme()" class="btn" style="background:#444; color:white">🌓</button>
-        <input id="search" placeholder="Search..." onkeyup="load()">
+        <button onclick="toggleTheme()" class="btn">🌓</button>
+        <button onclick="document.getElementById('addFModal').style.display='block'" class="btn btn-success">+ Flight</button>
     </div>
 </div>
 
 <div id="list"></div>
 
 <div id="recycleBin" class="overlay">
-    <div style="background:var(--card); max-width:850px; margin:auto; padding:20px; border-radius:12px; color:var(--text); border: 1px solid var(--border)">
-        <div style="display:flex; justify-content:space-between; align-items:center">
-            <h3>Recycle Bin</h3>
-            <button onclick="document.getElementById('recycleBin').style.display='none'" class="btn btn-danger">✕ Close</button>
-        </div>
-        <div class="bin-actions">
+    <div style="background:var(--card); max-width:700px; margin:auto; padding:20px; border-radius:12px; border: 1px solid var(--border)">
+        <div style="display:flex; justify-content:space-between"><h3>Recycle Bin</h3><button onclick="document.getElementById('recycleBin').style.display='none'" class="btn btn-danger">✕</button></div>
+        <div style="margin:10px 0; display:flex; gap:10px">
             <button onclick="toggleBinSelectAll()" class="btn btn-primary" id="binSelBtn">Select All</button>
-            <button onclick="bulkRestoreBin()" class="btn btn-success">Restore Selected</button>
+            <button onclick="bulkRestoreBin()" class="btn btn-success">Restore</button>
             <button onclick="bulkPermDelete()" class="btn btn-danger">Delete Permanently</button>
         </div>
         <div id="binList"></div>
@@ -67,226 +52,138 @@
 
 <div id="userMgmt" class="overlay">
     <div style="background:var(--card); max-width:600px; margin:auto; padding:20px; border-radius:12px; border: 1px solid var(--border)">
-        <div style="display:flex; justify-content:space-between; align-items:center">
-            <h3>User Management</h3>
-            <button onclick="document.getElementById('userMgmt').style.display='none'" class="btn btn-danger">✕ Close</button>
-        </div>
-        <div style="background:rgba(128,128,128,0.1); padding:15px; border-radius:8px; margin:15px 0">
-            <h4>Add New Staff</h4>
-            <div style="display:grid; grid-template-columns: 1fr 1fr 1fr auto; gap:10px">
-                <input id="un" placeholder="ID (Login)">
-                <input id="up" placeholder="Password">
-                <input id="u_disp" placeholder="Display Name">
-                <button onclick="addUser()" class="btn btn-success">Add</button>
-            </div>
+        <div style="display:flex; justify-content:space-between"><h3>Users</h3><button onclick="document.getElementById('userMgmt').style.display='none'" class="btn btn-danger">✕</button></div>
+        <div style="display:grid; grid-template-columns: 1fr 1fr 1fr auto; gap:5px; margin:15px 0">
+            <input id="un" placeholder="ID"><input id="up" placeholder="Pass"><input id="u_disp" placeholder="Name">
+            <button id="userMainBtn" onclick="addUser()" class="btn btn-success">Add</button>
         </div>
         <div id="userList"></div>
     </div>
 </div>
 
 <div id="addFModal" class="overlay">
-    <div style="background:var(--card); max-width:400px; margin:100px auto; padding:25px; border-radius:12px; text-align:center; border: 1px solid var(--border)">
+    <div style="background:var(--card); max-width:300px; margin:100px auto; padding:20px; border-radius:12px; text-align:center">
         <h3>New Flight</h3>
-        <input id="nf" placeholder="Flight Number" style="width:100%; margin-bottom:10px"><br>
-        <input id="na" placeholder="Apron" style="width:100%; margin-bottom:20px"><br>
-        <button onclick="addFlight()" class="btn btn-success" style="width:100%">Confirm</button>
-        <button onclick="document.getElementById('addFModal').style.display='none'" class="btn" style="width:100%; margin-top:10px">Cancel</button>
+        <input id="nf" placeholder="Flight No" style="width:100%; margin-bottom:10px">
+        <input id="na" placeholder="Apron" style="width:100%; margin-bottom:10px">
+        <button onclick="addFlight()" class="btn btn-success" style="width:100%">Create</button>
     </div>
 </div>
 
 <script>
-let isAllSelected = false;
-let isBinAllSelected = false;
-const STATUS_COLORS = { "Delayed": "#da3633", "Need Assistance": "#e3b341", "Attached": "#1f6feb", "Completed": "#2ebc7f", "Not Started": "#8b949e" };
+let isAllSelected = false, isBinAllSelected = false;
 
-// --- 核心加载与航班逻辑 ---
 function load() {
     const db = JSON.parse(localStorage.getItem("flights") || "{}");
-    const s = document.getElementById('search').value.toUpperCase();
     const list = document.getElementById("list"); list.innerHTML = "";
     for(let f in db) {
-        if(!f.includes(s) && !db[f].apron.includes(s)) continue;
         const d = db[f];
-        const bar = getBarColor(d);
         const card = document.createElement("div"); card.className = "card";
-        const msgLogs = (d.logs || []).filter(l => l.task === "Message").slice().reverse();
-        const actLogs = (d.logs || []).filter(l => l.task !== "Message").slice().reverse();
-
+        const msgs = (d.logs||[]).filter(l=>l.task==="Message").slice().reverse();
+        const acts = (d.logs||[]).filter(l=>l.task!=="Message").slice().reverse();
         card.innerHTML = `
-            <div class="priority-bar" style="background:${bar}"></div>
-            <div style="display:flex; justify-content:space-between; align-items:center; margin-left:15px">
+            <div style="display:flex; justify-content:space-between">
                 <div><input type="checkbox" class="bulk" data-id="${f}" onchange="updateUI()"> <b>${f}</b> (${d.apron})</div>
-                <div>Status: <b style="color:${STATUS_COLORS[d['Overall Status']]}">${d['Overall Status']}</b> 
-                <button onclick="delF('${f}')" class="btn btn-danger" style="margin-left:10px">Move to Bin</button></div>
+                <button onclick="delF('${f}')" class="btn btn-danger" style="padding:4px 8px">Bin</button>
             </div>
-            <div style="margin:10px 0 0 15px">
-                <div style="display:flex; gap:10px">
-                    <input id="msg-${f}" placeholder="Send message to staff..." style="flex:1">
-                    <button onclick="sendMsg('${f}')" class="btn btn-primary">Send</button>
-                    <button onclick="toggleLogs('${f}')" class="btn btn-gray">View Logs</button>
-                </div>
-                <div id="logs-${f}" class="log-panel" style="display:none">
-                    <b>💬 Messages</b>
-                    <div class="log-section">${msgLogs.map(l => `<div class="log-line"><b>${l.user}</b>: ${l.status}</div>`).join('') || 'None'}</div>
-                    <b>⚙️ Activities</b>
-                    <div class="log-section">${actLogs.map(l => `<div class="log-line"><b>${l.user}</b>: ${l.task} -> ${l.status}</div>`).join('') || 'None'}</div>
-                </div>
+            <div style="display:flex; gap:5px; margin-top:10px"><input id="m-${f}" style="flex:1" placeholder="Msg..."><button onclick="sendMsg('${f}')" class="btn btn-primary">Send</button></div>
+            <div class="log-panel">
+                <b>💬 Msg:</b> <div class="log-section">${msgs.map(l=>`<div>${l.user}: ${l.status}</div>`).join('')||'None'}</div>
+                <b>⚙️ Act:</b> <div class="log-section">${acts.map(l=>`<div>${l.user}: ${l.task}->${l.status}</div>`).join('')||'None'}</div>
             </div>`;
         list.appendChild(card);
     }
 }
 
-function getBarColor(f) {
-    const order = ["Need Assistance", "Delayed", "Attached", "Completed", "Not Started"];
-    const states = [f['Overall Status'], ...Object.values(f).filter(v => typeof v === 'string')];
-    for(let s of order) { if(states.includes(s)) return STATUS_COLORS[s]; }
-    return STATUS_COLORS["Not Started"];
-}
-
-function toggleLogs(f) { const el = document.getElementById(`logs-${f}`); el.style.display = el.style.display==='none'?'block':'none'; }
-
 function sendMsg(f) {
-    const inp = document.getElementById(`msg-${f}`); if(!inp.value) return;
+    const val = document.getElementById(`m-${f}`).value; if(!val) return;
     let db = JSON.parse(localStorage.getItem("flights"));
-    db[f].logs.push({time:new Date().toISOString(), task:"Message", status:inp.value, user:"ADMIN"});
-    localStorage.setItem("flights", JSON.stringify(db));
-    inp.value = ""; load();
+    db[f].logs.push({time:new Date(), task:"Message", status:val, user:"ADMIN"});
+    localStorage.setItem("flights", JSON.stringify(db)); load();
 }
 
-// --- 用户管理逻辑 (恢复部分) ---
 function openUserMgmt() {
-    const users = JSON.parse(localStorage.getItem("users") || '{"admin":{"id":"admin","pass":"admin","name":"Default Staff"}}');
-    const list = document.getElementById("userList"); list.innerHTML = "<h4>Staff List</h4>";
+    const users = JSON.parse(localStorage.getItem("users") || '{"admin":{"id":"admin","pass":"admin","name":"Default"}}');
+    const list = document.getElementById("userList"); list.innerHTML = "";
     for(let id in users) {
-        list.innerHTML += `<div class="user-item">
-            <div><b>${users[id].name}</b> (ID: ${id}) | Pass: ${users[id].pass}</div>
-            <button onclick="deleteUser('${id}')" class="btn btn-danger" ${id==='admin'?'disabled':''}>Delete</button>
-        </div>`;
+        list.innerHTML += `<div class="user-item"><div>${users[id].name} (${id})</div>
+            <div><button onclick="editUserPrompt('${id}')" class="btn btn-primary" style="padding:4px">Edit</button>
+            <button onclick="deleteUser('${id}')" class="btn btn-danger" style="padding:4px" ${id==='admin'?'disabled':''}>Del</button></div></div>`;
     }
-    document.getElementById('userMgmt').style.display = 'block';
+    document.getElementById('userMgmt').style.display='block';
 }
 
 function addUser() {
-    const id = document.getElementById('un').value.trim();
-    const ps = document.getElementById('up').value.trim();
-    const nm = document.getElementById('u_disp').value.trim();
-    if(!id || !ps || !nm) return alert("Fill all fields");
-    let users = JSON.parse(localStorage.getItem("users") || "{}");
-    users[id] = {id:id, pass:ps, name:nm};
-    localStorage.setItem("users", JSON.stringify(users));
-    openUserMgmt();
+    let u = JSON.parse(localStorage.getItem("users") || "{}");
+    const id = document.getElementById('un').value;
+    u[id] = {id:id, pass:document.getElementById('up').value, name:document.getElementById('u_disp').value};
+    localStorage.setItem("users", JSON.stringify(u)); openUserMgmt();
 }
 
-function deleteUser(id) {
-    if(!confirm("Delete this user?")) return;
-    let users = JSON.parse(localStorage.getItem("users"));
-    delete users[id];
-    localStorage.setItem("users", JSON.stringify(users));
-    openUserMgmt();
+function editUserPrompt(id) {
+    const u = JSON.parse(localStorage.getItem("users"))[id];
+    document.getElementById('un').value = id; document.getElementById('un').disabled = true;
+    document.getElementById('up').value = u.pass; document.getElementById('u_disp').value = u.name;
+    const btn = document.getElementById('userMainBtn'); btn.innerText = "Update";
+    btn.onclick = () => {
+        let all = JSON.parse(localStorage.getItem("users"));
+        all[id].pass = document.getElementById('up').value;
+        all[id].name = document.getElementById('u_disp').value;
+        localStorage.setItem("users", JSON.stringify(all));
+        document.getElementById('un').disabled = false; btn.innerText = "Add"; btn.onclick = addUser;
+        openUserMgmt();
+    };
 }
 
-// --- 回收站与多选逻辑 (保留部分) ---
+function deleteUser(id) { if(confirm("Delete user?")) { let u = JSON.parse(localStorage.getItem("users")); delete u[id]; localStorage.setItem("users", JSON.stringify(u)); openUserMgmt(); } }
+
 function openRecycleBin() {
     const bin = JSON.parse(localStorage.getItem("deletedFlights") || "{}");
     const list = document.getElementById("binList"); list.innerHTML = "";
-    for(let f in bin) {
-        list.innerHTML += `<div class="bin-item">
-            <div><input type="checkbox" class="bin-bulk" data-id="${f}"> <b>${f}</b> (${bin[f].apron})</div>
-            <div>
-                <button onclick="restoreF('${f}')" class="btn btn-success">Restore</button>
-                <button onclick="permDeleteF('${f}')" class="btn btn-danger">Delete Permanently</button>
-            </div>
-        </div>`;
-    }
+    for(let f in bin) list.innerHTML += `<div class="bin-item"><div><input type="checkbox" class="bin-bulk" data-id="${f}"> ${f}</div><button onclick="restoreF('${f}')" class="btn btn-success">Restore</button></div>`;
     document.getElementById('recycleBin').style.display='block';
-}
-
-function permDeleteF(f) {
-    if(!confirm(`WARNING: Permanent delete ${f}?`)) return;
-    let bin = JSON.parse(localStorage.getItem("deletedFlights"));
-    delete bin[f]; localStorage.setItem("deletedFlights", JSON.stringify(bin));
-    openRecycleBin();
 }
 
 function bulkPermDelete() {
     const checked = document.querySelectorAll('.bin-bulk:checked');
-    if(!checked.length || !confirm(`Permanently delete ${checked.length} flights?`)) return;
-    let bin = JSON.parse(localStorage.getItem("deletedFlights"));
-    checked.forEach(c => delete bin[c.dataset.id]);
-    localStorage.setItem("deletedFlights", JSON.stringify(bin));
-    openRecycleBin();
-}
-
-function restoreF(f) {
-    let bin = JSON.parse(localStorage.getItem("deletedFlights"));
-    let db = JSON.parse(localStorage.getItem("flights") || "{}");
-    db[f] = bin[f]; delete bin[f];
-    localStorage.setItem("flights", JSON.stringify(db));
-    localStorage.setItem("deletedFlights", JSON.stringify(bin));
-    openRecycleBin(); load();
+    if(checked.length && confirm(`PERMANENTLY delete ${checked.length} flights?`)) {
+        let bin = JSON.parse(localStorage.getItem("deletedFlights"));
+        checked.forEach(c => delete bin[c.dataset.id]);
+        localStorage.setItem("deletedFlights", JSON.stringify(bin)); openRecycleBin();
+    }
 }
 
 function bulkRestoreBin() {
     const checked = document.querySelectorAll('.bin-bulk:checked');
-    if(!checked.length) return;
-    let bin = JSON.parse(localStorage.getItem("deletedFlights"));
-    let db = JSON.parse(localStorage.getItem("flights") || "{}");
+    let bin = JSON.parse(localStorage.getItem("deletedFlights")), db = JSON.parse(localStorage.getItem("flights")||"{}");
     checked.forEach(c => { db[c.dataset.id] = bin[c.dataset.id]; delete bin[c.dataset.id]; });
-    localStorage.setItem("flights", JSON.stringify(db));
-    localStorage.setItem("deletedFlights", JSON.stringify(bin));
+    localStorage.setItem("flights", JSON.stringify(db)); localStorage.setItem("deletedFlights", JSON.stringify(bin));
     openRecycleBin(); load();
 }
 
-function toggleBinSelectAll() {
-    isBinAllSelected = !isBinAllSelected;
-    document.querySelectorAll('.bin-bulk').forEach(c => c.checked = isBinAllSelected);
-    document.getElementById('binSelBtn').innerText = isBinAllSelected ? "Deselect All" : "Select All";
-}
-
-function toggleSelectAll() {
-    isAllSelected = !isAllSelected;
-    document.querySelectorAll('.bulk').forEach(c => c.checked = isAllSelected);
-    document.getElementById('selBtn').innerText = isAllSelected ? "Deselect All" : "Select All";
-    updateUI();
-}
-
+function toggleBinSelectAll() { isBinAllSelected = !isBinAllSelected; document.querySelectorAll('.bin-bulk').forEach(c => c.checked = isBinAllSelected); }
+function toggleSelectAll() { isAllSelected = !isAllSelected; document.querySelectorAll('.bulk').forEach(c => c.checked = isAllSelected); updateUI(); }
 function updateUI() { document.getElementById('bDel').style.display = document.querySelectorAll('.bulk:checked').length ? 'inline-block' : 'none'; }
 
 function bulkDel() {
     const checked = document.querySelectorAll('.bulk:checked');
-    if(!confirm(`Move ${checked.length} to Bin?`)) return;
-    let db = JSON.parse(localStorage.getItem("flights"));
-    let bin = JSON.parse(localStorage.getItem("deletedFlights") || "{}");
-    checked.forEach(c => { bin[c.dataset.id] = db[c.dataset.id]; delete db[c.dataset.id]; });
-    localStorage.setItem("flights", JSON.stringify(db));
-    localStorage.setItem("deletedFlights", JSON.stringify(bin));
-    load();
+    if(confirm(`Move ${checked.length} to Bin?`)) {
+        let db = JSON.parse(localStorage.getItem("flights")), bin = JSON.parse(localStorage.getItem("deletedFlights")||"{}");
+        checked.forEach(c => { bin[c.dataset.id] = db[c.dataset.id]; delete db[c.dataset.id]; });
+        localStorage.setItem("flights", JSON.stringify(db)); localStorage.setItem("deletedFlights", JSON.stringify(bin));
+        load();
+    }
 }
 
-function delF(f) {
-    if(!confirm(`Move ${f} to Bin?`)) return;
-    let db = JSON.parse(localStorage.getItem("flights"));
-    let bin = JSON.parse(localStorage.getItem("deletedFlights") || "{}");
-    bin[f] = db[f]; delete db[f];
-    localStorage.setItem("flights", JSON.stringify(db));
-    localStorage.setItem("deletedFlights", JSON.stringify(bin));
-    load();
-}
-
+function delF(f) { if(confirm("Move to bin?")) { let db = JSON.parse(localStorage.getItem("flights")), bin = JSON.parse(localStorage.getItem("deletedFlights")||"{}"); bin[f] = db[f]; delete db[f]; localStorage.setItem("flights", JSON.stringify(db)); localStorage.setItem("deletedFlights", JSON.stringify(bin)); load(); } }
 function addFlight() {
     const f = document.getElementById('nf').value.toUpperCase(), a = document.getElementById('na').value.toUpperCase();
-    if(!f || !a) return;
+    if(!f) return;
     let db = JSON.parse(localStorage.getItem("flights") || "{}");
-    db[f] = {apron:a, 'Overall Status':'Not Started', logs:[], etd:"", eta:"", at:""};
-    localStorage.setItem("flights", JSON.stringify(db));
-    document.getElementById('addFModal').style.display='none'; load();
+    db[f] = {apron:a, 'Overall Status':'Not Started', logs:[]};
+    localStorage.setItem("flights", JSON.stringify(db)); document.getElementById('addFModal').style.display='none'; load();
 }
-
-function toggleTheme() { 
-    const nt = document.body.getAttribute('data-theme')==='light'?'dark':'light';
-    document.body.setAttribute('data-theme', nt); 
-}
-
+function toggleTheme() { document.body.setAttribute('data-theme', document.body.getAttribute('data-theme')==='light'?'dark':'light'); }
 window.onload = load;
 </script>
 </body>

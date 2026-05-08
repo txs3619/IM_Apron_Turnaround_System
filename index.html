@@ -5,50 +5,65 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Apron Updating System - Staff</title>
 <style>
-  :root { --bg: #f0f2f5; --card: #ffffff; --text: #333; --border: #ddd; --primary: #1a237e; --accent: #007bff; --sel-bg: #ffffff; }
-  [data-theme='dark'] { --bg: #0b1117; --card: #161b22; --text: #c9d1d9; --border: #30363d; --primary: #58a6ff; --accent: #1f6feb; --sel-bg: #21262d; }
+  :root { --bg: #f0f2f5; --card: #ffffff; --text: #333; --border: #ddd; --primary: #1a237e; --accent: #007bff; --watermark: rgba(0,0,0,0.15); }
+  [data-theme='dark'] { --bg: #0b1117; --card: #161b22; --text: #c9d1d9; --border: #30363d; --primary: #58a6ff; --accent: #1f6feb; --watermark: rgba(255,255,255,0.1); }
   body { font-family: 'Segoe UI', sans-serif; background: var(--bg); color: var(--text); margin: 0; transition: 0.3s; padding-bottom: 80px; }
+  .watermark { position: fixed; bottom: 10px; left: 50%; transform: translateX(-50%); font-size: 14px; font-weight: bold; color: var(--watermark); pointer-events: none; z-index: 9999; }
   .header { background: var(--primary); color: white; padding: 12px 20px; display: flex; justify-content: space-between; align-items: center; position: sticky; top: 0; z-index: 1000; }
   .btn { padding: 8px 15px; border-radius: 8px; border: none; font-weight: bold; cursor: pointer; transition: 0.2s; }
   .btn-primary { background: var(--accent); color: white; }
   .btn-success { background: #238636; color: white; }
   .btn-danger { background: #da3633; color: white; }
   .btn-gray { background: #666; color: white; }
-  .card { background: var(--card); padding: 20px; margin: 15px auto; border-radius: 12px; border: 1px solid var(--border); cursor: pointer; max-width: 800px; position: relative; overflow: hidden; }
-  .priority-bar { position: absolute; left: 0; top: 0; bottom: 0; width: 8px; }
+  .card { background: var(--card); padding: 20px; margin: 15px auto; border-radius: 12px; border: 1px solid var(--border); border-left: 10px solid #666; cursor: pointer; max-width: 800px; position: relative; }
   .overlay { display: none; position: fixed; inset: 0; background: var(--bg); z-index: 1500; overflow-y: auto; padding: 20px; }
-  input, select, textarea { padding: 10px; border-radius: 8px; border: 1px solid var(--border); background: var(--sel-bg); color: var(--text); width: 100%; box-sizing: border-box; }
-  .task-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(140px, 1fr)); gap: 10px; }
-  .st-delayed { color: #da3633 !important; } .st-assistance { color: #e3b341 !important; } .st-completed { color: #2ebc7f !important; } .st-attached { color: #1f6feb !important; }
-  select.sel-delayed { background-color: rgba(218, 54, 51, 0.2) !important; }
-  select.sel-assistance { background-color: rgba(227, 179, 65, 0.2) !important; }
-  details { margin-top: 15px; background: rgba(128,128,128,0.08); padding: 12px; border-radius: 10px; border: 1px solid var(--border); }
-  .timer-box { font-family: monospace; font-size: 12px; margin-top: 6px; opacity: 0.8; }
-  .log-item { padding: 6px; border-bottom: 1px solid var(--border); font-size: 13px; }
+  .input-wrapper { margin-bottom: 15px; text-align: left; }
+  .input-wrapper label { font-size: 11px; font-weight: bold; color: #666; display: block; margin-bottom: 4px; }
+  [data-theme='dark'] .input-wrapper label { color: #8b949e; }
+  input, select, textarea { padding: 10px; border-radius: 8px; border: 1px solid var(--border); background: var(--card); color: var(--text); width: 100%; box-sizing: border-box; }
+  .task-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: 10px; }
+  .msg-display { background: rgba(0,123,255,0.1); padding: 8px; border-radius: 5px; margin-top: 10px; font-size: 12px; border-left: 3px solid var(--accent); }
+  
+  /* 优化日志区域大小 */
+  details { margin-top: 15px; background: rgba(128,128,128,0.05); padding: 15px; border-radius: 10px; border: 1px solid var(--border); }
+  summary { cursor: pointer; font-weight: bold; font-size: 18px; padding: 5px 0; color: var(--primary); }
+  #msgLogArea, #actionLogArea { margin-top: 10px; }
 </style>
+<script>
+  (function() {
+    const savedTheme = localStorage.getItem('theme') || 'light';
+    document.documentElement.setAttribute('data-theme', savedTheme);
+  })();
+</script>
 </head>
 <body>
 
+<div id="wm" class="watermark">STAFF ACCESS SYSTEM</div>
+
 <div id="loginOverlay" style="position:fixed; inset:0; background:var(--primary); z-index:5000; display:flex; align-items:center; justify-content:center;">
-    <div style="background:white; padding:30px; border-radius:15px; width:90%; max-width:400px; text-align:center; color:#333">
-        <h2>STAFF LOGIN</h2>
+    <div style="background:white; padding:30px; border-radius:15px; width:90%; max-width:400px; text-align:center;">
+        <h2 style="color:#333">STAFF LOGIN</h2>
         <input id="loginId" placeholder="Staff ID" style="margin-bottom:10px">
         <input id="loginPass" type="password" placeholder="Password" style="margin-bottom:15px">
         <button onclick="checkLogin()" class="btn btn-primary" style="width:100%">Login</button>
+        <p style="margin-top:15px; font-size:13px; color:#666">Restricted Access System</p>
     </div>
 </div>
 
 <div id="mainContent" style="display:none">
     <div class="header">
-        <div onclick="openProfile()" style="cursor:pointer; font-weight:bold">👤 <span id="userDisplay">Name</span></div>
+        <div onclick="openProfile()" style="cursor:pointer; display:flex; align-items:center; gap:10px">
+            <img id="userImg" src="" style="width:35px; height:35px; border-radius:50%; object-fit:cover; background:#ccc">
+            <span id="userDisplay">Profile</span>
+        </div>
         <div style="display:flex; gap:10px">
-            <button onclick="toggleTheme()" class="btn" style="background:none; font-size:18px">🌓</button>
+            <button onclick="toggleTheme()" class="btn" style="background:none; font-size:20px">🌓</button>
             <button onclick="logout()" class="btn btn-danger">Logout</button>
         </div>
     </div>
     <div style="max-width:800px; margin:20px auto; padding:0 15px">
         <div style="display:flex; gap:10px; margin-bottom:15px">
-            <input id="search" placeholder="Search..." onkeyup="renderFlights()" style="flex:1">
+            <input id="search" placeholder="Search Flight/Apron..." onkeyup="renderFlights()" style="flex:1">
             <button onclick="document.getElementById('addModal').style.display='block'" class="btn btn-success">+ New Flight</button>
         </div>
         <div id="list"></div>
@@ -57,79 +72,149 @@
 
 <div id="editorOverlay" class="overlay">
     <div style="max-width:800px; margin:auto">
-        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:15px">
+        <div style="display:flex; justify-content:space-between; align-items:center">
             <h2 id="editTitle">Update Flight</h2>
             <button onclick="closeEditor()" class="btn btn-gray">✕ Close</button>
         </div>
-        <div style="display:grid; grid-template-columns: 1fr 1fr; gap:10px; margin-bottom:10px">
-            <div><label>Apron</label><input id="editA"></div>
-            <div><label>Status</label><select id="t-Overall_Status" onchange="updateSelectColor(this)"><option value="Not Started">Not Started</option><option value="Attached">Attached</option><option value="Need Assistance">Need Assistance</option><option value="Delayed">Delayed</option><option value="Completed">Completed</option></select></div>
+        <div style="display:grid; grid-template-columns: 1fr 1fr 1fr; gap:10px">
+            <div class="input-wrapper"><label>Apron</label><input id="editA" readonly style="opacity:0.7"></div>
+            <div class="input-wrapper"><label>Overall Status</label>
+                <select id="t-Overall_Status">
+                    <option>Not Started</option><option>In Progress</option>
+                    <option>Need Assistance</option><option>Delayed</option><option>Completed</option>
+                </select>
+            </div>
+            <div class="input-wrapper"><label>ETD</label>
+                <div style="display:flex; gap:5px">
+                    <input type="datetime-local" id="depTime">
+                    <button onclick="toggleTZ()" class="btn btn-primary" id="tzBtn" style="font-size:10px">UTC</button>
+                </div>
+            </div>
         </div>
         <div id="categoryContainer"></div>
-        <textarea id="msgInput" placeholder="Message..." style="margin-top:10px"></textarea>
-        <button onclick="confirmUpdate()" class="btn btn-success" style="width:100%; height:50px; margin-top:10px">SAVE CHANGES</button>
-        <details open><summary>💬 Message Logs</summary><div id="msgLogArea"></div></details>
-        <details><summary>⚙️ Activity Logs</summary><div id="actionLogArea"></div></details>
+        <div class="input-wrapper">
+            <label>Message (Sync to Admin)</label>
+            <textarea id="msgInput" placeholder="Enter message here..."></textarea>
+        </div>
+        <button onclick="confirmUpdate()" class="btn btn-success" style="width:100%; height:60px; font-size:18px">SAVE CHANGES</button>
+        <div id="logSections" style="margin-top:20px">
+            <details open><summary>💬 Message Logs (Click to Collapse)</summary><div id="msgLogArea"></div></details>
+            <details><summary>⚙️ Activity Logs (Click to Expand)</summary><div id="actionLogArea" style="font-size: 13px;"></div></details>
+        </div>
     </div>
 </div>
 
 <div id="profileOverlay" class="overlay">
-    <div style="max-width:350px; margin:100px auto; background:var(--card); padding:20px; border-radius:12px; border:1px solid var(--border)">
-        <h3>Edit Profile</h3>
-        <label>Display Name</label><input id="pName" style="margin-bottom:10px">
-        <label>New Password</label><input id="pPass" type="password" style="margin-bottom:20px">
-        <button onclick="saveProfile()" class="btn btn-primary" style="width:100%">Save Changes</button>
-        <button onclick="document.getElementById('profileOverlay').style.display='none'" class="btn" style="width:100%; margin-top:10px">Cancel</button>
+    <div style="max-width:500px; margin:auto; text-align:center">
+        <h2>User Profile</h2>
+        <img id="profilePicPreview" style="width:100px; height:100px; border-radius:50%; object-fit:cover; margin-bottom:15px; border:3px solid var(--primary); background:#eee">
+        <div id="profileView">
+            <p><b>ID:</b> <span id="vId"></span></p>
+            <p><b>Name:</b> <span id="vName"></span></p>
+            <p><b>Position:</b> <span id="vPos"></span></p>
+            <button onclick="showProfileEdit()" class="btn btn-primary">Edit Profile</button>
+        </div>
+        <div id="profileForm" style="display:none; text-align:left">
+            <div class="input-wrapper"><label>Profile Picture</label><input type="file" onchange="handleImg(this)"></div>
+            <div class="input-wrapper"><label>Full Name</label><input id="pName"></div>
+            <div class="input-wrapper"><label>Position</label><input id="pPos"></div>
+            <div class="input-wrapper"><label>New Password</label><input id="pPass" type="password"></div>
+            <button onclick="saveProfile()" class="btn btn-success" style="width:100%">Save Changes</button>
+        </div>
+        <button onclick="document.getElementById('profileOverlay').style.display='none'" class="btn btn-gray" style="margin-top:15px">Close</button>
+    </div>
+</div>
+
+<div id="addModal" class="overlay">
+    <div style="max-width:500px; margin:auto; background:var(--card); padding:20px; border-radius:12px">
+        <h2>Add Flight</h2>
+        <input id="newF" placeholder="Flight No (e.g. MH123)"><br><br>
+        <input id="newA" placeholder="Apron (e.g. A10)"><br><br>
+        <button onclick="saveNewFlight()" class="btn btn-success" style="width:100%">Create</button>
+        <button onclick="document.getElementById('addModal').style.display='none'" class="btn btn-gray" style="width:100%; margin-top:10px">Cancel</button>
     </div>
 </div>
 
 <script>
-const CATS = { "Ground": ["Fueling","Baggage","Catering"], "Admin": ["Flight Plan","Customs"] };
-let currentF = null;
-const STATUS_COLORS = { "Delayed": "#da3633", "Need Assistance": "#e3b341", "Attached": "#1f6feb", "Completed": "#2ebc7f", "Not Started": "#8b949e" };
+const CATS = { "Admin": ["Flight Plan Approval","Engineering","Tow Truck Pushback"], "Cabin": ["PAX Boarding (F)","PAX Boarding (B)","Catering"], "Ground": ["Baggage Load","Fueling","Water","Lavatory"] };
+let currentF = null, useUTC = true, currentPhoto = "";
 
-function updateSelectColor(el) {
-    el.style.backgroundColor = el.value === "Delayed" ? "rgba(218,54,51,0.2)" : (el.value === "Need Assistance" ? "rgba(227,179,65,0.2)" : "");
+function formatDT(iso) {
+    if(!iso) return "-";
+    const d = new Date(iso);
+    if(useUTC) return d.toISOString().replace('T',' ').substring(0,19);
+    return d.toLocaleString();
 }
 
 function checkLogin() {
-    const id = document.getElementById('loginId').value;
-    const users = JSON.parse(localStorage.getItem("users") || '{"admin":{"id":"admin","pass":"admin","name":"Default User"}}');
-    if(users[id] && users[id].pass === document.getElementById('loginPass').value) {
+    const id = document.getElementById('loginId').value.trim();
+    const pass = document.getElementById('loginPass').value;
+    const users = JSON.parse(localStorage.getItem("users") || '{"admin":{"id":"admin","pass":"admin","name":"Admin","pos":"Administrator"}}');
+    if(users[id] && users[id].pass === pass) {
         sessionStorage.setItem("user", JSON.stringify(users[id]));
         initApp();
-    } else alert("Invalid");
+    } else { alert("Invalid Credentials"); }
 }
 
 function initApp() {
     const u = JSON.parse(sessionStorage.getItem("user"));
+    if(!u) return;
     document.getElementById('loginOverlay').style.display='none';
     document.getElementById('mainContent').style.display='block';
+    document.getElementById('userImg').src = u.photo || "";
     document.getElementById('userDisplay').innerText = u.name;
+    document.getElementById('wm').innerText = "STAFF ID: " + u.id;
     renderFlights();
 }
 
+window.addEventListener('storage', (e) => {
+    if(e.key === 'flights' || e.key === 'users') {
+        renderFlights();
+        if(currentF && document.getElementById('editorOverlay').style.display === 'block') openEditor(currentF);
+    }
+});
+
 function renderFlights() {
     const db = JSON.parse(localStorage.getItem("flights") || "{}");
+    const s = document.getElementById('search').value.toUpperCase();
     const list = document.getElementById("list"); list.innerHTML = "";
     for(let f in db) {
+        if(!f.includes(s) && !db[f].apron.includes(s)) continue;
+        const d = db[f];
+        const lastMsg = (d.logs || []).filter(l => l.task === "Message").pop();
         const card = document.createElement("div"); card.className = "card";
         card.onclick = () => openEditor(f);
-        card.innerHTML = `<div class="priority-bar" style="background:${STATUS_COLORS[db[f]['Overall Status']]}"></div>
-            <div style="margin-left:12px"><b>${f}</b> (${db[f].apron}) <br> <small>${db[f]['Overall Status']}</small></div>`;
+        card.innerHTML = `<b>${f}</b> <span style="margin-left:15px">Apron: ${d.apron}</span>
+            <div style="font-size:12px; margin-top:5px">Status: ${d['Overall Status']} | ETD: ${formatDT(d.etd)}</div>
+            ${lastMsg ? `<div class="msg-display"><b>Latest Msg:</b> ${lastMsg.status}</div>` : ''}`;
         list.appendChild(card);
     }
 }
 
 function openEditor(f) {
     currentF = f;
-    const d = JSON.parse(localStorage.getItem("flights"))[f];
-    document.getElementById('editTitle').innerText = f;
+    const db = JSON.parse(localStorage.getItem("flights"));
+    if(!db[f]) return closeEditor();
+    const d = db[f];
+    document.getElementById('editTitle').innerText = "Update: " + f;
     document.getElementById('editA').value = d.apron;
     document.getElementById('t-Overall_Status').value = d['Overall Status'];
+    document.getElementById('depTime').value = d.etd ? d.etd.substring(0,16) : "";
+    document.getElementById('msgInput').value = "";
     let h = "";
     for(let c in CATS) {
-        h += `<b>${c}</b><div class="task-grid">` + CATS[c].map(t => `<div><small>${t}</small><select id="t-${t.replace(/\s/g,'_')}"><option value="Not Started">Not Started</option><option value="Completed">Completed</option></select></div>`).join('') + `</div>`;
+        h += `<div style="background:rgba(128,128,128,0.05); padding:10px; margin-bottom:10px; border-radius:8px"><b>${c}</b><div class="task-grid">`;
+        CATS[c].forEach(t => {
+            const currentVal = d[t] || 'Not Started';
+            h += `<div><label style="font-size:10px">${t}</label><select id="t-${t.replace(/\s+/g,'_')}">
+                <option ${currentVal=='Not Started'?'selected':''}>Not Started</option>
+                <option ${currentVal=='In Progress'?'selected':''}>In Progress</option>
+                <option ${currentVal=='Need Assistance'?'selected':''}>Need Assistance</option>
+                <option ${currentVal=='Delayed'?'selected':''}>Delayed</option>
+                <option ${currentVal=='Completed'?'selected':''}>Completed</option>
+            </select></div>`;
+        });
+        h += `</div></div>`;
     }
     document.getElementById('categoryContainer').innerHTML = h;
     renderLogs(d.logs || []);
@@ -137,47 +222,106 @@ function openEditor(f) {
 }
 
 function renderLogs(logs) {
-    const m = document.getElementById('msgLogArea'); const a = document.getElementById('actionLogArea');
-    m.innerHTML = ""; a.innerHTML = "";
-    logs.slice().reverse().forEach(l => {
-        const row = `<div class="log-item"><b>${l.user}</b>: ${l.status} <small>(${l.task})</small></div>`;
-        if(l.task === "Message") m.innerHTML += row; else a.innerHTML += row;
-    });
+    const msgs = logs.filter(l => l.task === "Message").reverse();
+    const acts = logs.filter(l => l.task !== "Message").reverse();
+    document.getElementById('msgLogArea').innerHTML = msgs.length ? msgs.map(m => `<div class="msg-display" style="font-size:14px"><b>[${formatDT(m.time)}] ${m.user}:</b> ${m.status}</div>`).join('') : "No messages.";
+    document.getElementById('actionLogArea').innerHTML = acts.length ? acts.map(a => `<div>[${formatDT(a.time)}] ${a.task} → ${a.status} (${a.user})</div>`).join('') : "No changes logged.";
 }
 
 function confirmUpdate() {
     let db = JSON.parse(localStorage.getItem("flights"));
     const u = JSON.parse(sessionStorage.getItem("user"));
+    const fData = db[currentF];
+    const now = new Date().toISOString();
+    let changeList = [];
+
+    const newOS = document.getElementById('t-Overall_Status').value;
+    if(fData['Overall Status'] !== newOS) {
+        fData.logs.push({time:now, task:"Overall Status", status:newOS, user:u.name});
+        fData['Overall Status'] = newOS;
+        changeList.push("Overall Status: " + newOS);
+    }
+
     const msg = document.getElementById('msgInput').value.trim();
-    if(msg) db[currentF].logs.push({time:new Date(), task:"Message", status:msg, user:u.name});
-    db[currentF]['Overall Status'] = document.getElementById('t-Overall_Status').value;
-    localStorage.setItem("flights", JSON.stringify(db));
-    alert("Saved"); closeEditor();
+    if(msg) {
+        fData.logs.push({time:now, task:"Message", status:msg, user:u.name});
+        document.getElementById('msgInput').value = "";
+        changeList.push("Message Sent");
+    }
+
+    const newETD = document.getElementById('depTime').value ? new Date(document.getElementById('depTime').value).toISOString() : "";
+    if(fData.etd !== newETD) {
+        fData.logs.push({time:now, task:"ETD Update", status:formatDT(newETD), user:u.name});
+        fData.etd = newETD;
+        changeList.push("ETD Updated");
+    }
+
+    Object.values(CATS).flat().forEach(t => {
+        const nv = document.getElementById(`t-${t.replace(/\s+/g,'_')}`).value;
+        const ov = fData[t] || 'Not Started';
+        if(ov !== nv) { 
+            fData.logs.push({time:now, task:t, status:nv, user:u.name}); 
+            fData[t] = nv; 
+            changeList.push(t + ": " + nv);
+        }
+    });
+
+    if(changeList.length > 0) {
+        localStorage.setItem("flights", JSON.stringify(db));
+        renderLogs(fData.logs);
+        alert("Changes Saved Successfully:\n\n" + changeList.join("\n"));
+    } else {
+        alert("No changes detected.");
+    }
 }
 
 function openProfile() {
     const u = JSON.parse(sessionStorage.getItem("user"));
-    document.getElementById('pName').value = u.name;
-    document.getElementById('pPass').value = u.pass;
-    document.getElementById('profileOverlay').style.display = 'block';
+    document.getElementById('vId').innerText = u.id; document.getElementById('vName').innerText = u.name;
+    document.getElementById('vPos').innerText = u.pos || "N/A"; document.getElementById('profilePicPreview').src = u.photo || "";
+    document.getElementById('pName').value = u.name; document.getElementById('pPos').value = u.pos || "";
+    document.getElementById('profileOverlay').style.display='block';
 }
-
+function showProfileEdit() { document.getElementById('profileView').style.display='none'; document.getElementById('profileForm').style.display='block'; }
+function handleImg(i) { if(i.files[0]) { const r = new FileReader(); r.onload=e=>{currentPhoto=e.target.result; document.getElementById('profilePicPreview').src=e.target.result;}; r.readAsDataURL(i.files[0]); } }
 function saveProfile() {
     let users = JSON.parse(localStorage.getItem("users"));
-    const u = JSON.parse(sessionStorage.getItem("user"));
-    users[u.id].name = document.getElementById('pName').value;
-    users[u.id].pass = document.getElementById('pPass').value;
+    let u = JSON.parse(sessionStorage.getItem("user"));
+    u.name = document.getElementById('pName').value; u.pos = document.getElementById('pPos').value;
+    if(currentPhoto) u.photo = currentPhoto;
+    if(document.getElementById('pPass').value) u.pass = document.getElementById('pPass').value;
+    users[u.id] = u;
     localStorage.setItem("users", JSON.stringify(users));
-    alert("Updated"); location.reload();
+    sessionStorage.setItem("user", JSON.stringify(u));
+    location.reload();
 }
 
+function saveNewFlight() {
+    const f = document.getElementById('newF').value.trim().toUpperCase();
+    const a = document.getElementById('newA').value.trim().toUpperCase();
+    if(!f || !a) return alert("Fill all fields");
+    let db = JSON.parse(localStorage.getItem("flights") || "{}");
+    if(db[f]) return alert("Flight already exists!");
+    db[f] = {apron: a, 'Overall Status':'Not Started', logs:[], etd: ""};
+    localStorage.setItem("flights", JSON.stringify(db));
+    location.reload();
+}
+
+function toggleTZ() { useUTC = !useUTC; document.getElementById('tzBtn').innerText = useUTC?"UTC":"Local"; if(currentF) openEditor(currentF); }
 function toggleTheme() { 
-    const t = document.documentElement.getAttribute('data-theme')==='dark'?'light':'dark';
-    document.documentElement.setAttribute('data-theme', t); localStorage.setItem('theme', t); 
+    const cur = document.body.getAttribute('data-theme') || 'light';
+    const next = cur === 'dark' ? 'light' : 'dark';
+    document.body.setAttribute('data-theme', next); 
+    document.documentElement.setAttribute('data-theme', next);
+    localStorage.setItem('theme', next);
 }
 function closeEditor() { document.getElementById('editorOverlay').style.display='none'; renderFlights(); }
 function logout() { sessionStorage.clear(); location.reload(); }
-window.onload = () => { if(sessionStorage.getItem("user")) initApp(); };
+window.onload = () => { 
+    const savedTheme = localStorage.getItem('theme') || 'light';
+    document.body.setAttribute('data-theme', savedTheme);
+    if(sessionStorage.getItem("user")) initApp(); 
+};
 </script>
 </body>
 </html>

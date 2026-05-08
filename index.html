@@ -4,6 +4,8 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Apron Updating System - Staff</title>
+<script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-database-compat.js"></script>
 <style>
   :root { --bg: #f0f2f5; --card: #ffffff; --text: #333; --border: #ddd; --primary: #1a237e; --accent: #007bff; --watermark: rgba(0,0,0,0.15); }
   [data-theme='dark'] { --bg: #0b1117; --card: #161b22; --text: #c9d1d9; --border: #30363d; --primary: #58a6ff; --accent: #1f6feb; --watermark: rgba(255,255,255,0.1); }
@@ -19,22 +21,12 @@
   .overlay { display: none; position: fixed; inset: 0; background: var(--bg); z-index: 1500; overflow-y: auto; padding: 20px; }
   .input-wrapper { margin-bottom: 15px; text-align: left; }
   .input-wrapper label { font-size: 11px; font-weight: bold; color: #666; display: block; margin-bottom: 4px; }
-  [data-theme='dark'] .input-wrapper label { color: #8b949e; }
   input, select, textarea { padding: 10px; border-radius: 8px; border: 1px solid var(--border); background: var(--card); color: var(--text); width: 100%; box-sizing: border-box; }
   .task-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: 10px; }
   .msg-display { background: rgba(0,123,255,0.1); padding: 8px; border-radius: 5px; margin-top: 10px; font-size: 12px; border-left: 3px solid var(--accent); }
-  
-  /* 优化日志区域大小 */
   details { margin-top: 15px; background: rgba(128,128,128,0.05); padding: 15px; border-radius: 10px; border: 1px solid var(--border); }
   summary { cursor: pointer; font-weight: bold; font-size: 18px; padding: 5px 0; color: var(--primary); }
-  #msgLogArea, #actionLogArea { margin-top: 10px; }
 </style>
-<script>
-  (function() {
-    const savedTheme = localStorage.getItem('theme') || 'light';
-    document.documentElement.setAttribute('data-theme', savedTheme);
-  })();
-</script>
 </head>
 <body>
 
@@ -46,16 +38,12 @@
         <input id="loginId" placeholder="Staff ID" style="margin-bottom:10px">
         <input id="loginPass" type="password" placeholder="Password" style="margin-bottom:15px">
         <button onclick="checkLogin()" class="btn btn-primary" style="width:100%">Login</button>
-        <p style="margin-top:15px; font-size:13px; color:#666">Restricted Access System</p>
     </div>
 </div>
 
 <div id="mainContent" style="display:none">
     <div class="header">
-        <div onclick="openProfile()" style="cursor:pointer; display:flex; align-items:center; gap:10px">
-            <img id="userImg" src="" style="width:35px; height:35px; border-radius:50%; object-fit:cover; background:#ccc">
-            <span id="userDisplay">Profile</span>
-        </div>
+        <div id="userDisplay" style="font-weight:bold">Profile</div>
         <div style="display:flex; gap:10px">
             <button onclick="toggleTheme()" class="btn" style="background:none; font-size:20px">🌓</button>
             <button onclick="logout()" class="btn btn-danger">Logout</button>
@@ -63,65 +51,38 @@
     </div>
     <div style="max-width:800px; margin:20px auto; padding:0 15px">
         <div style="display:flex; gap:10px; margin-bottom:15px">
-            <input id="search" placeholder="Search Flight/Apron..." onkeyup="renderFlights()" style="flex:1">
+            <input id="search" placeholder="Search Flight/Apron..." onkeyup="renderList()" style="flex:1">
             <button onclick="document.getElementById('addModal').style.display='block'" class="btn btn-success">+ New Flight</button>
         </div>
-        <div id="list"></div>
+        <div id="list">正在同步云端数据...</div>
     </div>
 </div>
 
 <div id="editorOverlay" class="overlay">
     <div style="max-width:800px; margin:auto">
         <div style="display:flex; justify-content:space-between; align-items:center">
-            <h2 id="editTitle">Update Flight</h2>
+            <h2 id="editTitle">Update</h2>
             <button onclick="closeEditor()" class="btn btn-gray">✕ Close</button>
         </div>
-        <div style="display:grid; grid-template-columns: 1fr 1fr 1fr; gap:10px">
-            <div class="input-wrapper"><label>Apron</label><input id="editA" readonly style="opacity:0.7"></div>
+        <div style="display:grid; grid-template-columns: 1fr 1fr; gap:10px">
             <div class="input-wrapper"><label>Overall Status</label>
                 <select id="t-Overall_Status">
                     <option>Not Started</option><option>In Progress</option>
                     <option>Need Assistance</option><option>Delayed</option><option>Completed</option>
                 </select>
             </div>
-            <div class="input-wrapper"><label>ETD</label>
-                <div style="display:flex; gap:5px">
-                    <input type="datetime-local" id="depTime">
-                    <button onclick="toggleTZ()" class="btn btn-primary" id="tzBtn" style="font-size:10px">UTC</button>
-                </div>
-            </div>
+            <div class="input-wrapper"><label>ETD (UTC)</label><input type="datetime-local" id="depTime"></div>
         </div>
         <div id="categoryContainer"></div>
         <div class="input-wrapper">
             <label>Message (Sync to Admin)</label>
             <textarea id="msgInput" placeholder="Enter message here..."></textarea>
         </div>
-        <button onclick="confirmUpdate()" class="btn btn-success" style="width:100%; height:60px; font-size:18px">SAVE CHANGES</button>
+        <button onclick="confirmUpdate()" class="btn btn-success" style="width:100%; height:60px; font-size:18px">SAVE TO CLOUD</button>
         <div id="logSections" style="margin-top:20px">
-            <details open><summary>💬 Message Logs (Click to Collapse)</summary><div id="msgLogArea"></div></details>
-            <details><summary>⚙️ Activity Logs (Click to Expand)</summary><div id="actionLogArea" style="font-size: 13px;"></div></details>
+            <details open><summary>💬 Message Logs</summary><div id="msgLogArea"></div></details>
+            <details><summary>⚙️ Activity Logs</summary><div id="actionLogArea" style="font-size: 13px;"></div></details>
         </div>
-    </div>
-</div>
-
-<div id="profileOverlay" class="overlay">
-    <div style="max-width:500px; margin:auto; text-align:center">
-        <h2>User Profile</h2>
-        <img id="profilePicPreview" style="width:100px; height:100px; border-radius:50%; object-fit:cover; margin-bottom:15px; border:3px solid var(--primary); background:#eee">
-        <div id="profileView">
-            <p><b>ID:</b> <span id="vId"></span></p>
-            <p><b>Name:</b> <span id="vName"></span></p>
-            <p><b>Position:</b> <span id="vPos"></span></p>
-            <button onclick="showProfileEdit()" class="btn btn-primary">Edit Profile</button>
-        </div>
-        <div id="profileForm" style="display:none; text-align:left">
-            <div class="input-wrapper"><label>Profile Picture</label><input type="file" onchange="handleImg(this)"></div>
-            <div class="input-wrapper"><label>Full Name</label><input id="pName"></div>
-            <div class="input-wrapper"><label>Position</label><input id="pPos"></div>
-            <div class="input-wrapper"><label>New Password</label><input id="pPass" type="password"></div>
-            <button onclick="saveProfile()" class="btn btn-success" style="width:100%">Save Changes</button>
-        </div>
-        <button onclick="document.getElementById('profileOverlay').style.display='none'" class="btn btn-gray" style="margin-top:15px">Close</button>
     </div>
 </div>
 
@@ -136,24 +97,37 @@
 </div>
 
 <script>
-const CATS = { "Admin": ["Flight Plan Approval","Engineering","Tow Truck Pushback"], "Cabin": ["PAX Boarding (F)","PAX Boarding (B)","Catering"], "Ground": ["Baggage Load","Fueling","Water","Lavatory"] };
-let currentF = null, useUTC = true, currentPhoto = "";
+// --- YOUR CONFIG START ---
+const firebaseConfig = {
+  apiKey: "AIzaSyBNcUXtBufxeST6EzJEa2Me562cdkzBJMM",
+  authDomain: "im-apron-turnaround-system.firebaseapp.com",
+  databaseURL: "https://im-apron-turnaround-system-default-rtdb.asia-southeast1.firebasedatabase.app",
+  projectId: "im-apron-turnaround-system",
+  storageBucket: "im-apron-turnaround-system.firebasestorage.app",
+  messagingSenderId: "984848540764",
+  appId: "1:984848540764:web:4a54026553c971acb33299",
+  measurementId: "G-CTC6CESSTJ"
+};
+// --- YOUR CONFIG END ---
 
-function formatDT(iso) {
-    if(!iso) return "-";
-    const d = new Date(iso);
-    if(useUTC) return d.toISOString().replace('T',' ').substring(0,19);
-    return d.toLocaleString();
-}
+firebase.initializeApp(firebaseConfig);
+const db = firebase.database();
+const CATS = { "Admin": ["Flight Plan Approval","Engineering","Tow Truck Pushback"], "Cabin": ["PAX Boarding (F)","PAX Boarding (B)","Catering"], "Ground": ["Baggage Load","Fueling","Water","Lavatory"] };
+let currentF = null, allFlights = {};
 
 function checkLogin() {
     const id = document.getElementById('loginId').value.trim();
     const pass = document.getElementById('loginPass').value;
-    const users = JSON.parse(localStorage.getItem("users") || '{"admin":{"id":"admin","pass":"admin","name":"Admin","pos":"Administrator"}}');
-    if(users[id] && users[id].pass === pass) {
-        sessionStorage.setItem("user", JSON.stringify(users[id]));
-        initApp();
-    } else { alert("Invalid Credentials"); }
+    db.ref('users/' + id).once('value').then((s) => {
+        const u = s.val();
+        if(u && u.pass === pass) {
+            sessionStorage.setItem("user", JSON.stringify(u));
+            initApp();
+        } else if(id === 'admin' && pass === 'admin') { // 备用万能账号
+            sessionStorage.setItem("user", JSON.stringify({id:'admin', name:'Admin', pos:'Administrator'}));
+            initApp();
+        } else { alert("Login Failed"); }
+    });
 }
 
 function initApp() {
@@ -161,57 +135,49 @@ function initApp() {
     if(!u) return;
     document.getElementById('loginOverlay').style.display='none';
     document.getElementById('mainContent').style.display='block';
-    document.getElementById('userImg').src = u.photo || "";
-    document.getElementById('userDisplay').innerText = u.name;
-    document.getElementById('wm').innerText = "STAFF ID: " + u.id;
-    renderFlights();
+    document.getElementById('userDisplay').innerText = u.name + " (" + u.pos + ")";
+    
+    db.ref('flights').on('value', (snapshot) => {
+        allFlights = snapshot.val() || {};
+        renderList();
+        if(currentF) openEditor(currentF);
+    });
 }
 
-window.addEventListener('storage', (e) => {
-    if(e.key === 'flights' || e.key === 'users') {
-        renderFlights();
-        if(currentF && document.getElementById('editorOverlay').style.display === 'block') openEditor(currentF);
-    }
-});
-
-function renderFlights() {
-    const db = JSON.parse(localStorage.getItem("flights") || "{}");
+function renderList() {
     const s = document.getElementById('search').value.toUpperCase();
     const list = document.getElementById("list"); list.innerHTML = "";
-    for(let f in db) {
-        if(!f.includes(s) && !db[f].apron.includes(s)) continue;
-        const d = db[f];
-        const lastMsg = (d.logs || []).filter(l => l.task === "Message").pop();
+    for(let f in allFlights) {
+        if(!f.includes(s) && !allFlights[f].apron.includes(s)) continue;
+        const d = allFlights[f];
         const card = document.createElement("div"); card.className = "card";
+        card.style.borderLeftColor = d['Overall Status'] === 'Completed' ? '#238636' : (d['Overall Status'] === 'Delayed' ? '#da3633' : '#666');
         card.onclick = () => openEditor(f);
         card.innerHTML = `<b>${f}</b> <span style="margin-left:15px">Apron: ${d.apron}</span>
-            <div style="font-size:12px; margin-top:5px">Status: ${d['Overall Status']} | ETD: ${formatDT(d.etd)}</div>
-            ${lastMsg ? `<div class="msg-display"><b>Latest Msg:</b> ${lastMsg.status}</div>` : ''}`;
+            <div style="font-size:12px; margin-top:5px">Status: ${d['Overall Status']} | ETD: ${d.etd || '-'}</div>`;
         list.appendChild(card);
     }
 }
 
 function openEditor(f) {
     currentF = f;
-    const db = JSON.parse(localStorage.getItem("flights"));
-    if(!db[f]) return closeEditor();
-    const d = db[f];
+    const d = allFlights[f];
+    if(!d) return closeEditor();
     document.getElementById('editTitle').innerText = "Update: " + f;
-    document.getElementById('editA').value = d.apron;
     document.getElementById('t-Overall_Status').value = d['Overall Status'];
-    document.getElementById('depTime').value = d.etd ? d.etd.substring(0,16) : "";
-    document.getElementById('msgInput').value = "";
+    document.getElementById('depTime').value = d.etd || "";
+    
     let h = "";
     for(let c in CATS) {
         h += `<div style="background:rgba(128,128,128,0.05); padding:10px; margin-bottom:10px; border-radius:8px"><b>${c}</b><div class="task-grid">`;
         CATS[c].forEach(t => {
-            const currentVal = d[t] || 'Not Started';
+            const val = d[t] || 'Not Started';
             h += `<div><label style="font-size:10px">${t}</label><select id="t-${t.replace(/\s+/g,'_')}">
-                <option ${currentVal=='Not Started'?'selected':''}>Not Started</option>
-                <option ${currentVal=='In Progress'?'selected':''}>In Progress</option>
-                <option ${currentVal=='Need Assistance'?'selected':''}>Need Assistance</option>
-                <option ${currentVal=='Delayed'?'selected':''}>Delayed</option>
-                <option ${currentVal=='Completed'?'selected':''}>Completed</option>
+                <option ${val=='Not Started'?'selected':''}>Not Started</option>
+                <option ${val=='In Progress'?'selected':''}>In Progress</option>
+                <option ${val=='Need Assistance'?'selected':''}>Need Assistance</option>
+                <option ${val=='Delayed'?'selected':''}>Delayed</option>
+                <option ${val=='Completed'?'selected':''}>Completed</option>
             </select></div>`;
         });
         h += `</div></div>`;
@@ -224,102 +190,51 @@ function openEditor(f) {
 function renderLogs(logs) {
     const msgs = logs.filter(l => l.task === "Message").reverse();
     const acts = logs.filter(l => l.task !== "Message").reverse();
-    document.getElementById('msgLogArea').innerHTML = msgs.length ? msgs.map(m => `<div class="msg-display" style="font-size:14px"><b>[${formatDT(m.time)}] ${m.user}:</b> ${m.status}</div>`).join('') : "No messages.";
-    document.getElementById('actionLogArea').innerHTML = acts.length ? acts.map(a => `<div>[${formatDT(a.time)}] ${a.task} → ${a.status} (${a.user})</div>`).join('') : "No changes logged.";
+    document.getElementById('msgLogArea').innerHTML = msgs.map(m => `<div class="msg-display"><b>[${m.time.substring(11,16)}] ${m.user}:</b> ${m.status}</div>`).join('') || "No messages.";
+    document.getElementById('actionLogArea').innerHTML = acts.map(a => `<div>[${a.time.substring(11,16)}] ${a.task} → ${a.status}</div>`).join('') || "No activity.";
 }
 
 function confirmUpdate() {
-    let db = JSON.parse(localStorage.getItem("flights"));
     const u = JSON.parse(sessionStorage.getItem("user"));
-    const fData = db[currentF];
     const now = new Date().toISOString();
-    let changeList = [];
+    const fData = {...allFlights[currentF]};
+    if(!fData.logs) fData.logs = [];
 
-    const newOS = document.getElementById('t-Overall_Status').value;
-    if(fData['Overall Status'] !== newOS) {
-        fData.logs.push({time:now, task:"Overall Status", status:newOS, user:u.name});
-        fData['Overall Status'] = newOS;
-        changeList.push("Overall Status: " + newOS);
-    }
+    const check = (id, key, label) => {
+        const nv = document.getElementById(id).value;
+        if(fData[key] !== nv) {
+            fData.logs.push({time:now, task:label, status:nv, user:u.name});
+            fData[key] = nv;
+        }
+    };
+
+    check('t-Overall_Status', 'Overall Status', 'Overall Status');
+    check('depTime', 'etd', 'ETD Update');
+    Object.values(CATS).flat().forEach(t => check(`t-${t.replace(/\s+/g,'_')}`, t, t));
 
     const msg = document.getElementById('msgInput').value.trim();
-    if(msg) {
-        fData.logs.push({time:now, task:"Message", status:msg, user:u.name});
-        document.getElementById('msgInput').value = "";
-        changeList.push("Message Sent");
-    }
+    if(msg) { fData.logs.push({time:now, task:"Message", status:msg, user:u.name}); document.getElementById('msgInput').value = ""; }
 
-    const newETD = document.getElementById('depTime').value ? new Date(document.getElementById('depTime').value).toISOString() : "";
-    if(fData.etd !== newETD) {
-        fData.logs.push({time:now, task:"ETD Update", status:formatDT(newETD), user:u.name});
-        fData.etd = newETD;
-        changeList.push("ETD Updated");
-    }
-
-    Object.values(CATS).flat().forEach(t => {
-        const nv = document.getElementById(`t-${t.replace(/\s+/g,'_')}`).value;
-        const ov = fData[t] || 'Not Started';
-        if(ov !== nv) { 
-            fData.logs.push({time:now, task:t, status:nv, user:u.name}); 
-            fData[t] = nv; 
-            changeList.push(t + ": " + nv);
-        }
-    });
-
-    if(changeList.length > 0) {
-        localStorage.setItem("flights", JSON.stringify(db));
-        renderLogs(fData.logs);
-        alert("Changes Saved Successfully:\n\n" + changeList.join("\n"));
-    } else {
-        alert("No changes detected.");
-    }
-}
-
-function openProfile() {
-    const u = JSON.parse(sessionStorage.getItem("user"));
-    document.getElementById('vId').innerText = u.id; document.getElementById('vName').innerText = u.name;
-    document.getElementById('vPos').innerText = u.pos || "N/A"; document.getElementById('profilePicPreview').src = u.photo || "";
-    document.getElementById('pName').value = u.name; document.getElementById('pPos').value = u.pos || "";
-    document.getElementById('profileOverlay').style.display='block';
-}
-function showProfileEdit() { document.getElementById('profileView').style.display='none'; document.getElementById('profileForm').style.display='block'; }
-function handleImg(i) { if(i.files[0]) { const r = new FileReader(); r.onload=e=>{currentPhoto=e.target.result; document.getElementById('profilePicPreview').src=e.target.result;}; r.readAsDataURL(i.files[0]); } }
-function saveProfile() {
-    let users = JSON.parse(localStorage.getItem("users"));
-    let u = JSON.parse(sessionStorage.getItem("user"));
-    u.name = document.getElementById('pName').value; u.pos = document.getElementById('pPos').value;
-    if(currentPhoto) u.photo = currentPhoto;
-    if(document.getElementById('pPass').value) u.pass = document.getElementById('pPass').value;
-    users[u.id] = u;
-    localStorage.setItem("users", JSON.stringify(users));
-    sessionStorage.setItem("user", JSON.stringify(u));
-    location.reload();
+    db.ref('flights/' + currentF).set(fData).then(() => alert("Saved to Cloud!"));
 }
 
 function saveNewFlight() {
-    const f = document.getElementById('newF').value.trim().toUpperCase();
-    const a = document.getElementById('newA').value.trim().toUpperCase();
+    const f = document.getElementById('newF').value.toUpperCase();
+    const a = document.getElementById('newA').value.toUpperCase();
     if(!f || !a) return alert("Fill all fields");
-    let db = JSON.parse(localStorage.getItem("flights") || "{}");
-    if(db[f]) return alert("Flight already exists!");
-    db[f] = {apron: a, 'Overall Status':'Not Started', logs:[], etd: ""};
-    localStorage.setItem("flights", JSON.stringify(db));
-    location.reload();
+    db.ref('flights/' + f).set({apron:a, 'Overall Status':'Not Started', logs:[], etd:''});
+    document.getElementById('addModal').style.display='none';
 }
 
-function toggleTZ() { useUTC = !useUTC; document.getElementById('tzBtn').innerText = useUTC?"UTC":"Local"; if(currentF) openEditor(currentF); }
-function toggleTheme() { 
-    const cur = document.body.getAttribute('data-theme') || 'light';
-    const next = cur === 'dark' ? 'light' : 'dark';
-    document.body.setAttribute('data-theme', next); 
-    document.documentElement.setAttribute('data-theme', next);
-    localStorage.setItem('theme', next);
+function toggleTheme() {
+    const t = document.documentElement.getAttribute('data-theme') === 'dark' ? 'light' : 'dark';
+    document.documentElement.setAttribute('data-theme', t);
+    localStorage.setItem('theme', t);
 }
-function closeEditor() { document.getElementById('editorOverlay').style.display='none'; renderFlights(); }
+function closeEditor() { currentF = null; document.getElementById('editorOverlay').style.display='none'; }
 function logout() { sessionStorage.clear(); location.reload(); }
 window.onload = () => { 
-    const savedTheme = localStorage.getItem('theme') || 'light';
-    document.body.setAttribute('data-theme', savedTheme);
+    document.documentElement.setAttribute('data-theme', localStorage.getItem('theme') || 'light');
     if(sessionStorage.getItem("user")) initApp(); 
 };
 </script>

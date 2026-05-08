@@ -41,13 +41,14 @@
 
 <div id="mainContent" style="display:none">
     <div class="header">
-        <div id="userDisplay" style="font-weight:bold">Profile</div>
+        <div id="userDisplay" style="font-weight:bold" onclick="document.getElementById('profileOverlay').style.display='block'">Profile</div>
         <div style="display:flex; gap:10px">
             <button id="tzBtn" onclick="toggleTZ()" class="btn" style="background:rgba(255,255,255,0.2); color:white">UTC</button>
             <button onclick="toggleTheme()" class="btn" style="background:none; font-size:20px">🌓</button>
             <button onclick="logout()" class="btn btn-danger">Logout</button>
         </div>
     </div>
+    
     <div style="max-width:800px; margin:20px auto; padding:0 15px">
         <div style="display:flex; gap:10px; margin-bottom:15px">
             <input id="search" placeholder="Search Flight/Apron..." onkeyup="renderFlights()" style="flex:1">
@@ -57,28 +58,43 @@
     </div>
 </div>
 
+<div id="profileOverlay" class="overlay">
+    <div style="max-width:400px; margin:auto">
+        <h2>Edit Profile</h2>
+        <input id="pName" placeholder="Full Name"><br><br>
+        <input id="pPos" placeholder="Position"><br><br>
+        <button onclick="updateProfile()" class="btn btn-success" style="width:100%">Save Profile</button>
+        <button onclick="document.getElementById('profileOverlay').style.display='none'" class="btn btn-gray" style="width:100%; margin-top:10px">Cancel</button>
+    </div>
+</div>
+
 <div id="editorOverlay" class="overlay">
     <div style="max-width:800px; margin:auto">
         <div style="display:flex; justify-content:space-between; align-items:center">
             <h2 id="editTitle">Update</h2>
             <button onclick="closeEditor()" class="btn btn-gray">✕ Close</button>
         </div>
-        <div style="display:grid; grid-template-columns: 1fr 1fr 1fr; gap:10px">
-            <div class="input-wrapper"><label>Status</label><select id="t-Overall_Status"><option>Not Started</option><option>In Progress</option><option>Need Assistance</option><option>Delayed</option><option>Completed</option></select></div>
-            <div class="input-wrapper"><label>Apron</label><input id="editA"></div>
+        <div style="display:grid; grid-template-columns: 1fr 1fr; gap:10px">
+            <div class="input-wrapper"><label>Overall Status</label>
+                <select id="t-Overall_Status">
+                    <option>Not Started</option><option>In Progress</option>
+                    <option>Need Assistance</option><option>Delayed</option><option>Completed</option>
+                </select>
+            </div>
             <div class="input-wrapper"><label>ETD (UTC)</label><input type="datetime-local" id="depTime"></div>
             <div class="input-wrapper"><label>ETA (UTC)</label><input type="datetime-local" id="etaTime"></div>
             <div class="input-wrapper"><label>AT (UTC)</label><input type="datetime-local" id="atTime"></div>
         </div>
         <div id="categoryContainer"></div>
         <div class="input-wrapper">
-            <label>Message to Admin</label>
-            <textarea id="msgInput" placeholder="Enter message..."></textarea>
+            <label>Message (Sync to Admin)</label>
+            <textarea id="msgInput" placeholder="Enter message here..."></textarea>
         </div>
-        <button onclick="confirmUpdate()" class="btn btn-success" style="width:100%; height:50px;">SAVE CHANGES</button>
+        <button onclick="confirmUpdate()" class="btn btn-success" style="width:100%; height:50px;">SAVE TO CLOUD</button>
+        
         <div id="logSections" style="margin-top:20px">
-            <details open><summary>💬 Messages</summary><div id="msgLogArea"></div></details>
-            <details><summary>⚙️ Activity</summary><div id="actionLogArea" style="font-size:12px"></div></details>
+            <details open><summary>💬 Message Logs</summary><div id="msgLogArea"></div></details>
+            <details><summary>⚙️ Activity Logs</summary><div id="actionLogArea" style="font-size:12px"></div></details>
         </div>
     </div>
 </div>
@@ -86,8 +102,8 @@
 <div id="addModal" class="overlay">
     <div style="max-width:400px; margin:auto; background:var(--card); padding:20px; border-radius:12px; margin-top:100px">
         <h2>Add Flight</h2>
-        <input id="newF" placeholder="Flight No"><br><br>
-        <input id="newA" placeholder="Apron"><br><br>
+        <input id="newF" placeholder="Flight No (e.g. MH123)"><br><br>
+        <input id="newA" placeholder="Apron (e.g. A10)"><br><br>
         <button onclick="saveNewFlight()" class="btn btn-success" style="width:100%">Create</button>
         <button onclick="document.getElementById('addModal').style.display='none'" class="btn btn-gray" style="width:100%; margin-top:10px">Cancel</button>
     </div>
@@ -112,7 +128,8 @@ let currentF = null, allFlights = {}, useUTC = true;
 function fmtT(iso) {
     if(!iso) return "-";
     let d = new Date(iso);
-    return useUTC ? iso.replace('T',' ').substring(11,16)+'Z' : d.toLocaleTimeString([], {hour:'2-digit', minute:'2-digit', hour12:false});
+    if(!useUTC) return d.toLocaleTimeString([], {hour:'2-digit', minute:'2-digit', hour12:false});
+    return iso.replace('T',' ').substring(11,16) + "Z";
 }
 
 function checkLogin() {
@@ -120,8 +137,10 @@ function checkLogin() {
     const pass = document.getElementById('loginPass').value;
     database.ref('users/' + id).once('value').then(s => {
         const u = s.val();
-        if(u && u.pass === pass) { sessionStorage.setItem("user", JSON.stringify(u)); initApp(); }
-        else { alert("Login failed"); }
+        if(u && u.pass === pass) { 
+            sessionStorage.setItem("user", JSON.stringify(u)); 
+            initApp(); 
+        } else { alert("Invalid Credentials"); }
     });
 }
 
@@ -130,7 +149,9 @@ function initApp() {
     if(!u) return;
     document.getElementById('loginOverlay').style.display='none';
     document.getElementById('mainContent').style.display='block';
-    document.getElementById('userDisplay').innerText = u.name;
+    document.getElementById('userDisplay').innerText = u.name + " (" + u.pos + ")";
+    document.getElementById('pName').value = u.name;
+    document.getElementById('pPos').value = u.pos;
     
     database.ref('flights').on('value', s => {
         allFlights = s.val() || {};
@@ -158,7 +179,6 @@ function openEditor(f) {
     currentF = f; const d = allFlights[f];
     document.getElementById('editTitle').innerText = f;
     document.getElementById('t-Overall_Status').value = d['Overall Status'];
-    document.getElementById('editA').value = d.apron;
     document.getElementById('depTime').value = d.etd || "";
     document.getElementById('etaTime').value = d.eta || "";
     document.getElementById('atTime').value = d.at || "";
@@ -168,11 +188,12 @@ function openEditor(f) {
         h += `<h4>${c}</h4><div class="task-grid">`;
         CATS[c].forEach(t => {
             const val = d[t] || 'Not Started';
-            h += `<div><label>${t}</label><select id="t-${t.replace(/\s+/g,'_')}">
+            h += `<div><label style="font-size:10px">${t}</label><select id="t-${t.replace(/\s+/g,'_')}">
                 <option ${val==='Not Started'?'selected':''}>Not Started</option>
                 <option ${val==='In Progress'?'selected':''}>In Progress</option>
                 <option ${val==='Completed'?'selected':''}>Completed</option>
                 <option ${val==='Delayed'?'selected':''}>Delayed</option>
+                <option ${val==='Need Assistance'?'selected':''}>Need Assistance</option>
             </select></div>`;
         });
         h += `</div>`;
@@ -186,7 +207,7 @@ function renderLogs(logs) {
     const msgs = logs.filter(l => l.task === "Message").reverse();
     const acts = logs.filter(l => l.task !== "Message").reverse();
     document.getElementById('msgLogArea').innerHTML = msgs.map(m => `<div class="msg-display"><b>${m.user}:</b> ${m.status}</div>`).join('');
-    document.getElementById('actionLogArea').innerHTML = acts.map(a => `<div>${a.task} -> ${a.status} (${a.user})</div>`).join('');
+    document.getElementById('actionLogArea').innerHTML = acts.map(a => `<div>[${a.time.substring(11,16)}] ${a.task} → ${a.status} (${a.user})</div>`).join('');
 }
 
 function confirmUpdate() {
@@ -201,7 +222,6 @@ function confirmUpdate() {
     };
 
     check('t-Overall_Status', 'Overall Status', 'Overall Status');
-    check('editA', 'apron', 'Apron');
     check('depTime', 'etd', 'ETD');
     check('etaTime', 'eta', 'ETA');
     check('atTime', 'at', 'AT');
@@ -213,6 +233,16 @@ function confirmUpdate() {
     database.ref('flights/' + currentF).set(fData);
 }
 
+function updateProfile() {
+    const u = JSON.parse(sessionStorage.getItem("user"));
+    u.name = document.getElementById('pName').value;
+    u.pos = document.getElementById('pPos').value;
+    database.ref('users/' + u.id).update({name: u.name, pos: u.pos}).then(() => {
+        sessionStorage.setItem("user", JSON.stringify(u));
+        location.reload();
+    });
+}
+
 function saveNewFlight() {
     const f = document.getElementById('newF').value.toUpperCase();
     const a = document.getElementById('newA').value.toUpperCase();
@@ -220,7 +250,7 @@ function saveNewFlight() {
     document.getElementById('addModal').style.display='none';
 }
 
-function toggleTZ() { useUTC = !useUTC; document.getElementById('tzBtn').innerText = useUTC?"UTC":"Local"; renderFlights(); }
+function toggleTZ() { useUTC = !useUTC; document.getElementById('tzBtn').innerText = useUTC?"UTC":"Local"; renderFlights(); if(currentF) openEditor(currentF); }
 function toggleTheme() { document.body.setAttribute('data-theme', document.body.getAttribute('data-theme')==='dark'?'light':'dark'); }
 function closeEditor() { currentF = null; document.getElementById('editorOverlay').style.display='none'; }
 function logout() { sessionStorage.clear(); location.reload(); }

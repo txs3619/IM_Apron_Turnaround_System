@@ -25,7 +25,7 @@
   
   input { background: var(--sel-bg); color: var(--text); border: 1px solid var(--border); padding: 8px; border-radius: 6px; }
   
-  .bin-item { display: flex; justify-content: space-between; align-items: center; padding: 10px; border-bottom: 1px solid var(--border); }
+  .bin-item, .user-item { display: flex; justify-content: space-between; align-items: center; padding: 10px; border-bottom: 1px solid var(--border); }
   .bin-actions { display: flex; gap: 10px; margin-bottom: 15px; background: rgba(128,128,128,0.1); padding: 10px; border-radius: 8px; }
 </style>
 </head>
@@ -39,6 +39,7 @@
             <button onclick="bulkDel()" class="btn btn-danger" id="bDel" style="display:none">Move to Bin</button>
         </div>
         <button onclick="openRecycleBin()" class="btn btn-gray">🗑️ Recycle Bin</button>
+        <button onclick="openUserMgmt()" class="btn btn-gray">👥 User Mgmt</button>
         <button onclick="document.getElementById('addFModal').style.display='block'" class="btn btn-success">+ Flight</button>
     </div>
     <div style="display:flex; gap:10px">
@@ -55,15 +56,31 @@
             <h3>Recycle Bin</h3>
             <button onclick="document.getElementById('recycleBin').style.display='none'" class="btn btn-danger">✕ Close</button>
         </div>
-        <hr style="border-color:var(--border)">
-        
         <div class="bin-actions">
             <button onclick="toggleBinSelectAll()" class="btn btn-primary" id="binSelBtn">Select All</button>
             <button onclick="bulkRestoreBin()" class="btn btn-success">Restore Selected</button>
             <button onclick="bulkPermDelete()" class="btn btn-danger">Delete Permanently</button>
         </div>
-
         <div id="binList"></div>
+    </div>
+</div>
+
+<div id="userMgmt" class="overlay">
+    <div style="background:var(--card); max-width:600px; margin:auto; padding:20px; border-radius:12px; border: 1px solid var(--border)">
+        <div style="display:flex; justify-content:space-between; align-items:center">
+            <h3>User Management</h3>
+            <button onclick="document.getElementById('userMgmt').style.display='none'" class="btn btn-danger">✕ Close</button>
+        </div>
+        <div style="background:rgba(128,128,128,0.1); padding:15px; border-radius:8px; margin:15px 0">
+            <h4>Add New Staff</h4>
+            <div style="display:grid; grid-template-columns: 1fr 1fr 1fr auto; gap:10px">
+                <input id="un" placeholder="ID (Login)">
+                <input id="up" placeholder="Password">
+                <input id="u_disp" placeholder="Display Name">
+                <button onclick="addUser()" class="btn btn-success">Add</button>
+            </div>
+        </div>
+        <div id="userList"></div>
     </div>
 </div>
 
@@ -82,18 +99,16 @@ let isAllSelected = false;
 let isBinAllSelected = false;
 const STATUS_COLORS = { "Delayed": "#da3633", "Need Assistance": "#e3b341", "Attached": "#1f6feb", "Completed": "#2ebc7f", "Not Started": "#8b949e" };
 
+// --- 核心加载与航班逻辑 ---
 function load() {
     const db = JSON.parse(localStorage.getItem("flights") || "{}");
     const s = document.getElementById('search').value.toUpperCase();
     const list = document.getElementById("list"); list.innerHTML = "";
-    
     for(let f in db) {
         if(!f.includes(s) && !db[f].apron.includes(s)) continue;
         const d = db[f];
         const bar = getBarColor(d);
         const card = document.createElement("div"); card.className = "card";
-        
-        // 分离日志逻辑
         const msgLogs = (d.logs || []).filter(l => l.task === "Message").slice().reverse();
         const actLogs = (d.logs || []).filter(l => l.task !== "Message").slice().reverse();
 
@@ -112,13 +127,9 @@ function load() {
                 </div>
                 <div id="logs-${f}" class="log-panel" style="display:none">
                     <b>💬 Messages</b>
-                    <div class="log-section">
-                        ${msgLogs.length ? msgLogs.map(l => `<div class="log-line"><b>${l.user}</b>: ${l.status}</div>`).join('') : '<div style="opacity:0.5">No messages</div>'}
-                    </div>
+                    <div class="log-section">${msgLogs.map(l => `<div class="log-line"><b>${l.user}</b>: ${l.status}</div>`).join('') || 'None'}</div>
                     <b>⚙️ Activities</b>
-                    <div class="log-section">
-                        ${actLogs.length ? actLogs.map(l => `<div class="log-line"><b>${l.user}</b>: ${l.task} -> ${l.status}</div>`).join('') : '<div style="opacity:0.5">No activities</div>'}
-                    </div>
+                    <div class="log-section">${actLogs.map(l => `<div class="log-line"><b>${l.user}</b>: ${l.task} -> ${l.status}</div>`).join('') || 'None'}</div>
                 </div>
             </div>`;
         list.appendChild(card);
@@ -142,23 +153,43 @@ function sendMsg(f) {
     inp.value = ""; load();
 }
 
-function delF(f) {
-    if(!confirm(`Move flight ${f} to Recycle Bin?`)) return;
-    let db = JSON.parse(localStorage.getItem("flights"));
-    let bin = JSON.parse(localStorage.getItem("deletedFlights") || "{}");
-    bin[f] = db[f]; delete db[f];
-    localStorage.setItem("flights", JSON.stringify(db));
-    localStorage.setItem("deletedFlights", JSON.stringify(bin));
-    load();
+// --- 用户管理逻辑 (恢复部分) ---
+function openUserMgmt() {
+    const users = JSON.parse(localStorage.getItem("users") || '{"admin":{"id":"admin","pass":"admin","name":"Default Staff"}}');
+    const list = document.getElementById("userList"); list.innerHTML = "<h4>Staff List</h4>";
+    for(let id in users) {
+        list.innerHTML += `<div class="user-item">
+            <div><b>${users[id].name}</b> (ID: ${id}) | Pass: ${users[id].pass}</div>
+            <button onclick="deleteUser('${id}')" class="btn btn-danger" ${id==='admin'?'disabled':''}>Delete</button>
+        </div>`;
+    }
+    document.getElementById('userMgmt').style.display = 'block';
 }
 
+function addUser() {
+    const id = document.getElementById('un').value.trim();
+    const ps = document.getElementById('up').value.trim();
+    const nm = document.getElementById('u_disp').value.trim();
+    if(!id || !ps || !nm) return alert("Fill all fields");
+    let users = JSON.parse(localStorage.getItem("users") || "{}");
+    users[id] = {id:id, pass:ps, name:nm};
+    localStorage.setItem("users", JSON.stringify(users));
+    openUserMgmt();
+}
+
+function deleteUser(id) {
+    if(!confirm("Delete this user?")) return;
+    let users = JSON.parse(localStorage.getItem("users"));
+    delete users[id];
+    localStorage.setItem("users", JSON.stringify(users));
+    openUserMgmt();
+}
+
+// --- 回收站与多选逻辑 (保留部分) ---
 function openRecycleBin() {
     const bin = JSON.parse(localStorage.getItem("deletedFlights") || "{}");
     const list = document.getElementById("binList"); list.innerHTML = "";
-    const keys = Object.keys(bin);
-    if(keys.length === 0) { list.innerHTML = "<p style='text-align:center; opacity:0.5'>Recycle Bin is empty.</p>"; return; }
-    
-    keys.forEach(f => {
+    for(let f in bin) {
         list.innerHTML += `<div class="bin-item">
             <div><input type="checkbox" class="bin-bulk" data-id="${f}"> <b>${f}</b> (${bin[f].apron})</div>
             <div>
@@ -166,22 +197,20 @@ function openRecycleBin() {
                 <button onclick="permDeleteF('${f}')" class="btn btn-danger">Delete Permanently</button>
             </div>
         </div>`;
-    });
+    }
     document.getElementById('recycleBin').style.display='block';
 }
 
 function permDeleteF(f) {
-    if(!confirm(`WARNING: Permanent delete flight ${f}? This cannot be undone.`)) return;
+    if(!confirm(`WARNING: Permanent delete ${f}?`)) return;
     let bin = JSON.parse(localStorage.getItem("deletedFlights"));
-    delete bin[f];
-    localStorage.setItem("deletedFlights", JSON.stringify(bin));
+    delete bin[f]; localStorage.setItem("deletedFlights", JSON.stringify(bin));
     openRecycleBin();
 }
 
 function bulkPermDelete() {
     const checked = document.querySelectorAll('.bin-bulk:checked');
-    if(!checked.length) return;
-    if(!confirm(`WARNING: Permanent delete ${checked.length} selected flights? This cannot be undone.`)) return;
+    if(!checked.length || !confirm(`Permanently delete ${checked.length} flights?`)) return;
     let bin = JSON.parse(localStorage.getItem("deletedFlights"));
     checked.forEach(c => delete bin[c.dataset.id]);
     localStorage.setItem("deletedFlights", JSON.stringify(bin));
@@ -202,10 +231,7 @@ function bulkRestoreBin() {
     if(!checked.length) return;
     let bin = JSON.parse(localStorage.getItem("deletedFlights"));
     let db = JSON.parse(localStorage.getItem("flights") || "{}");
-    checked.forEach(c => {
-        const id = c.dataset.id;
-        db[id] = bin[id]; delete bin[id];
-    });
+    checked.forEach(c => { db[c.dataset.id] = bin[c.dataset.id]; delete bin[c.dataset.id]; });
     localStorage.setItem("flights", JSON.stringify(db));
     localStorage.setItem("deletedFlights", JSON.stringify(bin));
     openRecycleBin(); load();
@@ -228,26 +254,32 @@ function updateUI() { document.getElementById('bDel').style.display = document.q
 
 function bulkDel() {
     const checked = document.querySelectorAll('.bulk:checked');
-    if(!confirm(`Move ${checked.length} flights to Recycle Bin?`)) return;
+    if(!confirm(`Move ${checked.length} to Bin?`)) return;
     let db = JSON.parse(localStorage.getItem("flights"));
     let bin = JSON.parse(localStorage.getItem("deletedFlights") || "{}");
-    checked.forEach(c => {
-        const id = c.dataset.id; bin[id] = db[id]; delete db[id];
-    });
+    checked.forEach(c => { bin[c.dataset.id] = db[c.dataset.id]; delete db[c.dataset.id]; });
+    localStorage.setItem("flights", JSON.stringify(db));
+    localStorage.setItem("deletedFlights", JSON.stringify(bin));
+    load();
+}
+
+function delF(f) {
+    if(!confirm(`Move ${f} to Bin?`)) return;
+    let db = JSON.parse(localStorage.getItem("flights"));
+    let bin = JSON.parse(localStorage.getItem("deletedFlights") || "{}");
+    bin[f] = db[f]; delete db[f];
     localStorage.setItem("flights", JSON.stringify(db));
     localStorage.setItem("deletedFlights", JSON.stringify(bin));
     load();
 }
 
 function addFlight() {
-    const f = document.getElementById('nf').value.toUpperCase();
-    const a = document.getElementById('na').value.toUpperCase();
+    const f = document.getElementById('nf').value.toUpperCase(), a = document.getElementById('na').value.toUpperCase();
     if(!f || !a) return;
     let db = JSON.parse(localStorage.getItem("flights") || "{}");
     db[f] = {apron:a, 'Overall Status':'Not Started', logs:[], etd:"", eta:"", at:""};
     localStorage.setItem("flights", JSON.stringify(db));
-    document.getElementById('addFModal').style.display='none';
-    load();
+    document.getElementById('addFModal').style.display='none'; load();
 }
 
 function toggleTheme() { 

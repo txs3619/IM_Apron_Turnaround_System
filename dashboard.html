@@ -8,65 +8,40 @@
 <style>
   :root { --bg: #0b1117; --card: #161b22; --text: #c9d1d9; --border: #30363d; --primary: #58a6ff; }
   [data-theme='light'] { --bg: #f0f2f5; --card: #ffffff; --text: #333; --border: #ddd; --primary: #1a237e; }
-  body { font-family: 'Segoe UI', sans-serif; background: var(--bg); color: var(--text); margin: 0; transition: 0.3s; padding-bottom: 60px; }
+  body { font-family: 'Segoe UI', sans-serif; background: var(--bg); color: var(--text); margin: 0; padding-bottom: 60px; }
   .header { display: flex; justify-content: space-between; align-items: center; padding: 15px 20px; background: var(--card); border-bottom: 1px solid var(--border); position: sticky; top:0; z-index: 1000; }
-  .btn { padding: 8px 14px; border-radius: 6px; border: none; font-weight: bold; cursor: pointer; }
+  .btn { padding: 8px 14px; border-radius: 6px; border: none; font-weight: bold; cursor: pointer; margin-left: 5px; }
   .btn-success { background: #238636; color: white; }
   .btn-danger { background: #da3633; color: white; }
-  .btn-primary { background: var(--primary); color: white; }
   .card { background: var(--card); border-radius: 12px; padding: 20px; margin: 15px; border: 1px solid var(--border); }
-  .log-box { margin-top: 15px; padding: 15px; background: rgba(0,0,0,0.2); border-radius: 8px; }
-  .msg-item { background: rgba(88,166,255,0.1); border-left: 4px solid #58a6ff; padding: 8px 12px; margin-bottom: 8px; }
-  input { padding:8px; border-radius:6px; background: var(--card); color: var(--text); border:1px solid var(--border); }
-  table { width:100%; border-collapse: collapse; margin-top:10px; }
-  th, td { padding:10px; border-bottom:1px solid var(--border); text-align:left; }
   .overlay { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.8); z-index: 3000; padding: 20px; overflow-y: auto; }
 </style>
 </head>
 <body>
 
 <div class="header">
-    <div style="display:flex; gap:12px; align-items:center">
-        <h2>Admin Dashboard</h2>
-        <button onclick="document.getElementById('addFModal').style.display='block'" class="btn btn-success">+ Flight</button>
-    </div>
-    <div style="display:flex; gap:10px">
-        <button onclick="document.getElementById('userModal').style.display='block'; renderUsers();" class="btn btn-primary">Users</button>
-        <button onclick="toggleTheme()" class="btn" style="background:#444; color:white">🌓</button>
-        <input id="search" placeholder="Search..." onkeyup="load()">
+    <h2>Admin Dashboard</h2>
+    <div>
+        <input id="search" placeholder="Search..." onkeyup="render()">
+        <button id="selBtn" onclick="toggleSelectAll()" class="btn">Select All</button>
+        <button id="bDel" onclick="bulkDel()" class="btn btn-danger" style="display:none">Bulk Delete</button>
+        <button onclick="document.getElementById('userModal').style.display='block'; renderUsers();" class="btn">Manage Users</button>
+        <button onclick="toggleTheme()" class="btn">🌓</button>
     </div>
 </div>
 
-<div id="list">正在同步云端...</div>
+<div id="list"></div>
 
 <div id="userModal" class="overlay">
-    <div style="background:var(--card); max-width:800px; margin:auto; padding:20px; border-radius:10px">
-        <div style="display:flex; justify-content:space-between"><h3>User Management</h3><button onclick="document.getElementById('userModal').style.display='none'" class="btn">✕</button></div>
-        <div style="display:grid; grid-template-columns: 1fr 1fr; gap:20px; margin: 20px 0;">
-            <div style="background:rgba(128,128,128,0.1); padding:15px; border-radius:8px">
-                <h4>Add/Edit User</h4>
-                <input id="uId" placeholder="User ID" style="width:90%; margin-bottom:5px"><br>
-                <input id="uName" placeholder="Name" style="width:90%; margin-bottom:5px"><br>
-                <input id="uPos" placeholder="Position" style="width:90%; margin-bottom:5px"><br>
-                <input id="uPass" placeholder="Password" style="width:90%; margin-bottom:10px"><br>
-                <button onclick="saveUser()" class="btn btn-success" style="width:100%">Save User</button>
-            </div>
-            <div style="flex:1">
-                <table>
-                    <thead><tr><th>ID</th><th>Name</th><th>Action</th></tr></thead>
-                    <tbody id="userList"></tbody>
-                </table>
-            </div>
-        </div>
-    </div>
-</div>
-
-<div id="addFModal" class="overlay">
-    <div style="background:var(--card); max-width:400px; margin:auto; padding:20px; border-radius:10px">
-        <h3>Add New Flight</h3>
-        <input id="newF" placeholder="Flight Number" style="width:100%; margin-bottom:10px"><br>
-        <input id="newA" placeholder="Apron" style="width:100%; margin-bottom:10px"><br>
-        <button onclick="saveNewFlight()" class="btn btn-success" style="width:100%">Create</button>
+    <div style="background:var(--card); max-width:600px; margin:auto; padding:20px; border-radius:10px">
+        <h3>User Management</h3>
+        <input id="uId" placeholder="ID"> <input id="uName" placeholder="Name"> <input id="uPass" placeholder="Password">
+        <button onclick="saveUser()" class="btn btn-success">Add User</button>
+        <table style="width:100%; margin-top:20px">
+            <thead><tr><th>ID</th><th>Name</th><th>Action</th></tr></thead>
+            <tbody id="userList"></tbody>
+        </table>
+        <button onclick="document.getElementById('userModal').style.display='none'" class="btn" style="width:100%; margin-top:10px">Close</button>
     </div>
 </div>
 
@@ -82,78 +57,67 @@ const firebaseConfig = {
 };
 
 firebase.initializeApp(firebaseConfig);
-const db = firebase.database();
+const database = firebase.database();
+let allFlights = {}, isAllSelected = false;
 
-function load() {
-    db.ref('flights').on('value', (snapshot) => {
-        const data = snapshot.val() || {};
-        const s = document.getElementById('search').value.toUpperCase();
+function render() {
+    database.ref('flights').on('value', s => {
+        allFlights = s.val() || {};
         const list = document.getElementById("list"); list.innerHTML = "";
-        
-        for(let f in data) {
-            if(!f.includes(s) && !data[f].apron.includes(s)) continue;
-            const d = data[f];
-            const logs = d.logs || [];
+        for(let f in allFlights) {
+            const d = allFlights[f];
             const card = document.createElement("div"); card.className = "card";
             card.innerHTML = `
-                <div style="display:flex; justify-content:space-between">
-                    <div><b>${f}</b> (Apron: ${d.apron})</div>
-                    <div>Status: <b style="color:var(--primary)">${d['Overall Status']}</b> | <button onclick="delF('${f}')" class="btn btn-danger btn-sm">Delete</button></div>
-                </div>
-                <div style="margin-top:10px; display:flex; gap:10px">
-                    <input id="msg-${f}" placeholder="Reply..." style="flex:1">
-                    <button onclick="sendMsg('${f}')" class="btn btn-success">Send</button>
-                </div>
-                <div class="log-box">
-                    ${logs.filter(l=>l.task==='Message').reverse().slice(0,3).map(m=>`<div class="msg-item"><b>${m.user}:</b> ${m.status}</div>`).join('')}
-                </div>
+                <input type="checkbox" class="bulk" data-id="${f}" onchange="updateUI()"> 
+                <b>${f}</b> | Apron: ${d.apron} | Status: ${d['Overall Status']}
+                <button onclick="delF('${f}')" class="btn btn-danger" style="float:right">Del</button>
             `;
             list.appendChild(card);
         }
     });
 }
 
-function sendMsg(f) {
-    const txt = document.getElementById(`msg-${f}`).value.trim();
-    if(!txt) return;
-    db.ref('flights/'+f+'/logs').once('value').then(s => {
-        let logs = s.val() || [];
-        logs.push({time: new Date().toISOString(), task:"Message", status:txt, user:"Admin"});
-        db.ref('flights/'+f+'/logs').set(logs);
-        document.getElementById(`msg-${f}`).value = "";
+function toggleSelectAll() {
+    isAllSelected = !isAllSelected;
+    document.querySelectorAll('.bulk').forEach(c => c.checked = isAllSelected);
+    document.getElementById('selBtn').innerText = isAllSelected ? "Deselect All" : "Select All";
+    updateUI();
+}
+
+function updateUI() {
+    const count = document.querySelectorAll('.bulk:checked').length;
+    document.getElementById('bDel').style.display = count > 0 ? 'inline-block' : 'none';
+}
+
+function bulkDel() {
+    if(!confirm("Delete selected?")) return;
+    document.querySelectorAll('.bulk:checked').forEach(c => {
+        database.ref('flights/' + c.dataset.id).remove();
     });
 }
 
+function delF(f) { if(confirm("Delete " + f + "?")) database.ref('flights/' + f).remove(); }
+
 function saveUser() {
-    const id = document.getElementById('uId').value.trim();
+    const id = document.getElementById('uId').value;
     const name = document.getElementById('uName').value;
-    const pos = document.getElementById('uPos').value;
     const pass = document.getElementById('uPass').value;
-    if(!id) return alert("ID required");
-    db.ref('users/' + id).set({id, name, pos, pass}).then(() => {
-        alert("User Saved");
-        renderUsers();
-    });
+    if(id) database.ref('users/' + id).set({id, name, pass});
 }
 
 function renderUsers() {
-    db.ref('users').once('value').then(s => {
+    database.ref('users').on('value', s => {
         const users = s.val() || {};
-        const uList = document.getElementById("userList"); uList.innerHTML = "";
+        const tbody = document.getElementById("userList"); tbody.innerHTML = "";
         for(let id in users) {
-            uList.innerHTML += `<tr><td>${id}</td><td>${users[id].name}</td>
-                <td><button onclick="delU('${id}')" class="btn btn-danger">Del</button></td></tr>`;
+            tbody.innerHTML += `<tr><td>${id}</td><td>${users[id].name}</td><td><button onclick="delU('${id}')">Del</button></td></tr>`;
         }
     });
 }
+function delU(id) { database.ref('users/' + id).remove(); }
+function toggleTheme() { document.body.setAttribute('data-theme', document.body.getAttribute('data-theme')==='dark'?'light':'dark'); }
 
-function delF(f) { if(confirm("Delete Flight?")) db.ref('flights/' + f).remove(); }
-function delU(id) { if(confirm("Delete User?")) db.ref('users/' + id).remove().then(renderUsers); }
-function toggleTheme() {
-    const nt = document.body.getAttribute('data-theme')==='light'?'dark':'light';
-    document.body.setAttribute('data-theme', nt);
-}
-window.onload = load;
+window.onload = render;
 </script>
 </body>
 </html>

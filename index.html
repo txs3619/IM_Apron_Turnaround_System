@@ -1,63 +1,230 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Apron Updating System - Staff</title>
+<script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-database-compat.js"></script>
+<style>
+  :root { --bg: #f0f2f5; --card: #ffffff; --text: #333; --border: #ddd; --primary: #1a237e; --accent: #007bff; --watermark: rgba(0,0,0,0.15); }
+  [data-theme='dark'] { --bg: #0b1117; --card: #161b22; --text: #c9d1d9; --border: #30363d; --primary: #58a6ff; --accent: #1f6feb; --watermark: rgba(255,255,255,0.1); }
+  body { font-family: 'Segoe UI', sans-serif; background: var(--bg); color: var(--text); margin: 0; transition: 0.3s; padding-bottom: 80px; }
+  .watermark { position: fixed; bottom: 10px; left: 50%; transform: translateX(-50%); font-size: 14px; font-weight: bold; color: var(--watermark); pointer-events: none; z-index: 9999; }
+  .header { background: var(--primary); color: white; padding: 12px 20px; display: flex; justify-content: space-between; align-items: center; position: sticky; top: 0; z-index: 1000; }
+  .btn { padding: 8px 15px; border-radius: 8px; border: none; font-weight: bold; cursor: pointer; transition: 0.2s; }
+  .btn-primary { background: var(--accent); color: white; }
+  .btn-success { background: #238636; color: white; }
+  .btn-danger { background: #da3633; color: white; }
+  .btn-gray { background: #666; color: white; }
+  .card { background: var(--card); padding: 20px; margin: 15px auto; border-radius: 12px; border: 1px solid var(--border); border-left: 10px solid #666; cursor: pointer; max-width: 800px; position: relative; }
+  .overlay { display: none; position: fixed; inset: 0; background: var(--bg); z-index: 1500; overflow-y: auto; padding: 20px; }
+  .input-wrapper { margin-bottom: 15px; text-align: left; }
+  .input-wrapper label { font-size: 11px; font-weight: bold; color: #666; display: block; margin-bottom: 4px; }
+  input, select, textarea { padding: 10px; border-radius: 8px; border: 1px solid var(--border); background: var(--card); color: var(--text); width: 100%; box-sizing: border-box; }
+  .task-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: 10px; }
+  .msg-display { background: rgba(0,123,255,0.1); padding: 8px; border-radius: 5px; margin-top: 10px; font-size: 12px; border-left: 3px solid var(--accent); }
+</style>
+</head>
+<body data-theme="light">
+
+<div class="watermark">STAFF ACCESS SYSTEM</div>
+
+<div id="loginOverlay" style="position:fixed; inset:0; background:var(--primary); z-index:5000; display:flex; align-items:center; justify-content:center;">
+    <div style="background:white; padding:30px; border-radius:15px; width:90%; max-width:400px; text-align:center;">
+        <h2 style="color:#333">STAFF LOGIN</h2>
+        <input id="loginId" placeholder="Staff ID" style="margin-bottom:10px">
+        <input id="loginPass" type="password" placeholder="Password" style="margin-bottom:15px">
+        <button onclick="checkLogin()" class="btn btn-primary" style="width:100%">Login</button>
+    </div>
+</div>
+
+<div id="mainContent" style="display:none">
+    <div class="header">
+        <div id="userDisplay" style="font-weight:bold">Profile</div>
+        <div style="display:flex; gap:10px">
+            <button id="tzBtn" onclick="toggleTZ()" class="btn" style="background:rgba(255,255,255,0.2); color:white">UTC</button>
+            <button onclick="toggleTheme()" class="btn" style="background:none; font-size:20px">🌓</button>
+            <button onclick="logout()" class="btn btn-danger">Logout</button>
+        </div>
+    </div>
+    <div style="max-width:800px; margin:20px auto; padding:0 15px">
+        <div style="display:flex; gap:10px; margin-bottom:15px">
+            <input id="search" placeholder="Search Flight/Apron..." onkeyup="renderFlights()" style="flex:1">
+            <button onclick="document.getElementById('addModal').style.display='block'" class="btn btn-success">+ New</button>
+        </div>
+        <div id="list">Connecting to Cloud...</div>
+    </div>
+</div>
+
+<div id="editorOverlay" class="overlay">
+    <div style="max-width:800px; margin:auto">
+        <div style="display:flex; justify-content:space-between; align-items:center">
+            <h2 id="editTitle">Update</h2>
+            <button onclick="closeEditor()" class="btn btn-gray">✕ Close</button>
+        </div>
+        <div style="display:grid; grid-template-columns: 1fr 1fr 1fr; gap:10px">
+            <div class="input-wrapper"><label>Status</label><select id="t-Overall_Status"><option>Not Started</option><option>In Progress</option><option>Need Assistance</option><option>Delayed</option><option>Completed</option></select></div>
+            <div class="input-wrapper"><label>Apron</label><input id="editA"></div>
+            <div class="input-wrapper"><label>ETD (UTC)</label><input type="datetime-local" id="depTime"></div>
+            <div class="input-wrapper"><label>ETA (UTC)</label><input type="datetime-local" id="etaTime"></div>
+            <div class="input-wrapper"><label>AT (UTC)</label><input type="datetime-local" id="atTime"></div>
+        </div>
+        <div id="categoryContainer"></div>
+        <div class="input-wrapper">
+            <label>Message to Admin</label>
+            <textarea id="msgInput" placeholder="Enter message..."></textarea>
+        </div>
+        <button onclick="confirmUpdate()" class="btn btn-success" style="width:100%; height:50px;">SAVE CHANGES</button>
+        <div id="logSections" style="margin-top:20px">
+            <details open><summary>💬 Messages</summary><div id="msgLogArea"></div></details>
+            <details><summary>⚙️ Activity</summary><div id="actionLogArea" style="font-size:12px"></div></details>
+        </div>
+    </div>
+</div>
+
+<div id="addModal" class="overlay">
+    <div style="max-width:400px; margin:auto; background:var(--card); padding:20px; border-radius:12px; margin-top:100px">
+        <h2>Add Flight</h2>
+        <input id="newF" placeholder="Flight No"><br><br>
+        <input id="newA" placeholder="Apron"><br><br>
+        <button onclick="saveNewFlight()" class="btn btn-success" style="width:100%">Create</button>
+        <button onclick="document.getElementById('addModal').style.display='none'" class="btn btn-gray" style="width:100%; margin-top:10px">Cancel</button>
+    </div>
+</div>
+
 <script>
-// Firebase 配置保持不变...
+const firebaseConfig = {
+  apiKey: "AIzaSyBNcUXtBufxeST6EzJEa2Me562cdkzBJMM",
+  authDomain: "im-apron-turnaround-system.firebaseapp.com",
+  databaseURL: "https://im-apron-turnaround-system-default-rtdb.asia-southeast1.firebasedatabase.app",
+  projectId: "im-apron-turnaround-system",
+  storageBucket: "im-apron-turnaround-system.firebasestorage.app",
+  messagingSenderId: "984848540764",
+  appId: "1:984848540764:web:4a54026553c971acb33299"
+};
 
-function load() {
-    db.ref('flights').on('value', (snapshot) => {
-        const data = snapshot.val() || {};
-        const s = document.getElementById('search').value.toUpperCase();
-        const list = document.getElementById("list"); list.innerHTML = "";
-        
-        // 恢复：全选按钮状态重置
-        if(document.getElementById('selBtn')) document.getElementById('selBtn').innerText = "Select All";
+firebase.initializeApp(firebaseConfig);
+const database = firebase.database();
+const CATS = { "Admin": ["Flight Plan Approval","Engineering","Tow Truck Pushback"], "Cabin": ["PAX Boarding (F)","PAX Boarding (B)","Catering"], "Ground": ["Baggage Load","Fueling","Water","Lavatory"] };
+let currentF = null, allFlights = {}, useUTC = true;
 
-        for(let f in data) {
-            if(!f.includes(s) && !data[f].apron.includes(s)) continue;
-            const d = data[f];
-            const card = document.createElement("div"); card.className = "card";
-            card.innerHTML = `
-                <div style="display:flex; align-items:center; gap:10px">
-                    <input type="checkbox" class="bulk" data-id="${f}" onchange="updateUI()">
-                    <div style="flex:1">
-                        <div style="display:flex; justify-content:space-between">
-                            <b>${f}</b> (Apron: ${d.apron})
-                            <button onclick="delF('${f}')" class="btn btn-danger btn-sm">Bin</button>
-                        </div>
-                        </div>
-                </div>`;
-            list.appendChild(card);
-        }
+function fmtT(iso) {
+    if(!iso) return "-";
+    let d = new Date(iso);
+    return useUTC ? iso.replace('T',' ').substring(11,16)+'Z' : d.toLocaleTimeString([], {hour:'2-digit', minute:'2-digit', hour12:false});
+}
+
+function checkLogin() {
+    const id = document.getElementById('loginId').value.trim();
+    const pass = document.getElementById('loginPass').value;
+    database.ref('users/' + id).once('value').then(s => {
+        const u = s.val();
+        if(u && u.pass === pass) { sessionStorage.setItem("user", JSON.stringify(u)); initApp(); }
+        else { alert("Login failed"); }
     });
 }
 
-// 恢复：批量删除逻辑 (操作 Firebase)
-function bulkDel() {
-    const checked = document.querySelectorAll('.bulk:checked');
-    if(!confirm(`Move ${checked.length} flights to Recycle Bin?`)) return;
+function initApp() {
+    const u = JSON.parse(sessionStorage.getItem("user"));
+    if(!u) return;
+    document.getElementById('loginOverlay').style.display='none';
+    document.getElementById('mainContent').style.display='block';
+    document.getElementById('userDisplay').innerText = u.name;
     
-    const updates = {};
-    const binUpdates = {};
-    
-    checked.forEach(c => {
-        const id = c.dataset.id;
-        binUpdates[id] = allFlights[id]; // allFlights 是本地缓存的最新云端数据
-        updates[id] = null; // 在原节点设为 null 表示删除
-    });
-
-    db.ref('deletedFlights').update(binUpdates);
-    db.ref('flights').update(updates);
-}
-
-// 恢复：删除至回收站逻辑
-function delF(f) {
-    if(!confirm(`Move ${f} to Recycle Bin?`)) return;
-    db.ref('flights/' + f).once('value').then(s => {
-        db.ref('deletedFlights/' + f).set(s.val());
-        db.ref('flights/' + f).remove();
+    database.ref('flights').on('value', s => {
+        allFlights = s.val() || {};
+        renderFlights();
+        if(currentF) openEditor(currentF);
     });
 }
 
-function updateUI() {
-    const count = document.querySelectorAll('.bulk:checked').length;
-    if(document.getElementById('bDel')) document.getElementById('bDel').style.display = count ? 'inline-block' : 'none';
+function renderFlights() {
+    const s = document.getElementById('search').value.toUpperCase();
+    const list = document.getElementById("list"); list.innerHTML = "";
+    for(let f in allFlights) {
+        const d = allFlights[f];
+        if(!f.includes(s) && !d.apron.includes(s)) continue;
+        const card = document.createElement("div"); card.className = "card";
+        card.style.borderLeftColor = d['Overall Status']==='Completed'?'#238636':(d['Overall Status']==='Delayed'?'#da3633':'#666');
+        card.onclick = () => openEditor(f);
+        card.innerHTML = `<b>${f}</b> <span style="float:right">Apron: ${d.apron}</span><br>
+            <small>Status: ${d['Overall Status']} | ETD: ${fmtT(d.etd)}</small>`;
+        list.appendChild(card);
+    }
 }
+
+function openEditor(f) {
+    currentF = f; const d = allFlights[f];
+    document.getElementById('editTitle').innerText = f;
+    document.getElementById('t-Overall_Status').value = d['Overall Status'];
+    document.getElementById('editA').value = d.apron;
+    document.getElementById('depTime').value = d.etd || "";
+    document.getElementById('etaTime').value = d.eta || "";
+    document.getElementById('atTime').value = d.at || "";
+
+    let h = "";
+    for(let c in CATS) {
+        h += `<h4>${c}</h4><div class="task-grid">`;
+        CATS[c].forEach(t => {
+            const val = d[t] || 'Not Started';
+            h += `<div><label>${t}</label><select id="t-${t.replace(/\s+/g,'_')}">
+                <option ${val==='Not Started'?'selected':''}>Not Started</option>
+                <option ${val==='In Progress'?'selected':''}>In Progress</option>
+                <option ${val==='Completed'?'selected':''}>Completed</option>
+                <option ${val==='Delayed'?'selected':''}>Delayed</option>
+            </select></div>`;
+        });
+        h += `</div>`;
+    }
+    document.getElementById('categoryContainer').innerHTML = h;
+    renderLogs(d.logs || []);
+    document.getElementById('editorOverlay').style.display='block';
+}
+
+function renderLogs(logs) {
+    const msgs = logs.filter(l => l.task === "Message").reverse();
+    const acts = logs.filter(l => l.task !== "Message").reverse();
+    document.getElementById('msgLogArea').innerHTML = msgs.map(m => `<div class="msg-display"><b>${m.user}:</b> ${m.status}</div>`).join('');
+    document.getElementById('actionLogArea').innerHTML = acts.map(a => `<div>${a.task} -> ${a.status} (${a.user})</div>`).join('');
+}
+
+function confirmUpdate() {
+    const u = JSON.parse(sessionStorage.getItem("user"));
+    const now = new Date().toISOString();
+    let fData = JSON.parse(JSON.stringify(allFlights[currentF]));
+    if(!fData.logs) fData.logs = [];
+
+    const check = (id, key, label) => {
+        const v = document.getElementById(id).value;
+        if(fData[key] !== v) { fData.logs.push({time:now, task:label, status:v, user:u.name}); fData[key] = v; }
+    };
+
+    check('t-Overall_Status', 'Overall Status', 'Overall Status');
+    check('editA', 'apron', 'Apron');
+    check('depTime', 'etd', 'ETD');
+    check('etaTime', 'eta', 'ETA');
+    check('atTime', 'at', 'AT');
+    Object.values(CATS).flat().forEach(t => check(`t-${t.replace(/\s+/g,'_')}`, t, t));
+
+    const msg = document.getElementById('msgInput').value.trim();
+    if(msg) { fData.logs.push({time:now, task:"Message", status:msg, user:u.name}); document.getElementById('msgInput').value=""; }
+
+    database.ref('flights/' + currentF).set(fData);
+}
+
+function saveNewFlight() {
+    const f = document.getElementById('newF').value.toUpperCase();
+    const a = document.getElementById('newA').value.toUpperCase();
+    if(f && a) database.ref('flights/' + f).set({apron:a, 'Overall Status':'Not Started', logs:[], etd:'', eta:'', at:''});
+    document.getElementById('addModal').style.display='none';
+}
+
+function toggleTZ() { useUTC = !useUTC; document.getElementById('tzBtn').innerText = useUTC?"UTC":"Local"; renderFlights(); }
+function toggleTheme() { document.body.setAttribute('data-theme', document.body.getAttribute('data-theme')==='dark'?'light':'dark'); }
+function closeEditor() { currentF = null; document.getElementById('editorOverlay').style.display='none'; }
+function logout() { sessionStorage.clear(); location.reload(); }
+window.onload = () => { if(sessionStorage.getItem("user")) initApp(); };
 </script>
+</body>
+</html>

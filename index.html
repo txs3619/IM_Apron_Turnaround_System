@@ -1,108 +1,63 @@
-<script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-app-compat.js"></script>
-<script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-database-compat.js"></script>
-
 <script>
-const firebaseConfig = {
-  apiKey: "AIzaSyBNcUXtBufxeST6EzJEa2Me562cdkzBJMM",
-  authDomain: "im-apron-turnaround-system.firebaseapp.com",
-  databaseURL: "https://im-apron-turnaround-system-default-rtdb.asia-southeast1.firebasedatabase.app",
-  projectId: "im-apron-turnaround-system",
-  storageBucket: "im-apron-turnaround-system.firebasestorage.app",
-  messagingSenderId: "984848540764",
-  appId: "1:984848540764:web:4a54026553c971acb33299",
-  measurementId: "G-CTC6CESSTJ"
-};
+// Firebase 配置保持不变...
 
-firebase.initializeApp(firebaseConfig);
-const db = firebase.database();
-const CATS = { "Admin": ["Flight Plan Approval","Engineering","Tow Truck Pushback"], "Cabin": ["PAX Boarding (F)","PAX Boarding (B)","Catering"], "Ground": ["Baggage Load","Fueling","Water","Lavatory"] };
-let currentF = null, allFlights = {}, useUTC = true;
-
-// 恢复：时间转换逻辑
-function fmtT(iso) {
-    if(!iso) return "";
-    let d = new Date(iso);
-    if(!useUTC) return d.toLocaleString('en-GB', {hour12:false}).replace(',','');
-    return d.toISOString().replace('T',' ').substring(0,16) + " Z";
-}
-
-function initApp() {
-    const u = JSON.parse(sessionStorage.getItem("user"));
-    if(!u) return;
-    document.getElementById('loginOverlay').style.display='none';
-    document.getElementById('mainContent').style.display='block';
-    document.getElementById('userDisplay').innerText = u.name + " (" + u.pos + ")";
-    
+function load() {
     db.ref('flights').on('value', (snapshot) => {
-        allFlights = snapshot.val() || {};
-        renderList();
-        if(currentF) openEditor(currentF);
+        const data = snapshot.val() || {};
+        const s = document.getElementById('search').value.toUpperCase();
+        const list = document.getElementById("list"); list.innerHTML = "";
+        
+        // 恢复：全选按钮状态重置
+        if(document.getElementById('selBtn')) document.getElementById('selBtn').innerText = "Select All";
+
+        for(let f in data) {
+            if(!f.includes(s) && !data[f].apron.includes(s)) continue;
+            const d = data[f];
+            const card = document.createElement("div"); card.className = "card";
+            card.innerHTML = `
+                <div style="display:flex; align-items:center; gap:10px">
+                    <input type="checkbox" class="bulk" data-id="${f}" onchange="updateUI()">
+                    <div style="flex:1">
+                        <div style="display:flex; justify-content:space-between">
+                            <b>${f}</b> (Apron: ${d.apron})
+                            <button onclick="delF('${f}')" class="btn btn-danger btn-sm">Bin</button>
+                        </div>
+                        </div>
+                </div>`;
+            list.appendChild(card);
+        }
     });
 }
 
-// 恢复：带时间显示的列表
-function renderList() {
-    const s = document.getElementById('search').value.toUpperCase();
-    const list = document.getElementById("list"); list.innerHTML = "";
-    for(let f in allFlights) {
-        if(!f.includes(s) && !allFlights[f].apron.includes(s)) continue;
-        const d = allFlights[f];
-        const card = document.createElement("div"); card.className = "card";
-        card.style.borderLeftColor = d['Overall Status'] === 'Completed' ? '#238636' : (d['Overall Status'] === 'Delayed' ? '#da3633' : '#666');
-        card.onclick = () => openEditor(f);
-        card.innerHTML = `<b>${f}</b> <span style="margin-left:15px">Apron: ${d.apron}</span>
-            <div style="font-size:12px; margin-top:5px">Status: ${d['Overall Status']} | ETD: ${fmtT(d.etd)}</div>`;
-        list.appendChild(card);
-    }
-}
-
-// 恢复：ETA, AT 字段更新
-function openEditor(f) {
-    currentF = f;
-    const d = allFlights[f];
-    if(!d) return closeEditor();
-    document.getElementById('editTitle').innerText = "Update: " + f;
-    document.getElementById('t-Overall_Status').value = d['Overall Status'];
-    document.getElementById('depTime').value = d.etd || "";
-    // 新增/恢复字段
-    if(document.getElementById('etaTime')) document.getElementById('etaTime').value = d.eta || "";
-    if(document.getElementById('atTime')) document.getElementById('atTime').value = d.at || "";
+// 恢复：批量删除逻辑 (操作 Firebase)
+function bulkDel() {
+    const checked = document.querySelectorAll('.bulk:checked');
+    if(!confirm(`Move ${checked.length} flights to Recycle Bin?`)) return;
     
-    // ... 渲染分类任务的代码保持不变 ...
-    renderLogs(d.logs || []);
-    document.getElementById('editorOverlay').style.display="block";
-}
-
-function confirmUpdate() {
-    const u = JSON.parse(sessionStorage.getItem("user"));
-    const now = new Date().toISOString();
-    const fData = {...allFlights[currentF]};
-    if(!fData.logs) fData.logs = [];
-
-    const check = (id, key, label) => {
-        const el = document.getElementById(id);
-        if(!el) return;
-        const nv = el.value;
-        if(fData[key] !== nv) {
-            fData.logs.push({time:now, task:label, status:nv, user:u.name});
-            fData[key] = nv;
-        }
-    };
-
-    check('t-Overall_Status', 'Overall Status', 'Overall Status');
-    check('depTime', 'etd', 'ETD Update');
-    check('etaTime', 'eta', 'ETA Update');
-    check('atTime', 'at', 'AT Update');
-    // ... 遍历任务检查 ...
+    const updates = {};
+    const binUpdates = {};
     
-    db.ref('flights/' + currentF).set(fData);
+    checked.forEach(c => {
+        const id = c.dataset.id;
+        binUpdates[id] = allFlights[id]; // allFlights 是本地缓存的最新云端数据
+        updates[id] = null; // 在原节点设为 null 表示删除
+    });
+
+    db.ref('deletedFlights').update(binUpdates);
+    db.ref('flights').update(updates);
 }
 
-// 恢复：时间切换函数
-function toggleTZ() { 
-    useUTC = !useUTC; 
-    document.getElementById('tzBtn').innerText = useUTC ? "UTC" : "Local"; 
-    renderList();
-    if(currentF) openEditor(currentF); 
+// 恢复：删除至回收站逻辑
+function delF(f) {
+    if(!confirm(`Move ${f} to Recycle Bin?`)) return;
+    db.ref('flights/' + f).once('value').then(s => {
+        db.ref('deletedFlights/' + f).set(s.val());
+        db.ref('flights/' + f).remove();
+    });
+}
+
+function updateUI() {
+    const count = document.querySelectorAll('.bulk:checked').length;
+    if(document.getElementById('bDel')) document.getElementById('bDel').style.display = count ? 'inline-block' : 'none';
 }
 </script>

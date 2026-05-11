@@ -14,6 +14,7 @@
   .btn-success { background: #238636; color: white; }
   .btn-danger { background: #da3633; color: white; }
   .btn-primary { background: #1f6feb; color: white; }
+  .btn-gray { background: #666; color: white; }
   .card { background: var(--card); border-radius: 12px; padding: 15px; margin: 15px; border: 1px solid var(--border); }
   .overlay { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.8); z-index: 3000; padding: 20px; overflow-y: auto; }
   .bulk-bar { position: fixed; bottom: 20px; left: 50%; transform: translateX(-50%); background: var(--primary); color: white; padding: 10px 25px; border-radius: 30px; display: none; box-shadow: 0 4px 15px rgba(0,0,0,0.5); z-index: 4000; }
@@ -63,10 +64,14 @@
 </div>
 
 <div id="userModal" class="overlay">
-    <div style="background:var(--card); max-width:800px; margin:auto; padding:20px; border-radius:10px">
+    <div style="background:var(--card); max-width:800px; margin:auto; padding:20px; border-radius:10px; position:relative">
+        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:20px">
+            <h3>User Management</h3>
+            <button onclick="document.getElementById('userModal').style.display='none'" class="btn btn-gray">✕ Close</button>
+        </div>
         <div style="display:grid; grid-template-columns:1fr 1fr; gap:20px">
             <div>
-                <h3>Add User</h3>
+                <h4>Add User</h4>
                 <input id="uId" placeholder="ID"><br><br>
                 <input id="uName" placeholder="Name"><br><br>
                 <input id="uPos" placeholder="Position"><br><br>
@@ -74,7 +79,7 @@
                 <button onclick="saveUser('u')" class="btn btn-success">Add</button>
             </div>
             <div style="border-left:1px solid var(--border); padding-left:20px">
-                <h3>Edit User</h3>
+                <h4>Edit User</h4>
                 <input id="eId" placeholder="ID" readonly><br><br>
                 <input id="eName" placeholder="Name"><br><br>
                 <input id="ePos" placeholder="Position"><br><br>
@@ -114,6 +119,7 @@ function render() {
             if(!f.includes(q) && !d.apron.includes(q)) continue;
             const logs = d.logs || [];
             const lastMsg = [...logs].reverse().find(l => l.task === "Message");
+            const lastTask = [...logs].reverse().find(l => l.task !== "Message");
             const card = document.createElement("div"); card.className = "card";
             card.innerHTML = `
                 <div style="display:flex; align-items:center; justify-content:space-between">
@@ -128,9 +134,13 @@ function render() {
                 </div>
                 ${lastMsg ? `<div class="msg-alert"><b>Latest:</b> ${lastMsg.status} <small>(${lastMsg.user})</small></div>` : ""}
                 <div class="dash-input">
-                    <input id="msg-${f}" placeholder="Send message to staff...">
+                    <input id="msg-${f}" placeholder="Message...">
                     <button onclick="sendDashMsg('${f}')" class="btn btn-primary">Send</button>
-                </div>`;
+                </div>
+                <details style="margin-top:10px; font-size:12px"><summary style="cursor:pointer">Activity Logs ${lastTask?`(${lastTask.task})`:''}</summary>
+                <div style="padding:5px; background:rgba(0,0,0,0.2); border-radius:4px">
+                    ${[...logs].reverse().slice(0,10).map(l => `<div>[${l.time.substring(11,16)}] ${l.user}: ${l.task}->${l.status}</div>`).join('')}
+                </div></details>`;
             list.appendChild(card);
         }
         updateUI('main');
@@ -142,10 +152,9 @@ function sendDashMsg(f) {
     const msg = input.value.trim();
     if(!msg) return;
     const now = new Date().toISOString();
-    let fData = allF[f];
-    if(!fData.logs) fData.logs = [];
-    fData.logs.push({time: now, task: "Message", status: msg, user: "Admin"});
-    db.ref('flights/' + f).update({logs: fData.logs}).then(() => input.value = "");
+    let logs = allF[f].logs || [];
+    logs.push({time: now, task: "Message", status: msg, user: "Admin"});
+    db.ref('flights/' + f + '/logs').set(logs).then(() => input.value = "");
 }
 
 function renderBin() {
@@ -184,13 +193,44 @@ function updateUI(type) {
     }
 }
 
+// 修复 Bin 移动功能
+function delF(f) {
+    if(!confirm(`Move ${f} to Bin?`)) return;
+    db.ref('flights/' + f).once('value').then(s => {
+        if(s.exists()) {
+            db.ref('deletedFlights/' + f).set(s.val()).then(() => {
+                db.ref('flights/' + f).remove();
+            });
+        }
+    });
+}
+
+function restoreF(f) {
+    db.ref('deletedFlights/' + f).once('value').then(s => {
+        if(s.exists()) {
+            db.ref('flights/' + f).set(s.val()).then(() => {
+                db.ref('deletedFlights/' + f).remove();
+            });
+        }
+    });
+}
+
+function bulkDel() {
+    const ids = Array.from(document.querySelectorAll('.bulk-main:checked')).map(c => c.dataset.id);
+    if(confirm(`Move ${ids.length} flights to Bin?`)) {
+        ids.forEach(f => {
+            db.ref('flights/' + f).once('value').then(s => {
+                db.ref('deletedFlights/' + f).set(s.val());
+                db.ref('flights/' + f).remove();
+            });
+        });
+    }
+}
+
 function bulkBinAction(action) {
     const ids = Array.from(document.querySelectorAll('.bulk-bin:checked')).map(c => c.dataset.id);
     ids.forEach(f => action === 'restore' ? restoreF(f) : db.ref('deletedFlights/' + f).remove());
 }
-
-function delF(f) { db.ref('flights/' + f).once('value', s => { db.ref('deletedFlights/' + f).set(s.val()); db.ref('flights/' + f).remove(); }); }
-function restoreF(f) { db.ref('deletedFlights/' + f).once('value', s => { db.ref('flights/' + f).set(s.val()); db.ref('deletedFlights/' + f).remove(); }); }
 
 function loadUsers() {
     db.ref('users').on('value', s => {

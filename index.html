@@ -49,7 +49,7 @@
     <div style="max-width:800px; margin:20px auto; padding:0 15px">
         <div style="display:flex; gap:10px; margin-bottom:15px">
             <input id="search" placeholder="Search Flight/Apron..." onkeyup="renderFlights()" style="flex:1">
-            <button onclick="document.getElementById('addModal').style.display='block'" class="btn btn-success">+ New</button>
+            <button onclick="document.getElementById('addModal').style.display='block'" class="btn btn-success">+ New Flight</button>
         </div>
         <div id="list">Connecting...</div>
     </div>
@@ -76,13 +76,22 @@
             </div>
         </div>
         <div style="display:grid; grid-template-columns: 1fr 1fr; gap:10px">
-            <div class="input-wrapper"><label>Overall Status</label><select id="t-Overall_Status"><option>Not Started</option><option>In Progress</option><option>Delayed</option><option>Completed</option></select></div>
+            <div class="input-wrapper"><label>Overall Status</label>
+                <select id="t-Overall_Status">
+                    <option>Not Started</option>
+                    <option>In Progress</option>
+                    <option>Delayed</option>
+                    <option>Completed</option>
+                    <option>Required Assistance</option>
+                </select>
+            </div>
+            <div class="input-wrapper"><label>Apron Number</label><input id="t-Apron"></div>
             <div class="input-wrapper"><label>ETD (UTC)</label><input type="datetime-local" id="depTime"></div>
             <div class="input-wrapper"><label>ETA (UTC)</label><input type="datetime-local" id="etaTime"></div>
             <div class="input-wrapper"><label>AT (UTC)</label><input type="datetime-local" id="atTime"></div>
         </div>
         <div id="categoryContainer"></div>
-        <div class="input-wrapper"><label>Message (Will notify Admin)</label><textarea id="msgInput" placeholder="Enter notes..."></textarea></div>
+        <div class="input-wrapper"><label>Message</label><textarea id="msgInput" placeholder="Enter notes..."></textarea></div>
         <button onclick="confirmUpdate()" class="btn btn-success" style="width:100%; height:50px;">SYNC TO CLOUD</button>
         <div id="logSections">
             <details open><summary>💬 Messages</summary><div id="msgLogArea"></div></details>
@@ -92,11 +101,14 @@
 </div>
 
 <div id="addModal" class="overlay">
-    <div style="max-width:400px; margin:auto; background:var(--card); padding:20px; border-radius:12px; margin-top:100px">
-        <h2>Add Flight</h2>
-        <input id="newF" placeholder="Flight No"><br><br>
-        <input id="newA" placeholder="Apron"><br><br>
-        <button onclick="saveNewFlight()" class="btn btn-success" style="width:100%">Create</button>
+    <div style="max-width:500px; margin:auto; background:var(--card); padding:20px; border-radius:12px; margin-top:50px">
+        <h2>Add New Flight</h2>
+        <div class="input-wrapper"><label>Flight No *</label><input id="newF" placeholder="e.g. MH123"></div>
+        <div class="input-wrapper"><label>Apron *</label><input id="newA" placeholder="e.g. A12"></div>
+        <div class="input-wrapper"><label>ETD (Optional)</label><input type="datetime-local" id="newETD"></div>
+        <div class="input-wrapper"><label>ETA (Optional)</label><input type="datetime-local" id="newETA"></div>
+        <div class="input-wrapper"><label>AT (Optional)</label><input type="datetime-local" id="newAT"></div>
+        <button onclick="saveNewFlight()" class="btn btn-success" style="width:100%">Create Flight</button>
         <button onclick="document.getElementById('addModal').style.display='none'" class="btn btn-gray" style="width:100%; margin-top:10px">Cancel</button>
     </div>
 </div>
@@ -151,7 +163,11 @@ function renderFlights() {
         const d = allFlights[f];
         if(!f.includes(s) && !d.apron.includes(s)) continue;
         const card = document.createElement("div"); card.className = "card";
-        card.style.borderLeftColor = d['Overall Status']==='Completed'?'#238636':(d['Overall Status']==='Delayed'?'#da3633':'#666');
+        let borderColor = '#666';
+        if(d['Overall Status']==='Completed') borderColor = '#238636';
+        else if(d['Overall Status']==='Delayed') borderColor = '#da3633';
+        else if(d['Overall Status']==='Required Assistance') borderColor = '#f1c40f';
+        card.style.borderLeftColor = borderColor;
         card.onclick = () => openEditor(f);
         card.innerHTML = `<b>${f}</b> <span style="float:right">Apron: ${d.apron}</span><br>
             <small>Status: ${d['Overall Status']} | ETD: ${d.etd || '-'}</small>`;
@@ -163,6 +179,7 @@ function openEditor(f) {
     currentF = f; const d = allFlights[f];
     document.getElementById('editTitle').innerText = "Update Flight: " + f;
     document.getElementById('t-Overall_Status').value = d['Overall Status'];
+    document.getElementById('t-Apron').value = d.apron;
     document.getElementById('depTime').value = d.etd || "";
     document.getElementById('etaTime').value = d.eta || "";
     document.getElementById('atTime').value = d.at || "";
@@ -186,20 +203,26 @@ function openEditor(f) {
     document.getElementById('editorOverlay').style.display='block';
 }
 
-function toggleAllDetails(expand) {
-    document.querySelectorAll('.cat-details').forEach(d => d.open = expand);
-}
-
-// 核心功能：只记录已更改的 Task
 function confirmUpdate() {
     const u = JSON.parse(sessionStorage.getItem("user"));
     const now = new Date().toISOString();
     let fData = JSON.parse(JSON.stringify(allFlights[currentF]));
     if(!fData.logs) fData.logs = [];
 
+    // Apron 防呆：检查是否有其他活跃航班正占用该 Apron
+    const newApron = document.getElementById('t-Apron').value.toUpperCase();
+    if(newApron !== fData.apron) {
+        for(let otherF in allFlights) {
+            if(otherF !== currentF && allFlights[otherF].apron === newApron) {
+                alert(`Error: Apron ${newApron} is already occupied by ${otherF}!`);
+                return;
+            }
+        }
+    }
+
     const check = (id, key, label) => {
         const v = document.getElementById(id).value;
-        if(fData[key] !== v) { // 只在值不同时记录
+        if(fData[key] !== v) {
             fData.logs.push({time:now, task:label, status:v, user:u.name}); 
             fData[key] = v; 
             return true;
@@ -209,6 +232,7 @@ function confirmUpdate() {
 
     let changed = false;
     if(check('t-Overall_Status', 'Overall Status', 'Status')) changed = true;
+    if(check('t-Apron', 'apron', 'Apron')) changed = true;
     if(check('depTime', 'etd', 'ETD')) changed = true;
     if(check('etaTime', 'eta', 'ETA')) changed = true;
     if(check('atTime', 'at', 'AT')) changed = true;
@@ -228,6 +252,37 @@ function confirmUpdate() {
     else alert("No changes detected.");
 }
 
+// 添加航班：防呆检查 + 选填时间
+async function saveNewFlight() {
+    const f = document.getElementById('newF').value.toUpperCase().trim();
+    const a = document.getElementById('newA').value.toUpperCase().trim();
+    if(!f || !a) return alert("Please fill Flight No and Apron!");
+
+    // 防呆：检查当前列表
+    if(allFlights[f]) return alert("Flight No already exists in active list!");
+
+    // 防呆：检查回收箱
+    const binSnap = await db.ref('deletedFlights/' + f).once('value');
+    if(binSnap.exists()) return alert("Flight No exists in Recycle Bin! Please restore or permanently delete it first.");
+
+    const newFlight = {
+        apron: a,
+        'Overall Status': 'Not Started',
+        etd: document.getElementById('newETD').value || '',
+        eta: document.getElementById('newETA').value || '',
+        at: document.getElementById('newAT').value || '',
+        logs: [{time: new Date().toISOString(), task: "System", status: "Flight Created", user: "Admin/Staff"}]
+    };
+
+    db.ref('flights/' + f).set(newFlight);
+    document.getElementById('addModal').style.display='none';
+    ['newF','newA','newETD','newETA','newAT'].forEach(k=>document.getElementById(k).value="");
+}
+
+function toggleAllDetails(expand) {
+    document.querySelectorAll('.cat-details').forEach(d => d.open = expand);
+}
+
 function updateProfile() {
     const u = JSON.parse(sessionStorage.getItem("user"));
     u.name = document.getElementById('pName').value;
@@ -243,13 +298,6 @@ function renderLogs(logs) {
     const acts = (logs||[]).filter(l => l.task !== "Message").reverse();
     document.getElementById('msgLogArea').innerHTML = msgs.map(m => `<div class="msg-display"><b>${m.user}:</b> ${m.status}</div>`).join('');
     document.getElementById('actionLogArea').innerHTML = acts.map(a => `<div>[${a.time.substring(11,16)}] ${a.task} -> ${a.status}</div>`).join('');
-}
-
-function saveNewFlight() {
-    const f = document.getElementById('newF').value.toUpperCase();
-    const a = document.getElementById('newA').value.toUpperCase();
-    if(f && a) db.ref('flights/' + f).set({apron:a, 'Overall Status':'Not Started', etd:'', eta:'', at:'', logs:[]});
-    document.getElementById('addModal').style.display='none';
 }
 
 function toggleTheme() {

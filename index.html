@@ -3,90 +3,103 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Apron Staff - Cloud Sync</title>
+<title>Apron Updating System - Staff</title>
 <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-database-compat.js"></script>
 <style>
-  :root { --bg: #f0f2f5; --card: #ffffff; --text: #333; --border: #ddd; --primary: #1a237e; --accent: #007bff; }
-  [data-theme='dark'] { --bg: #0b1117; --card: #161b22; --text: #c9d1d9; --border: #30363d; --primary: #58a6ff; --accent: #1f6feb; }
+  :root { --bg: #f0f2f5; --card: #ffffff; --text: #333; --border: #ddd; --primary: #1a237e; --accent: #007bff; --watermark: rgba(0,0,0,0.15); }
+  [data-theme='dark'] { --bg: #0b1117; --card: #161b22; --text: #c9d1d9; --border: #30363d; --primary: #58a6ff; --accent: #1f6feb; --watermark: rgba(255,255,255,0.1); }
   body { font-family: 'Segoe UI', sans-serif; background: var(--bg); color: var(--text); margin: 0; transition: 0.3s; padding-bottom: 80px; }
+  .watermark { position: fixed; bottom: 10px; left: 50%; transform: translateX(-50%); font-size: 14px; font-weight: bold; color: var(--watermark); pointer-events: none; z-index: 9999; }
   .header { background: var(--primary); color: white; padding: 12px 20px; display: flex; justify-content: space-between; align-items: center; position: sticky; top: 0; z-index: 1000; }
-  .btn { padding: 8px 15px; border-radius: 8px; border: none; font-weight: bold; cursor: pointer; }
+  .btn { padding: 8px 15px; border-radius: 8px; border: none; font-weight: bold; cursor: pointer; transition: 0.2s; }
+  .btn-primary { background: var(--accent); color: white; }
   .btn-success { background: #238636; color: white; }
   .btn-danger { background: #da3633; color: white; }
-  .card { background: var(--card); padding: 15px; margin: 10px auto; border-radius: 10px; border: 1px solid var(--border); max-width: 800px; }
-  .overlay { display: none; position: fixed; inset: 0; background: var(--bg); z-index: 2000; overflow-y: auto; padding: 20px; }
-  .input-group { margin-bottom: 15px; }
+  .btn-gray { background: #666; color: white; }
+  .card { background: var(--card); padding: 20px; margin: 15px auto; border-radius: 12px; border: 1px solid var(--border); border-left: 10px solid #666; cursor: pointer; max-width: 800px; position: relative; }
+  .overlay { display: none; position: fixed; inset: 0; background: var(--bg); z-index: 1500; overflow-y: auto; padding: 20px; }
+  .input-wrapper { margin-bottom: 15px; text-align: left; }
+  .input-wrapper label { font-size: 11px; font-weight: bold; color: #666; display: block; margin-bottom: 4px; }
   input, select, textarea { padding: 10px; border-radius: 8px; border: 1px solid var(--border); background: var(--card); color: var(--text); width: 100%; box-sizing: border-box; }
-  .task-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(140px, 1fr)); gap: 10px; margin-top: 10px; }
-  details { background: rgba(0,0,0,0.05); padding: 10px; border-radius: 8px; margin-top: 10px; }
+  .task-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: 10px; }
+  .msg-display { background: rgba(0,123,255,0.1); padding: 8px; border-radius: 5px; margin-top: 10px; font-size: 12px; border-left: 3px solid var(--accent); }
 </style>
 </head>
-<body>
+<body data-theme="light">
+
+<div class="watermark">STAFF ACCESS SYSTEM</div>
 
 <div id="loginOverlay" style="position:fixed; inset:0; background:var(--primary); z-index:5000; display:flex; align-items:center; justify-content:center;">
-    <div style="background:white; padding:30px; border-radius:15px; width:300px; text-align:center;">
-        <h3 style="color:#333">STAFF LOGIN</h3>
-        <input id="loginId" placeholder="ID" style="margin-bottom:10px">
+    <div style="background:white; padding:30px; border-radius:15px; width:90%; max-width:400px; text-align:center;">
+        <h2 style="color:#333">STAFF LOGIN</h2>
+        <input id="loginId" placeholder="Staff ID" style="margin-bottom:10px">
         <input id="loginPass" type="password" placeholder="Password" style="margin-bottom:15px">
-        <button onclick="checkLogin()" class="btn btn-success" style="width:100%">Login</button>
+        <button onclick="checkLogin()" class="btn btn-primary" style="width:100%">Login</button>
     </div>
 </div>
 
 <div id="mainContent" style="display:none">
     <div class="header">
-        <div id="userDisplay" style="cursor:pointer; font-weight:bold" onclick="showProfile()">Profile</div>
+        <div id="userDisplay" style="font-weight:bold; cursor:pointer" onclick="document.getElementById('profileOverlay').style.display='block'">Profile</div>
         <div style="display:flex; gap:10px">
             <button id="tzBtn" onclick="toggleTZ()" class="btn" style="background:rgba(255,255,255,0.2); color:white">UTC</button>
             <button onclick="toggleTheme()" class="btn" style="background:none; font-size:20px">🌓</button>
             <button onclick="logout()" class="btn btn-danger">Logout</button>
         </div>
     </div>
-    <div style="padding:15px; max-width:800px; margin:auto">
+    <div style="max-width:800px; margin:20px auto; padding:0 15px">
         <div style="display:flex; gap:10px; margin-bottom:15px">
-            <input id="search" placeholder="Search Flight/Apron..." onkeyup="render()">
-            <button onclick="document.getElementById('addFModal').style.display='block'" class="btn btn-success">+ New</button>
+            <input id="search" placeholder="Search Flight/Apron..." onkeyup="renderFlights()" style="flex:1">
+            <button onclick="document.getElementById('addModal').style.display='block'" class="btn btn-success">+ New</button>
         </div>
-        <div id="list">Loading...</div>
+        <div id="list">Connecting...</div>
     </div>
 </div>
 
 <div id="profileOverlay" class="overlay">
     <div style="max-width:400px; margin:auto">
-        <h2>Edit My Profile</h2>
-        <div class="input-group"><label>Display Name</label><input id="pName"></div>
-        <div class="input-group"><label>Position</label><input id="pPos"></div>
-        <button onclick="updateProfile()" class="btn btn-success" style="width:100%">Save & Reload</button>
-        <button onclick="document.getElementById('profileOverlay').style.display='none'" class="btn" style="width:100%; margin-top:10px">Cancel</button>
+        <h2>Edit Profile</h2>
+        <div class="input-wrapper"><label>Name</label><input id="pName"></div>
+        <div class="input-wrapper"><label>Position</label><input id="pPos"></div>
+        <button onclick="updateProfile()" class="btn btn-success" style="width:100%">Save Changes</button>
+        <button onclick="document.getElementById('profileOverlay').style.display='none'" class="btn btn-gray" style="width:100%; margin-top:10px">Back</button>
     </div>
 </div>
 
 <div id="editorOverlay" class="overlay">
     <div style="max-width:800px; margin:auto">
-        <div style="display:flex; justify-content:space-between">
-            <h2 id="editTitle"></h2>
-            <button onclick="closeEditor()" class="btn">✕ Close</button>
+        <div style="display:flex; justify-content:space-between; align-items:center">
+            <h2 id="editTitle">Update</h2>
+            <div>
+                <button onclick="toggleAllDetails(true)" class="btn btn-primary">Expand All</button>
+                <button onclick="toggleAllDetails(false)" class="btn btn-gray">Collapse All</button>
+                <button onclick="closeEditor()" class="btn btn-gray">✕</button>
+            </div>
         </div>
         <div style="display:grid; grid-template-columns: 1fr 1fr; gap:10px">
-            <div><label>Overall Status</label><select id="t-Overall_Status"><option>Not Started</option><option>In Progress</option><option>Delayed</option><option>Completed</option></select></div>
-            <div><label>ETD</label><input type="datetime-local" id="depTime"></div>
-            <div><label>ETA</label><input type="datetime-local" id="etaTime"></div>
-            <div><label>AT</label><input type="datetime-local" id="atTime"></div>
+            <div class="input-wrapper"><label>Overall Status</label><select id="t-Overall_Status"><option>Not Started</option><option>In Progress</option><option>Delayed</option><option>Completed</option></select></div>
+            <div class="input-wrapper"><label>ETD (UTC)</label><input type="datetime-local" id="depTime"></div>
+            <div class="input-wrapper"><label>ETA (UTC)</label><input type="datetime-local" id="etaTime"></div>
+            <div class="input-wrapper"><label>AT (UTC)</label><input type="datetime-local" id="atTime"></div>
         </div>
-        <div id="catBox"></div>
-        <textarea id="msgIn" placeholder="Message to Admin..." style="margin-top:15px"></textarea>
-        <button onclick="saveUpdate()" class="btn btn-success" style="width:100%; margin-top:15px; height:50px">SYNC TO CLOUD</button>
-        <div id="logs" style="margin-top:20px"></div>
+        <div id="categoryContainer"></div>
+        <div class="input-wrapper"><label>Message</label><textarea id="msgInput" placeholder="Enter notes..."></textarea></div>
+        <button onclick="confirmUpdate()" class="btn btn-success" style="width:100%; height:50px;">SYNC TO CLOUD</button>
+        <div id="logSections">
+            <details open><summary>💬 Messages</summary><div id="msgLogArea"></div></details>
+            <details><summary>⚙️ Activities</summary><div id="actionLogArea" style="font-size:12px"></div></details>
+        </div>
     </div>
 </div>
 
-<div id="addFModal" class="overlay">
-    <div style="max-width:400px; margin:auto; background:var(--card); padding:20px; border-radius:10px; margin-top:50px">
-        <h3>Create Flight</h3>
-        <input id="nf" placeholder="Flight No"><br><br>
-        <input id="na" placeholder="Apron"><br><br>
-        <button onclick="addF()" class="btn btn-success" style="width:100%">Create</button>
-        <button onclick="document.getElementById('addFModal').style.display='none'" class="btn" style="width:100%; margin-top:10px">Back</button>
+<div id="addModal" class="overlay">
+    <div style="max-width:400px; margin:auto; background:var(--card); padding:20px; border-radius:12px; margin-top:100px">
+        <h2>Add Flight</h2>
+        <input id="newF" placeholder="Flight No"><br><br>
+        <input id="newA" placeholder="Apron"><br><br>
+        <button onclick="saveNewFlight()" class="btn btn-success" style="width:100%">Create</button>
+        <button onclick="document.getElementById('addModal').style.display='none'" class="btn btn-gray" style="width:100%; margin-top:10px">Cancel</button>
     </div>
 </div>
 
@@ -101,58 +114,54 @@ const firebaseConfig = {
   appId: "1:984848540764:web:4a54026553c971acb33299"
 };
 firebase.initializeApp(firebaseConfig);
-const db = firebase.database();
+const database = firebase.database();
 const CATS = { "Admin": ["Flight Plan Approval","Engineering","Tow Truck Pushback"], "Cabin": ["PAX Boarding (F)","PAX Boarding (B)","Catering"], "Ground": ["Baggage Load","Fueling","Water","Lavatory"] };
-let currentF = null, flights = {}, useUTC = true;
-
-// 初始化黑白模式
-function applyTheme() {
-    const t = localStorage.getItem('theme') || 'light';
-    document.body.setAttribute('data-theme', t);
-}
+let currentF = null, allFlights = {}, useUTC = true;
 
 function checkLogin() {
     const id = document.getElementById('loginId').value;
-    const pw = document.getElementById('loginPass').value;
-    db.ref('users/' + id).once('value', s => {
+    const pass = document.getElementById('loginPass').value;
+    database.ref('users/' + id).once('value').then(s => {
         const u = s.val();
-        if(u && u.pass === pw) { sessionStorage.setItem('user', JSON.stringify(u)); init(); }
-        else alert('Login Failed');
+        if(u && u.pass === pass) { sessionStorage.setItem("user", JSON.stringify(u)); initApp(); }
+        else alert("Login Failed");
     });
 }
 
-function init() {
-    const u = JSON.parse(sessionStorage.getItem('user'));
+function initApp() {
+    const u = JSON.parse(sessionStorage.getItem("user"));
     if(!u) return;
-    applyTheme();
-    document.getElementById('loginOverlay').style.display = 'none';
-    document.getElementById('mainContent').style.display = 'block';
+    const theme = localStorage.getItem('theme') || 'light';
+    document.body.setAttribute('data-theme', theme);
+    document.getElementById('loginOverlay').style.display='none';
+    document.getElementById('mainContent').style.display='block';
     document.getElementById('userDisplay').innerText = u.name + " (" + u.pos + ")";
+    document.getElementById('pName').value = u.name;
+    document.getElementById('pPos').value = u.pos;
     
-    db.ref('flights').on('value', s => {
-        flights = s.val() || {};
-        render();
+    database.ref('flights').on('value', s => {
+        allFlights = s.val() || {};
+        renderFlights();
         if(currentF) openEditor(currentF);
     });
 }
 
-function render() {
-    const q = document.getElementById('search').value.toUpperCase();
-    const list = document.getElementById('list'); list.innerHTML = "";
-    for(let f in flights) {
-        const d = flights[f];
-        if(!f.includes(q) && !d.apron.includes(q)) continue;
-        const card = document.createElement('div'); card.className = 'card';
-        card.style.borderLeft = `8px solid ${d['Overall Status']==='Completed'?'#238636':(d['Overall Status']==='Delayed'?'#da3633':'#666')}`;
+function renderFlights() {
+    const s = document.getElementById('search').value.toUpperCase();
+    const list = document.getElementById("list"); list.innerHTML = "";
+    for(let f in allFlights) {
+        const d = allFlights[f];
+        if(!f.includes(s) && !d.apron.includes(s)) continue;
+        const card = document.createElement("div"); card.className = "card";
+        card.style.borderLeftColor = d['Overall Status']==='Completed'?'#238636':(d['Overall Status']==='Delayed'?'#da3633':'#666');
         card.onclick = () => openEditor(f);
-        card.innerHTML = `<b>${f}</b> <span style="float:right">Apron: ${d.apron}</span><br>
-            <small>Status: ${d['Overall Status']} | ETD: ${d.etd || '-'}</small>`;
+        card.innerHTML = `<b>${f}</b> <span style="float:right">Apron: ${d.apron}</span><br><small>ETD: ${d.etd || '-'}</small>`;
         list.appendChild(card);
     }
 }
 
 function openEditor(f) {
-    currentF = f; const d = flights[f];
+    currentF = f; const d = allFlights[f];
     document.getElementById('editTitle').innerText = "Flight: " + f;
     document.getElementById('t-Overall_Status').value = d['Overall Status'];
     document.getElementById('depTime').value = d.etd || "";
@@ -161,79 +170,82 @@ function openEditor(f) {
 
     let h = "";
     for(let c in CATS) {
-        h += `<details><summary><b>${c} Tasks</b></summary><div class="task-grid">`;
+        h += `<details class="cat-details" open><summary><b>${c} Tasks</b></summary><div class="task-grid">`;
         CATS[c].forEach(t => {
-            const v = d[t] || 'Not Started';
-            h += `<div><label style="font-size:11px">${t}</label>
-                <select id="t-${t.replace(/\s+/g,'_')}">
-                    <option ${v==='Not Started'?'selected':''}>Not Started</option>
-                    <option ${v==='In Progress'?'selected':''}>In Progress</option>
-                    <option ${v==='Completed'?'selected':''}>Completed</option>
-                </select></div>`;
+            const val = d[t] || 'Not Started';
+            h += `<div><label style="font-size:10px">${t}</label><select id="t-${t.replace(/\s+/g,'_')}">
+                <option ${val==='Not Started'?'selected':''}>Not Started</option>
+                <option ${val==='In Progress'?'selected':''}>In Progress</option>
+                <option ${val==='Completed'?'selected':''}>Completed</option>
+                <option ${val==='Delayed'?'selected':''}>Delayed</option>
+            </select></div>`;
         });
         h += `</div></details>`;
     }
-    document.getElementById('catBox').innerHTML = h;
-    document.getElementById('logs').innerHTML = `<details><summary>Logs</summary>${(d.logs||[]).reverse().map(l=>`<div>[${l.time.substring(11,16)}] ${l.task}: ${l.status} (${l.user})</div>`).join('')}</details>`;
-    document.getElementById('editorOverlay').style.display = 'block';
+    document.getElementById('categoryContainer').innerHTML = h;
+    renderLogs(d.logs || []);
+    document.getElementById('editorOverlay').style.display='block';
 }
 
-function saveUpdate() {
-    const u = JSON.parse(sessionStorage.getItem('user'));
+function toggleAllDetails(expand) {
+    document.querySelectorAll('.cat-details').forEach(d => d.open = expand);
+}
+
+function confirmUpdate() {
+    const u = JSON.parse(sessionStorage.getItem("user"));
     const now = new Date().toISOString();
-    let data = JSON.parse(JSON.stringify(flights[currentF]));
-    if(!data.logs) data.logs = [];
+    let fData = JSON.parse(JSON.stringify(allFlights[currentF]));
+    if(!fData.logs) fData.logs = [];
 
     const check = (id, key, label) => {
         const v = document.getElementById(id).value;
-        if(data[key] !== v) { data.logs.push({time:now, task:label, status:v, user:u.name}); data[key] = v; }
+        if(fData[key] !== v) { fData.logs.push({time:now, task:label, status:v, user:u.name}); fData[key] = v; }
     };
     check('t-Overall_Status', 'Overall Status', 'Status');
     check('depTime', 'etd', 'ETD');
     check('etaTime', 'eta', 'ETA');
     check('atTime', 'at', 'AT');
-    Object.values(CATS).flat().forEach(t => check('t-'+t.replace(/\s+/g,'_'), t, t));
-    
-    const m = document.getElementById('msgIn').value.trim();
-    if(m) { data.logs.push({time:now, task:"Message", status:m, user:u.name}); document.getElementById('msgIn').value=""; }
+    Object.values(CATS).flat().forEach(t => check(`t-${t.replace(/\s+/g,'_')}`, t, t));
 
-    db.ref('flights/' + currentF).set(data);
-}
+    const msg = document.getElementById('msgInput').value.trim();
+    if(msg) { fData.logs.push({time:now, task:"Message", status:msg, user:u.name}); document.getElementById('msgInput').value=""; }
 
-function showProfile() {
-    const u = JSON.parse(sessionStorage.getItem('user'));
-    document.getElementById('pName').value = u.name;
-    document.getElementById('pPos').value = u.pos;
-    document.getElementById('profileOverlay').style.display = 'block';
+    database.ref('flights/' + currentF).set(fData);
 }
 
 function updateProfile() {
-    const u = JSON.parse(sessionStorage.getItem('user'));
+    const u = JSON.parse(sessionStorage.getItem("user"));
     u.name = document.getElementById('pName').value;
     u.pos = document.getElementById('pPos').value;
-    db.ref('users/' + u.id).update({name: u.name, pos: u.pos}).then(() => {
-        sessionStorage.setItem('user', JSON.stringify(u));
+    database.ref('users/' + u.id).update({name: u.name, pos: u.pos}).then(() => {
+        sessionStorage.setItem("user", JSON.stringify(u));
         location.reload();
     });
 }
 
-function addF() {
-    const f = document.getElementById('nf').value.toUpperCase();
-    const a = document.getElementById('na').value.toUpperCase();
-    if(f && a) db.ref('flights/'+f).set({apron:a, 'Overall Status':'Not Started', logs:[], etd:''});
-    document.getElementById('addFModal').style.display='none';
+function renderLogs(logs) {
+    const msgs = logs.filter(l => l.task === "Message").reverse();
+    const acts = logs.filter(l => l.task !== "Message").reverse();
+    document.getElementById('msgLogArea').innerHTML = msgs.map(m => `<div class="msg-display"><b>${m.user}:</b> ${m.status}</div>`).join('');
+    document.getElementById('actionLogArea').innerHTML = acts.map(a => `<div>[${a.time.substring(11,16)}] ${a.task} -> ${a.status}</div>`).join('');
+}
+
+function saveNewFlight() {
+    const f = document.getElementById('newF').value.toUpperCase();
+    const a = document.getElementById('newA').value.toUpperCase();
+    if(f && a) database.ref('flights/' + f).set({apron:a, 'Overall Status':'Not Started', etd:'', eta:'', at:''});
+    document.getElementById('addModal').style.display='none';
 }
 
 function toggleTheme() {
-    const t = document.body.getAttribute('data-theme') === 'dark' ? 'light' : 'dark';
-    document.body.setAttribute('data-theme', t);
-    localStorage.setItem('theme', t);
+    const next = document.body.getAttribute('data-theme') === 'dark' ? 'light' : 'dark';
+    document.body.setAttribute('data-theme', next);
+    localStorage.setItem('theme', next);
 }
-
-function toggleTZ() { useUTC = !useUTC; document.getElementById('tzBtn').innerText = useUTC?'UTC':'Local'; render(); }
-function closeEditor() { currentF = null; document.getElementById('editorOverlay').style.display = 'none'; }
+function toggleTZ() { useUTC = !useUTC; document.getElementById('tzBtn').innerText = useUTC?"UTC":"Local"; renderFlights(); }
+function closeEditor() { currentF = null; document.getElementById('editorOverlay').style.display='none'; }
 function logout() { sessionStorage.clear(); location.reload(); }
-window.onload = () => { if(sessionStorage.getItem('user')) init(); applyTheme(); };
+window.onload = () => { if(sessionStorage.getItem("user")) initApp(); };
 </script>
 </body>
 </html>

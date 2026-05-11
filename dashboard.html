@@ -2,29 +2,33 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8">
-<title>Apron Admin - Cloud</title>
+<title>Apron Dashboard - Admin</title>
 <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-database-compat.js"></script>
 <style>
-  :root { --bg: #0b1117; --card: #161b22; --text: #c9d1d9; --border: #30363d; }
-  [data-theme='light'] { --bg: #f0f2f5; --card: #ffffff; --text: #333; --border: #ddd; }
+  :root { --bg: #0b1117; --card: #161b22; --text: #c9d1d9; --border: #30363d; --primary: #58a6ff; }
+  [data-theme='light'] { --bg: #f0f2f5; --card: #ffffff; --text: #333; --border: #ddd; --primary: #1a237e; }
   body { font-family: 'Segoe UI', sans-serif; background: var(--bg); color: var(--text); margin: 0; padding-bottom: 60px; }
-  .header { display: flex; justify-content: space-between; align-items: center; padding: 10px 20px; background: var(--card); border-bottom: 1px solid var(--border); sticky; top:0; z-index:100; }
-  .btn { padding: 6px 12px; border-radius: 5px; border: none; cursor: pointer; font-weight: bold; }
+  .header { display: flex; justify-content: space-between; align-items: center; padding: 15px 20px; background: var(--card); border-bottom: 1px solid var(--border); position: sticky; top:0; z-index: 1000; }
+  .btn { padding: 8px 14px; border-radius: 6px; border: none; font-weight: bold; cursor: pointer; margin-left: 5px; }
+  .btn-success { background: #238636; color: white; }
   .btn-danger { background: #da3633; color: white; }
-  .card { background: var(--card); border-radius: 10px; padding: 15px; margin: 15px; border: 1px solid var(--border); }
-  .bulk-bar { position: fixed; bottom: 20px; left: 50%; transform: translateX(-50%); background: #1f6feb; color: white; padding: 10px 20px; border-radius: 30px; display: none; z-index: 1000; box-shadow: 0 4px 15px rgba(0,0,0,0.3); }
-  .overlay { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.8); z-index: 2000; padding: 20px; }
+  .card { background: var(--card); border-radius: 12px; padding: 20px; margin: 15px; border: 1px solid var(--border); }
+  .overlay { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.8); z-index: 3000; padding: 20px; overflow-y: auto; }
+  .bulk-bar { position: fixed; bottom: 20px; left: 50%; transform: translateX(-50%); background: var(--primary); color: white; padding: 10px 20px; border-radius: 30px; display: none; }
+  input { padding: 8px; border-radius: 6px; border: 1px solid var(--border); background: var(--bg); color: var(--text); }
+  table { width: 100%; border-collapse: collapse; margin-top: 15px; }
+  th, td { padding: 10px; border-bottom: 1px solid var(--border); text-align: left; }
 </style>
 </head>
-<body>
+<body data-theme="dark">
 
 <div class="header">
-    <h2>Admin Console</h2>
+    <h2>Admin Dashboard</h2>
     <div>
         <input id="search" placeholder="Search..." onkeyup="render()">
-        <button id="selBtn" onclick="toggleAll()" class="btn">Select All</button>
-        <button onclick="document.getElementById('uModal').style.display='block'; loadUsers();" class="btn">Users</button>
+        <button id="selBtn" onclick="toggleSelectAll()" class="btn">Select All</button>
+        <button onclick="document.getElementById('userModal').style.display='block'; loadUsers();" class="btn">User Management</button>
         <button onclick="toggleTheme()" class="btn">🌓</button>
     </div>
 </div>
@@ -32,19 +36,36 @@
 <div id="list"></div>
 
 <div id="bulkBar" class="bulk-bar">
-    <span id="selCount">0</span> selected 
-    <button onclick="bulkDel()" class="btn btn-danger" style="margin-left:10px">Delete Selected</button>
+    <span id="selCount">0</span> Selected 
+    <button onclick="bulkDel()" class="btn btn-danger">Move to Recycle Bin</button>
 </div>
 
-<div id="uModal" class="overlay">
-    <div style="background:var(--card); max-width:600px; margin:auto; padding:20px; border-radius:10px">
-        <h3>User Management</h3>
-        <div style="display:flex; gap:10px; margin-bottom:15px">
-            <input id="uId" placeholder="ID"> <input id="uName" placeholder="Name"> <input id="uPass" placeholder="Pass">
-            <button onclick="saveU()" class="btn" style="background:#238636; color:white">Add/Update</button>
+<div id="userModal" class="overlay">
+    <div style="background:var(--card); max-width:800px; margin:auto; padding:20px; border-radius:10px">
+        <div style="display:grid; grid-template-columns:1fr 1fr; gap:20px">
+            <div>
+                <h3>Add New User</h3>
+                <input id="uId" placeholder="ID"><br><br>
+                <input id="uName" placeholder="Name"><br><br>
+                <input id="uPos" placeholder="Position"><br><br>
+                <input id="uPass" placeholder="Password"><br><br>
+                <button onclick="saveUser('u')" class="btn btn-success">Add User</button>
+            </div>
+            <div style="border-left:1px solid var(--border); padding-left:20px">
+                <h3>Edit User</h3>
+                <input id="eId" placeholder="ID (Read only)" readonly><br><br>
+                <input id="eName" placeholder="Name"><br><br>
+                <input id="ePos" placeholder="Position"><br><br>
+                <input id="ePass" placeholder="New Password"><br><br>
+                <button onclick="saveUser('e')" class="btn btn-primary">Update User</button>
+            </div>
         </div>
-        <div id="uList" style="max-height:300px; overflow-y:auto"></div>
-        <button onclick="document.getElementById('uModal').style.display='none'" class="btn" style="width:100%; margin-top:15px">Close</button>
+        <hr style="margin:20px 0; border:0; border-top:1px solid var(--border)">
+        <table>
+            <thead><tr><th>ID</th><th>Name</th><th>Pos</th><th>Action</th></tr></thead>
+            <tbody id="userList"></tbody>
+        </table>
+        <button onclick="document.getElementById('userModal').style.display='none'" class="btn" style="width:100%; margin-top:15px">Close</button>
     </div>
 </div>
 
@@ -60,77 +81,99 @@ const firebaseConfig = {
 };
 firebase.initializeApp(firebaseConfig);
 const db = firebase.database();
-let sel = false;
-
-function applyTheme() {
-    const t = localStorage.getItem('adminTheme') || 'dark';
-    document.body.setAttribute('data-theme', t);
-}
+let allFlights = {}, allUsers = {}, isAllSelected = false;
 
 function render() {
+    const theme = localStorage.getItem('adminTheme') || 'dark';
+    document.body.setAttribute('data-theme', theme);
     db.ref('flights').on('value', s => {
-        const data = s.val() || {};
-        const q = document.getElementById('search').value.toUpperCase();
-        const list = document.getElementById('list'); list.innerHTML = "";
-        for(let f in data) {
-            if(!f.includes(q) && !data[f].apron.includes(q)) continue;
-            const card = document.createElement('div'); card.className = 'card';
+        allFlights = s.val() || {};
+        const q = document.getElementById("search").value.toUpperCase();
+        const list = document.getElementById("list"); list.innerHTML = "";
+        for(let f in allFlights) {
+            if(!f.includes(q) && !allFlights[f].apron.includes(q)) continue;
+            const card = document.createElement("div"); card.className = "card";
             card.innerHTML = `
-                <input type="checkbox" class="cb" data-id="${f}" onchange="updateUI()">
-                <b style="margin:0 10px">${f}</b> (Apron: ${data[f].apron})
-                <details style="margin-top:10px; font-size:12px">
-                    <summary>View Logs & Status</summary>
-                    <div style="padding:10px">${(data[f].logs||[]).map(l=>`<div>${l.time.substring(11,16)} - ${l.user}: ${l.status}</div>`).join('')}</div>
-                </details>
-                <button onclick="delF('${f}')" class="btn btn-danger" style="float:right; margin-top:-25px">Del</button>`;
+                <input type="checkbox" class="bulk" data-id="${f}" onchange="updateUI()"> 
+                <b style="margin:0 10px">${f}</b> | Apron: ${allFlights[f].apron} | Status: ${allFlights[f]['Overall Status']}
+                <button onclick="delF('${f}')" class="btn btn-danger" style="float:right">Bin</button>
+                <details style="margin-top:10px; font-size:12px"><summary>Quick Logs</summary>
+                ${(allFlights[f].logs||[]).map(l => `<div>${l.time.substring(11,16)} ${l.user}: ${l.status}</div>`).join('')}
+                </details>`;
             list.appendChild(card);
         }
     });
 }
 
+function toggleSelectAll() {
+    isAllSelected = !isAllSelected;
+    document.querySelectorAll('.bulk').forEach(c => c.checked = isAllSelected);
+    document.getElementById('selBtn').innerText = isAllSelected ? "Deselect All" : "Select All";
+    updateUI();
+}
+
 function updateUI() {
-    const count = document.querySelectorAll('.cb:checked').length;
+    const count = document.querySelectorAll('.bulk:checked').length;
     document.getElementById('selCount').innerText = count;
     document.getElementById('bulkBar').style.display = count > 0 ? 'block' : 'none';
 }
 
-function toggleAll() {
-    sel = !sel;
-    document.querySelectorAll('.cb').forEach(c => c.checked = sel);
-    document.getElementById('selBtn').innerText = sel ? "Deselect" : "Select All";
-    updateUI();
+// 核心：回收桶功能 (移至 deletedFlights 节点)
+function delF(f) {
+    if(!confirm("Move to Recycle Bin?")) return;
+    db.ref('flights/' + f).once('value').then(s => {
+        db.ref('deletedFlights/' + f).set(s.val());
+        db.ref('flights/' + f).remove();
+    });
 }
 
 function bulkDel() {
-    if(!confirm("Delete selected?")) return;
-    document.querySelectorAll('.cb:checked').forEach(c => db.ref('flights/'+c.dataset.id).remove());
+    if(!confirm("Move selected to Recycle Bin?")) return;
+    document.querySelectorAll('.bulk:checked').forEach(c => {
+        const f = c.dataset.id;
+        db.ref('flights/' + f).once('value').then(s => {
+            db.ref('deletedFlights/' + f).set(s.val());
+            db.ref('flights/' + f).remove();
+        });
+    });
 }
 
-function delF(f) { if(confirm("Del "+f+"?")) db.ref('flights/'+f).remove(); }
-
-function saveU() {
-    const id = document.getElementById('uId').value;
-    const n = document.getElementById('uName').value;
-    const p = document.getElementById('uPass').value;
-    if(id) db.ref('users/'+id).update({id, name:n, pass:p, pos:'Staff'});
+function saveUser(prefix) {
+    const id = document.getElementById(prefix + 'Id').value.trim();
+    const name = document.getElementById(prefix + 'Name').value;
+    const pos = document.getElementById(prefix + 'Pos').value;
+    const pass = document.getElementById(prefix + 'Pass').value;
+    if(!id) return alert("ID Required");
+    db.ref('users/' + id).update({id, name, pos, pass: pass || (prefix==='e'?allUsers[id].pass:'1234')});
+    if(prefix==='u') ['uId','uName','uPos','uPass'].forEach(k=>document.getElementById(k).value="");
 }
 
 function loadUsers() {
     db.ref('users').on('value', s => {
-        const u = s.val() || {};
-        let h = "<table>";
-        for(let id in u) h += `<tr><td>${id}</td><td>${u[id].name}</td><td><button onclick="db.ref('users/${id}').remove()">Del</button></td></tr>`;
-        document.getElementById('uList').innerHTML = h + "</table>";
+        allUsers = s.val() || {};
+        const tbody = document.getElementById("userList"); tbody.innerHTML = "";
+        for(let id in allUsers) {
+            tbody.innerHTML += `<tr><td>${id}</td><td>${allUsers[id].name}</td><td>${allUsers[id].pos}</td>
+                <td><button onclick="editU('${id}')">Edit</button> <button onclick="db.ref('users/${id}').remove()">Del</button></td></tr>`;
+        }
     });
 }
 
-function toggleTheme() {
-    const t = document.body.getAttribute('data-theme') === 'dark' ? 'light' : 'dark';
-    document.body.setAttribute('data-theme', t);
-    localStorage.setItem('adminTheme', t);
+function editU(id) {
+    const u = allUsers[id];
+    document.getElementById('eId').value = u.id;
+    document.getElementById('eName').value = u.name;
+    document.getElementById('ePos').value = u.pos;
+    document.getElementById('ePass').value = "";
 }
 
-window.onload = () => { render(); applyTheme(); };
+function toggleTheme() {
+    const next = document.body.getAttribute('data-theme') === 'dark' ? 'light' : 'dark';
+    document.body.setAttribute('data-theme', next);
+    localStorage.setItem('adminTheme', next);
+}
+
+window.onload = render;
 </script>
 </body>
 </html>

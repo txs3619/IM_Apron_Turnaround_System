@@ -10,6 +10,7 @@
   :root { --bg: #f0f2f5; --card: #ffffff; --text: #333; --border: #ddd; --primary: #1a237e; --accent: #007bff; --watermark: rgba(0,0,0,0.15); }
   [data-theme='dark'] { --bg: #0b1117; --card: #161b22; --text: #c9d1d9; --border: #30363d; --primary: #58a6ff; --accent: #1f6feb; --watermark: rgba(255,255,255,0.1); }
   body { font-family: 'Segoe UI', sans-serif; background: var(--bg); color: var(--text); margin: 0; transition: 0.3s; padding-bottom: 80px; }
+  .watermark { position: fixed; bottom: 10px; left: 50%; transform: translateX(-50%); font-size: 14px; font-weight: bold; color: var(--watermark); pointer-events: none; z-index: 9999; }
   .header { background: var(--primary); color: white; padding: 12px 20px; display: flex; justify-content: space-between; align-items: center; position: sticky; top: 0; z-index: 1000; }
   .btn { padding: 8px 15px; border-radius: 8px; border: none; font-weight: bold; cursor: pointer; transition: 0.2s; }
   .btn-primary { background: var(--accent); color: white; }
@@ -21,12 +22,14 @@
   .input-wrapper { margin-bottom: 15px; text-align: left; }
   .input-wrapper label { font-size: 11px; font-weight: bold; color: #666; display: block; margin-bottom: 4px; }
   input, select, textarea { padding: 10px; border-radius: 8px; border: 1px solid var(--border); background: var(--card); color: var(--text); width: 100%; box-sizing: border-box; }
+  .task-section { background: rgba(128,128,128,0.05); padding: 15px; border-radius: 10px; margin-bottom: 15px; border: 1px solid var(--border); }
   .task-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: 10px; }
   .msg-display { background: rgba(0,123,255,0.1); padding: 8px; border-radius: 5px; margin-top: 10px; font-size: 12px; border-left: 3px solid var(--accent); }
-  details { margin-top: 10px; border: 1px solid var(--border); border-radius: 8px; padding: 5px 10px; }
 </style>
 </head>
 <body data-theme="light">
+
+<div id="watermark" class="watermark"></div>
 
 <div id="loginOverlay" style="position:fixed; inset:0; background:var(--primary); z-index:5000; display:flex; align-items:center; justify-content:center;">
     <div style="background:white; padding:30px; border-radius:15px; width:90%; max-width:400px; text-align:center;">
@@ -69,11 +72,7 @@
     <div style="max-width:800px; margin:auto">
         <div style="display:flex; justify-content:space-between; align-items:center">
             <h2 id="editTitle">Update</h2>
-            <div>
-                <button onclick="toggleAllDetails(true)" class="btn btn-primary">Expand All</button>
-                <button onclick="toggleAllDetails(false)" class="btn btn-gray">Collapse All</button>
-                <button onclick="closeEditor()" class="btn btn-gray">✕</button>
-            </div>
+            <button onclick="closeEditor()" class="btn btn-gray">✕ Close</button>
         </div>
         <div style="display:grid; grid-template-columns: 1fr 1fr; gap:10px">
             <div class="input-wrapper"><label>Overall Status</label>
@@ -90,12 +89,15 @@
             <div class="input-wrapper"><label>ETA (UTC)</label><input type="datetime-local" id="etaTime"></div>
             <div class="input-wrapper"><label>AT (UTC)</label><input type="datetime-local" id="atTime"></div>
         </div>
+        
         <div id="categoryContainer"></div>
-        <div class="input-wrapper"><label>Message</label><textarea id="msgInput" placeholder="Enter notes..."></textarea></div>
+        
+        <div class="input-wrapper"><label>Quick Message</label><textarea id="msgInput" placeholder="Enter notes..."></textarea></div>
         <button onclick="confirmUpdate()" class="btn btn-success" style="width:100%; height:50px;">SYNC TO CLOUD</button>
-        <div id="logSections">
-            <details open><summary>💬 Messages</summary><div id="msgLogArea"></div></details>
-            <details><summary>⚙️ Activity Logs</summary><div id="actionLogArea" style="font-size:12px"></div></details>
+        
+        <div id="logSections" style="margin-top:20px">
+            <details id="msgCollapse" ontoggle="saveFoldState('msgCollapse')"><summary style="cursor:pointer; font-weight:bold; padding:10px; background:var(--border); border-radius:5px">💬 Messages</summary><div id="msgLogArea"></div></details>
+            <details id="actCollapse" style="margin-top:10px" ontoggle="saveFoldState('actCollapse')"><summary style="cursor:pointer; font-weight:bold; padding:10px; background:var(--border); border-radius:5px">⚙️ Activity Logs</summary><div id="actionLogArea" style="font-size:12px"></div></details>
         </div>
     </div>
 </div>
@@ -141,19 +143,27 @@ function checkLogin() {
 function initApp() {
     const u = JSON.parse(sessionStorage.getItem("user"));
     if(!u) return;
-    const theme = localStorage.getItem('theme') || 'light';
-    document.body.setAttribute('data-theme', theme);
+    document.body.setAttribute('data-theme', localStorage.getItem('theme') || 'light');
     document.getElementById('loginOverlay').style.display='none';
     document.getElementById('mainContent').style.display='block';
     document.getElementById('userDisplay').innerText = u.name + " (" + u.pos + ")";
+    document.getElementById('watermark').innerText = u.id; // 恢复水印
     document.getElementById('pName').value = u.name;
     document.getElementById('pPos').value = u.pos;
+
+    // 应用折叠状态记忆
+    document.getElementById('msgCollapse').open = localStorage.getItem('msgCollapse') === 'true';
+    document.getElementById('actCollapse').open = localStorage.getItem('actCollapse') === 'true';
     
     db.ref('flights').on('value', s => {
         allFlights = s.val() || {};
         renderFlights();
         if(currentF) openEditor(currentF);
     });
+}
+
+function saveFoldState(id) {
+    localStorage.setItem(id, document.getElementById(id).open);
 }
 
 function renderFlights() {
@@ -186,7 +196,7 @@ function openEditor(f) {
 
     let h = "";
     for(let c in CATS) {
-        h += `<details class="cat-details" open><summary><b>${c} Tasks</b></summary><div class="task-grid">`;
+        h += `<div class="task-section"><h4>${c} Tasks</h4><div class="task-grid">`;
         CATS[c].forEach(t => {
             const val = d[t] || 'Not Started';
             h += `<div><label style="font-size:10px">${t}</label><select id="t-${t.replace(/\s+/g,'_')}">
@@ -196,7 +206,7 @@ function openEditor(f) {
                 <option ${val==='Delayed'?'selected':''}>Delayed</option>
             </select></div>`;
         });
-        h += `</div></details>`;
+        h += `</div></div>`;
     }
     document.getElementById('categoryContainer').innerHTML = h;
     renderLogs(d.logs || []);
@@ -207,14 +217,11 @@ function confirmUpdate() {
     const u = JSON.parse(sessionStorage.getItem("user"));
     const now = new Date().toISOString();
     let fData = JSON.parse(JSON.stringify(allFlights[currentF]));
-    if(!fData.logs) fData.logs = [];
-
-    // Apron 防呆：检查是否有其他活跃航班正占用该 Apron
     const newApron = document.getElementById('t-Apron').value.toUpperCase();
     if(newApron !== fData.apron) {
         for(let otherF in allFlights) {
             if(otherF !== currentF && allFlights[otherF].apron === newApron) {
-                alert(`Error: Apron ${newApron} is already occupied by ${otherF}!`);
+                alert(`Error: Apron ${newApron} is occupied by ${otherF}!`);
                 return;
             }
         }
@@ -224,8 +231,7 @@ function confirmUpdate() {
         const v = document.getElementById(id).value;
         if(fData[key] !== v) {
             fData.logs.push({time:now, task:label, status:v, user:u.name}); 
-            fData[key] = v; 
-            return true;
+            fData[key] = v; return true;
         }
         return false;
     };
@@ -236,61 +242,33 @@ function confirmUpdate() {
     if(check('depTime', 'etd', 'ETD')) changed = true;
     if(check('etaTime', 'eta', 'ETA')) changed = true;
     if(check('atTime', 'at', 'AT')) changed = true;
-    
     Object.values(CATS).flat().forEach(t => {
         if(check(`t-${t.replace(/\s+/g,'_')}`, t, t)) changed = true;
     });
 
     const msg = document.getElementById('msgInput').value.trim();
-    if(msg) { 
-        fData.logs.push({time:now, task:"Message", status:msg, user:u.name}); 
-        document.getElementById('msgInput').value=""; 
-        changed = true;
-    }
+    if(msg) { fData.logs.push({time:now, task:"Message", status:msg, user:u.name}); document.getElementById('msgInput').value=""; changed=true; }
 
     if(changed) db.ref('flights/' + currentF).set(fData);
-    else alert("No changes detected.");
+    else alert("No changes.");
 }
 
-// 添加航班：防呆检查 + 选填时间
 async function saveNewFlight() {
     const f = document.getElementById('newF').value.toUpperCase().trim();
     const a = document.getElementById('newA').value.toUpperCase().trim();
-    if(!f || !a) return alert("Please fill Flight No and Apron!");
-
-    // 防呆：检查当前列表
-    if(allFlights[f]) return alert("Flight No already exists in active list!");
-
-    // 防呆：检查回收箱
+    if(!f || !a) return alert("Fill mandatory fields!");
+    if(allFlights[f]) return alert("Flight exists!");
     const binSnap = await db.ref('deletedFlights/' + f).once('value');
-    if(binSnap.exists()) return alert("Flight No exists in Recycle Bin! Please restore or permanently delete it first.");
+    if(binSnap.exists()) return alert("Flight in Recycle Bin!");
 
-    const newFlight = {
-        apron: a,
-        'Overall Status': 'Not Started',
+    db.ref('flights/' + f).set({
+        apron: a, 'Overall Status': 'Not Started',
         etd: document.getElementById('newETD').value || '',
         eta: document.getElementById('newETA').value || '',
         at: document.getElementById('newAT').value || '',
-        logs: [{time: new Date().toISOString(), task: "System", status: "Flight Created", user: "Admin/Staff"}]
-    };
-
-    db.ref('flights/' + f).set(newFlight);
-    document.getElementById('addModal').style.display='none';
-    ['newF','newA','newETD','newETA','newAT'].forEach(k=>document.getElementById(k).value="");
-}
-
-function toggleAllDetails(expand) {
-    document.querySelectorAll('.cat-details').forEach(d => d.open = expand);
-}
-
-function updateProfile() {
-    const u = JSON.parse(sessionStorage.getItem("user"));
-    u.name = document.getElementById('pName').value;
-    u.pos = document.getElementById('pPos').value;
-    db.ref('users/' + u.id).update({name: u.name, pos: u.pos}).then(() => {
-        sessionStorage.setItem("user", JSON.stringify(u));
-        location.reload();
+        logs: [{time: new Date().toISOString(), task: "System", status: "Created", user: "Admin"}]
     });
+    document.getElementById('addModal').style.display='none';
 }
 
 function renderLogs(logs) {

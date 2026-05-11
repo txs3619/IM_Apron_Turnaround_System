@@ -147,11 +147,10 @@ function initApp() {
     document.getElementById('loginOverlay').style.display='none';
     document.getElementById('mainContent').style.display='block';
     document.getElementById('userDisplay').innerText = u.name + " (" + u.pos + ")";
-    document.getElementById('watermark').innerText = u.id; // 恢复水印
+    document.getElementById('watermark').innerText = u.id;
     document.getElementById('pName').value = u.name;
     document.getElementById('pPos').value = u.pos;
 
-    // 应用折叠状态记忆
     document.getElementById('msgCollapse').open = localStorage.getItem('msgCollapse') === 'true';
     document.getElementById('actCollapse').open = localStorage.getItem('actCollapse') === 'true';
     
@@ -162,9 +161,7 @@ function initApp() {
     });
 }
 
-function saveFoldState(id) {
-    localStorage.setItem(id, document.getElementById(id).open);
-}
+function saveFoldState(id) { localStorage.setItem(id, document.getElementById(id).open); }
 
 function renderFlights() {
     const s = document.getElementById('search').value.toUpperCase();
@@ -217,6 +214,9 @@ function confirmUpdate() {
     const u = JSON.parse(sessionStorage.getItem("user"));
     const now = new Date().toISOString();
     let fData = JSON.parse(JSON.stringify(allFlights[currentF]));
+    let changeSummary = [];
+
+    // Apron 防呆
     const newApron = document.getElementById('t-Apron').value.toUpperCase();
     if(newApron !== fData.apron) {
         for(let otherF in allFlights) {
@@ -230,6 +230,7 @@ function confirmUpdate() {
     const check = (id, key, label) => {
         const v = document.getElementById(id).value;
         if(fData[key] !== v) {
+            changeSummary.push(`${label}: ${fData[key] || 'Empty'} -> ${v}`);
             fData.logs.push({time:now, task:label, status:v, user:u.name}); 
             fData[key] = v; return true;
         }
@@ -237,7 +238,7 @@ function confirmUpdate() {
     };
 
     let changed = false;
-    if(check('t-Overall_Status', 'Overall Status', 'Status')) changed = true;
+    if(check('t-Overall_Status', 'Overall Status', 'Overall Status')) changed = true;
     if(check('t-Apron', 'apron', 'Apron')) changed = true;
     if(check('depTime', 'etd', 'ETD')) changed = true;
     if(check('etaTime', 'eta', 'ETA')) changed = true;
@@ -247,10 +248,21 @@ function confirmUpdate() {
     });
 
     const msg = document.getElementById('msgInput').value.trim();
-    if(msg) { fData.logs.push({time:now, task:"Message", status:msg, user:u.name}); document.getElementById('msgInput').value=""; changed=true; }
+    if(msg) { 
+        changeSummary.push(`Message: ${msg}`);
+        fData.logs.push({time:now, task:"Message", status:msg, user:u.name}); 
+        changed = true; 
+    }
 
-    if(changed) db.ref('flights/' + currentF).set(fData);
-    else alert("No changes.");
+    if(changed) {
+        if(confirm("Confirm following updates?\n\n" + changeSummary.join("\n"))) {
+            db.ref('flights/' + currentF).set(fData).then(() => {
+                document.getElementById('msgInput').value="";
+            });
+        }
+    } else {
+        alert("No changes detected.");
+    }
 }
 
 async function saveNewFlight() {

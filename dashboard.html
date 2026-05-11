@@ -14,10 +14,12 @@
   .btn-success { background: #238636; color: white; }
   .btn-danger { background: #da3633; color: white; }
   .btn-primary { background: #1f6feb; color: white; }
-  .card { background: var(--card); border-radius: 12px; padding: 15px; margin: 15px; border: 1px solid var(--border); transition: 0.2s; }
+  .card { background: var(--card); border-radius: 12px; padding: 15px; margin: 15px; border: 1px solid var(--border); }
   .overlay { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.8); z-index: 3000; padding: 20px; overflow-y: auto; }
   .bulk-bar { position: fixed; bottom: 20px; left: 50%; transform: translateX(-50%); background: var(--primary); color: white; padding: 10px 25px; border-radius: 30px; display: none; box-shadow: 0 4px 15px rgba(0,0,0,0.5); z-index: 4000; }
   .msg-alert { background: rgba(88,166,255,0.15); border-left: 4px solid var(--primary); padding: 8px; margin-top: 10px; font-size: 13px; border-radius: 4px; }
+  .dash-input { width: 100%; margin-top: 10px; display: flex; gap: 5px; }
+  .dash-input input { flex: 1; padding: 8px; border-radius: 5px; border: 1px solid var(--border); background: var(--bg); color: var(--text); }
   table { width: 100%; border-collapse: collapse; }
   th, td { padding: 10px; border-bottom: 1px solid var(--border); text-align: left; }
 </style>
@@ -102,8 +104,7 @@ const db = firebase.database();
 let allF = {}, binF = {}, users = {}, isAllMain = false, isAllBin = false;
 
 function render() {
-    const theme = localStorage.getItem('adminTheme') || 'dark';
-    document.body.setAttribute('data-theme', theme);
+    document.body.setAttribute('data-theme', localStorage.getItem('adminTheme') || 'dark');
     db.ref('flights').on('value', s => {
         allF = s.val() || {};
         const q = document.getElementById("search").value.toUpperCase();
@@ -113,7 +114,6 @@ function render() {
             if(!f.includes(q) && !d.apron.includes(q)) continue;
             const logs = d.logs || [];
             const lastMsg = [...logs].reverse().find(l => l.task === "Message");
-            const lastTask = [...logs].reverse().find(l => l.task !== "Message");
             const card = document.createElement("div"); card.className = "card";
             card.innerHTML = `
                 <div style="display:flex; align-items:center; justify-content:space-between">
@@ -121,14 +121,31 @@ function render() {
                         <input type="checkbox" class="bulk-main" data-id="${f}" onchange="updateUI('main')">
                         <b style="font-size:18px; margin-left:10px">${f}</b> (Apron: ${d.apron})
                     </div>
-                    <button onclick="delF('${f}')" class="btn btn-danger">Bin</button>
+                    <div>
+                        <span style="padding:4px 8px; border-radius:4px; font-size:12px; background:var(--primary)">${d['Overall Status']}</span>
+                        <button onclick="delF('${f}')" class="btn btn-danger">Bin</button>
+                    </div>
                 </div>
-                ${lastMsg ? `<div class="msg-alert"><b>New Msg:</b> "${lastMsg.status}" <small>(${lastMsg.user})</small></div>` : ""}
-                <details style="margin-top:10px; font-size:12px"><summary>Logs ${lastTask?`(${lastTask.task})`:''}</summary>
-                ${logs.reverse().slice(0,5).map(l => `<div>[${l.time.substring(11,16)}] ${l.user}: ${l.task}->${l.status}</div>`).join('')}</details>`;
+                ${lastMsg ? `<div class="msg-alert"><b>Latest:</b> ${lastMsg.status} <small>(${lastMsg.user})</small></div>` : ""}
+                <div class="dash-input">
+                    <input id="msg-${f}" placeholder="Send message to staff...">
+                    <button onclick="sendDashMsg('${f}')" class="btn btn-primary">Send</button>
+                </div>`;
             list.appendChild(card);
         }
+        updateUI('main');
     });
+}
+
+function sendDashMsg(f) {
+    const input = document.getElementById(`msg-${f}`);
+    const msg = input.value.trim();
+    if(!msg) return;
+    const now = new Date().toISOString();
+    let fData = allF[f];
+    if(!fData.logs) fData.logs = [];
+    fData.logs.push({time: now, task: "Message", status: msg, user: "Admin"});
+    db.ref('flights/' + f).update({logs: fData.logs}).then(() => input.value = "");
 }
 
 function renderBin() {
@@ -136,15 +153,7 @@ function renderBin() {
         binF = s.val() || {};
         const container = document.getElementById('binList'); container.innerHTML = "";
         for(let f in binF) {
-            container.innerHTML += `
-                <div class="card" style="border-left:5px solid #666; margin: 10px 0;">
-                    <input type="checkbox" class="bulk-bin" data-id="${f}" onchange="updateUI('bin')">
-                    <b style="margin-left:10px">${f}</b> (Apron: ${binF[f].apron}) 
-                    <div style="float:right">
-                        <button onclick="restoreF('${f}')" class="btn btn-success">Restore</button>
-                        <button onclick="permDel('${f}')" class="btn btn-danger">Delete</button>
-                    </div>
-                </div>`;
+            container.innerHTML += `<div class="card"><input type="checkbox" class="bulk-bin" data-id="${f}" onchange="updateUI('bin')"> <b>${f}</b> (Apron: ${binF[f].apron}) <div style="float:right"><button onclick="restoreF('${f}')" class="btn btn-success">Restore</button></div></div>`;
         }
         updateUI('bin');
     });
@@ -167,6 +176,7 @@ function updateUI(type) {
         const count = document.querySelectorAll('.bulk-main:checked').length;
         document.getElementById('selCount').innerText = count;
         document.getElementById('bulkBar').style.display = count > 0 ? 'block' : 'none';
+        document.getElementById('selBtn').innerText = (count > 0 && count === document.querySelectorAll('.bulk-main').length) ? "Deselect All" : "Select All";
     } else {
         const count = document.querySelectorAll('.bulk-bin:checked').length;
         document.getElementById('binSelCount').innerText = count;
@@ -174,72 +184,29 @@ function updateUI(type) {
     }
 }
 
-// 批量回收箱操作
 function bulkBinAction(action) {
-    const selected = Array.from(document.querySelectorAll('.bulk-bin:checked')).map(c => c.dataset.id);
-    if(selected.length === 0) return;
-    if(action === 'delete' && !confirm(`Permanently delete ${selected.length} flights?`)) return;
-
-    selected.forEach(f => {
-        if(action === 'restore') restoreF(f);
-        else db.ref('deletedFlights/' + f).remove();
-    });
+    const ids = Array.from(document.querySelectorAll('.bulk-bin:checked')).map(c => c.dataset.id);
+    ids.forEach(f => action === 'restore' ? restoreF(f) : db.ref('deletedFlights/' + f).remove());
 }
 
-function delF(f) {
-    db.ref('flights/' + f).once('value').then(s => {
-        db.ref('deletedFlights/' + f).set(s.val());
-        db.ref('flights/' + f).remove();
-    });
-}
-
-function restoreF(f) {
-    db.ref('deletedFlights/' + f).once('value').then(s => {
-        db.ref('flights/' + f).set(s.val());
-        db.ref('deletedFlights/' + f).remove();
-    });
-}
-
-function permDel(f) { if(confirm("Delete permanently?")) db.ref('deletedFlights/'+f).remove(); }
-
-function bulkDel() {
-    document.querySelectorAll('.bulk-main:checked').forEach(c => delF(c.dataset.id));
-}
-
-function saveUser(prefix) {
-    const id = document.getElementById(prefix + 'Id').value.trim();
-    if(!id) return;
-    db.ref('users/' + id).update({
-        id, name: document.getElementById(prefix+'Name').value,
-        pos: document.getElementById(prefix+'Pos').value,
-        pass: document.getElementById(prefix+'Pass').value || (prefix==='e'?users[id].pass:'1234')
-    });
-}
+function delF(f) { db.ref('flights/' + f).once('value', s => { db.ref('deletedFlights/' + f).set(s.val()); db.ref('flights/' + f).remove(); }); }
+function restoreF(f) { db.ref('deletedFlights/' + f).once('value', s => { db.ref('flights/' + f).set(s.val()); db.ref('deletedFlights/' + f).remove(); }); }
 
 function loadUsers() {
     db.ref('users').on('value', s => {
         users = s.val() || {};
         const tb = document.getElementById("userList"); tb.innerHTML = "";
-        for(let id in users) {
-            tb.innerHTML += `<tr><td>${id}</td><td>${users[id].name}</td><td>${users[id].pos}</td>
-                <td><button onclick="editU('${id}')" class="btn">Edit</button> <button onclick="db.ref('users/${id}').remove()" class="btn btn-danger">Del</button></td></tr>`;
-        }
+        for(let id in users) tb.innerHTML += `<tr><td>${id}</td><td>${users[id].name}</td><td>${users[id].pos}</td><td><button onclick="editU('${id}')" class="btn">Edit</button></td></tr>`;
     });
 }
 
-function editU(id) {
-    const u = users[id];
-    document.getElementById('eId').value = u.id;
-    document.getElementById('eName').value = u.name;
-    document.getElementById('ePos').value = u.pos;
+function saveUser(p) {
+    const id = document.getElementById(p+'Id').value;
+    db.ref('users/'+id).update({id, name:document.getElementById(p+'Name').value, pos:document.getElementById(p+'Pos').value, pass:document.getElementById(p+'Pass').value || '1234'});
 }
 
-function toggleTheme() {
-    const next = document.body.getAttribute('data-theme') === 'dark' ? 'light' : 'dark';
-    document.body.setAttribute('data-theme', next);
-    localStorage.setItem('adminTheme', next);
-}
-
+function editU(id) { const u = users[id]; document.getElementById('eId').value=u.id; document.getElementById('eName').value=u.name; document.getElementById('ePos').value=u.pos; }
+function toggleTheme() { const n = document.body.getAttribute('data-theme')==='dark'?'light':'dark'; document.body.setAttribute('data-theme', n); localStorage.setItem('adminTheme', n); }
 window.onload = render;
 </script>
 </body>

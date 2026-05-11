@@ -10,7 +10,6 @@
   :root { --bg: #f0f2f5; --card: #ffffff; --text: #333; --border: #ddd; --primary: #1a237e; --accent: #007bff; --watermark: rgba(0,0,0,0.15); }
   [data-theme='dark'] { --bg: #0b1117; --card: #161b22; --text: #c9d1d9; --border: #30363d; --primary: #58a6ff; --accent: #1f6feb; --watermark: rgba(255,255,255,0.1); }
   body { font-family: 'Segoe UI', sans-serif; background: var(--bg); color: var(--text); margin: 0; transition: 0.3s; padding-bottom: 80px; }
-  .watermark { position: fixed; bottom: 10px; left: 50%; transform: translateX(-50%); font-size: 14px; font-weight: bold; color: var(--watermark); pointer-events: none; z-index: 9999; }
   .header { background: var(--primary); color: white; padding: 12px 20px; display: flex; justify-content: space-between; align-items: center; position: sticky; top: 0; z-index: 1000; }
   .btn { padding: 8px 15px; border-radius: 8px; border: none; font-weight: bold; cursor: pointer; transition: 0.2s; }
   .btn-primary { background: var(--accent); color: white; }
@@ -24,11 +23,10 @@
   input, select, textarea { padding: 10px; border-radius: 8px; border: 1px solid var(--border); background: var(--card); color: var(--text); width: 100%; box-sizing: border-box; }
   .task-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: 10px; }
   .msg-display { background: rgba(0,123,255,0.1); padding: 8px; border-radius: 5px; margin-top: 10px; font-size: 12px; border-left: 3px solid var(--accent); }
+  details { margin-top: 10px; border: 1px solid var(--border); border-radius: 8px; padding: 5px 10px; }
 </style>
 </head>
 <body data-theme="light">
-
-<div class="watermark">STAFF ACCESS SYSTEM</div>
 
 <div id="loginOverlay" style="position:fixed; inset:0; background:var(--primary); z-index:5000; display:flex; align-items:center; justify-content:center;">
     <div style="background:white; padding:30px; border-radius:15px; width:90%; max-width:400px; text-align:center;">
@@ -84,11 +82,11 @@
             <div class="input-wrapper"><label>AT (UTC)</label><input type="datetime-local" id="atTime"></div>
         </div>
         <div id="categoryContainer"></div>
-        <div class="input-wrapper"><label>Message</label><textarea id="msgInput" placeholder="Enter notes..."></textarea></div>
+        <div class="input-wrapper"><label>Message (Will notify Admin)</label><textarea id="msgInput" placeholder="Enter notes..."></textarea></div>
         <button onclick="confirmUpdate()" class="btn btn-success" style="width:100%; height:50px;">SYNC TO CLOUD</button>
         <div id="logSections">
             <details open><summary>💬 Messages</summary><div id="msgLogArea"></div></details>
-            <details><summary>⚙️ Activities</summary><div id="actionLogArea" style="font-size:12px"></div></details>
+            <details><summary>⚙️ Activity Logs</summary><div id="actionLogArea" style="font-size:12px"></div></details>
         </div>
     </div>
 </div>
@@ -114,14 +112,14 @@ const firebaseConfig = {
   appId: "1:984848540764:web:4a54026553c971acb33299"
 };
 firebase.initializeApp(firebaseConfig);
-const database = firebase.database();
+const db = firebase.database();
 const CATS = { "Admin": ["Flight Plan Approval","Engineering","Tow Truck Pushback"], "Cabin": ["PAX Boarding (F)","PAX Boarding (B)","Catering"], "Ground": ["Baggage Load","Fueling","Water","Lavatory"] };
 let currentF = null, allFlights = {}, useUTC = true;
 
 function checkLogin() {
     const id = document.getElementById('loginId').value;
     const pass = document.getElementById('loginPass').value;
-    database.ref('users/' + id).once('value').then(s => {
+    db.ref('users/' + id).once('value').then(s => {
         const u = s.val();
         if(u && u.pass === pass) { sessionStorage.setItem("user", JSON.stringify(u)); initApp(); }
         else alert("Login Failed");
@@ -139,7 +137,7 @@ function initApp() {
     document.getElementById('pName').value = u.name;
     document.getElementById('pPos').value = u.pos;
     
-    database.ref('flights').on('value', s => {
+    db.ref('flights').on('value', s => {
         allFlights = s.val() || {};
         renderFlights();
         if(currentF) openEditor(currentF);
@@ -155,14 +153,15 @@ function renderFlights() {
         const card = document.createElement("div"); card.className = "card";
         card.style.borderLeftColor = d['Overall Status']==='Completed'?'#238636':(d['Overall Status']==='Delayed'?'#da3633':'#666');
         card.onclick = () => openEditor(f);
-        card.innerHTML = `<b>${f}</b> <span style="float:right">Apron: ${d.apron}</span><br><small>ETD: ${d.etd || '-'}</small>`;
+        card.innerHTML = `<b>${f}</b> <span style="float:right">Apron: ${d.apron}</span><br>
+            <small>Status: ${d['Overall Status']} | ETD: ${d.etd || '-'}</small>`;
         list.appendChild(card);
     }
 }
 
 function openEditor(f) {
     currentF = f; const d = allFlights[f];
-    document.getElementById('editTitle').innerText = "Flight: " + f;
+    document.getElementById('editTitle').innerText = "Update Flight: " + f;
     document.getElementById('t-Overall_Status').value = d['Overall Status'];
     document.getElementById('depTime').value = d.etd || "";
     document.getElementById('etaTime').value = d.eta || "";
@@ -191,6 +190,7 @@ function toggleAllDetails(expand) {
     document.querySelectorAll('.cat-details').forEach(d => d.open = expand);
 }
 
+// 核心功能：只记录已更改的 Task
 function confirmUpdate() {
     const u = JSON.parse(sessionStorage.getItem("user"));
     const now = new Date().toISOString();
@@ -199,33 +199,48 @@ function confirmUpdate() {
 
     const check = (id, key, label) => {
         const v = document.getElementById(id).value;
-        if(fData[key] !== v) { fData.logs.push({time:now, task:label, status:v, user:u.name}); fData[key] = v; }
+        if(fData[key] !== v) { // 只在值不同时记录
+            fData.logs.push({time:now, task:label, status:v, user:u.name}); 
+            fData[key] = v; 
+            return true;
+        }
+        return false;
     };
-    check('t-Overall_Status', 'Overall Status', 'Status');
-    check('depTime', 'etd', 'ETD');
-    check('etaTime', 'eta', 'ETA');
-    check('atTime', 'at', 'AT');
-    Object.values(CATS).flat().forEach(t => check(`t-${t.replace(/\s+/g,'_')}`, t, t));
+
+    let changed = false;
+    if(check('t-Overall_Status', 'Overall Status', 'Status')) changed = true;
+    if(check('depTime', 'etd', 'ETD')) changed = true;
+    if(check('etaTime', 'eta', 'ETA')) changed = true;
+    if(check('atTime', 'at', 'AT')) changed = true;
+    
+    Object.values(CATS).flat().forEach(t => {
+        if(check(`t-${t.replace(/\s+/g,'_')}`, t, t)) changed = true;
+    });
 
     const msg = document.getElementById('msgInput').value.trim();
-    if(msg) { fData.logs.push({time:now, task:"Message", status:msg, user:u.name}); document.getElementById('msgInput').value=""; }
+    if(msg) { 
+        fData.logs.push({time:now, task:"Message", status:msg, user:u.name}); 
+        document.getElementById('msgInput').value=""; 
+        changed = true;
+    }
 
-    database.ref('flights/' + currentF).set(fData);
+    if(changed) db.ref('flights/' + currentF).set(fData);
+    else alert("No changes detected.");
 }
 
 function updateProfile() {
     const u = JSON.parse(sessionStorage.getItem("user"));
     u.name = document.getElementById('pName').value;
     u.pos = document.getElementById('pPos').value;
-    database.ref('users/' + u.id).update({name: u.name, pos: u.pos}).then(() => {
+    db.ref('users/' + u.id).update({name: u.name, pos: u.pos}).then(() => {
         sessionStorage.setItem("user", JSON.stringify(u));
         location.reload();
     });
 }
 
 function renderLogs(logs) {
-    const msgs = logs.filter(l => l.task === "Message").reverse();
-    const acts = logs.filter(l => l.task !== "Message").reverse();
+    const msgs = (logs||[]).filter(l => l.task === "Message").reverse();
+    const acts = (logs||[]).filter(l => l.task !== "Message").reverse();
     document.getElementById('msgLogArea').innerHTML = msgs.map(m => `<div class="msg-display"><b>${m.user}:</b> ${m.status}</div>`).join('');
     document.getElementById('actionLogArea').innerHTML = acts.map(a => `<div>[${a.time.substring(11,16)}] ${a.task} -> ${a.status}</div>`).join('');
 }
@@ -233,7 +248,7 @@ function renderLogs(logs) {
 function saveNewFlight() {
     const f = document.getElementById('newF').value.toUpperCase();
     const a = document.getElementById('newA').value.toUpperCase();
-    if(f && a) database.ref('flights/' + f).set({apron:a, 'Overall Status':'Not Started', etd:'', eta:'', at:''});
+    if(f && a) db.ref('flights/' + f).set({apron:a, 'Overall Status':'Not Started', etd:'', eta:'', at:'', logs:[]});
     document.getElementById('addModal').style.display='none';
 }
 

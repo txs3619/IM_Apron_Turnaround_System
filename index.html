@@ -24,9 +24,10 @@
   input, select, textarea { padding: 10px; border-radius: 8px; border: 1px solid var(--border); background: var(--card); color: var(--text); width: 100%; box-sizing: border-box; }
   .task-section { background: rgba(128,128,128,0.05); padding: 12px; border-radius: 10px; margin-bottom: 12px; border: 1px solid var(--border); }
   .task-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(140px, 1fr)); gap: 8px; }
-  .msg-display { background: rgba(0,123,255,0.1); padding: 8px; border-radius: 5px; margin-top: 8px; font-size: 12px; border-left: 3px solid var(--accent); }
-  .card-msg { background: #fff3cd; color: #856404; padding: 5px 10px; border-radius: 6px; font-size: 12px; margin-bottom: 8px; border-left: 3px solid #ffc107; font-weight: bold; }
-  [data-theme='dark'] .card-msg { background: #2d2a1e; color: #eec137; }
+  .msg-display { background: rgba(0,123,255,0.1); padding: 10px; border-radius: 8px; margin-top: 8px; font-size: 12px; border-left: 4px solid var(--accent); position: relative; }
+  .read-btn { position: absolute; right: 10px; top: 10px; background: #238636; color: white; border: none; border-radius: 4px; padding: 2px 6px; cursor: pointer; }
+  .card-msg { background: #ffeb3b; color: #000; padding: 5px 10px; border-radius: 6px; font-size: 12px; margin-bottom: 8px; border-left: 5px solid #fbc02d; font-weight: bold; animation: pulse 2s infinite; }
+  @keyframes pulse { 0% { opacity: 1; } 50% { opacity: 0.6; } 100% { opacity: 1; } }
 </style>
 </head>
 <body data-theme="light">
@@ -81,15 +82,12 @@
             <div class="input-wrapper"><label>ETA (UTC)</label><input type="datetime-local" id="etaTime"></div>
             <div class="input-wrapper"><label>AT (UTC)</label><input type="datetime-local" id="atTime"></div>
         </div>
-        
         <div id="categoryContainer"></div>
-        
         <div class="input-wrapper"><label>Quick Message</label><textarea id="msgInput" placeholder="Enter notes..."></textarea></div>
         <button onclick="confirmUpdate()" class="btn btn-success" style="width:100%; height:50px;">SYNC TO CLOUD</button>
-        
         <div id="logSections" style="margin-top:20px">
-            <details id="msgCollapse" ontoggle="saveFoldState('msgCollapse')"><summary style="cursor:pointer; font-weight:bold; padding:10px; background:var(--border); border-radius:5px">💬 Messages</summary><div id="msgLogArea"></div></details>
-            <details id="actCollapse" style="margin-top:10px" ontoggle="saveFoldState('actCollapse')"><summary style="cursor:pointer; font-weight:bold; padding:10px; background:var(--border); border-radius:5px">⚙️ Activity Logs</summary><div id="actionLogArea" style="font-size:12px"></div></details>
+            <details id="msgCollapse" open><summary style="cursor:pointer; font-weight:bold; padding:10px; background:var(--border); border-radius:5px">💬 Messages</summary><div id="msgLogArea"></div></details>
+            <details id="actCollapse" style="margin-top:10px" open><summary style="cursor:pointer; font-weight:bold; padding:10px; background:var(--border); border-radius:5px">⚙️ Activity Logs</summary><div id="actionLogArea" style="font-size:12px"></div></details>
         </div>
     </div>
 </div>
@@ -97,11 +95,9 @@
 <div id="addModal" class="overlay">
     <div style="max-width:500px; margin:auto; background:var(--card); padding:20px; border-radius:12px; margin-top:50px">
         <h2>Add New Flight</h2>
-        <div class="input-wrapper"><label>Flight No *</label><input id="newF" placeholder="e.g. MH123"></div>
-        <div class="input-wrapper"><label>Apron *</label><input id="newA" placeholder="e.g. A12"></div>
-        <div class="input-wrapper"><label>ETD (Optional)</label><input type="datetime-local" id="newETD"></div>
-        <button onclick="saveNewFlight()" class="btn btn-success" style="width:100%">Create Flight</button>
-        <button onclick="document.getElementById('addModal').style.display='none'" class="btn btn-gray" style="width:100%; margin-top:10px">Cancel</button>
+        <input id="newF" placeholder="Flight No (e.g. MH123)" style="margin-bottom:10px">
+        <input id="newA" placeholder="Apron (e.g. A12)" style="margin-bottom:15px">
+        <button onclick="saveNewFlight()" class="btn btn-success" style="width:100%">Create</button>
     </div>
 </div>
 
@@ -120,17 +116,14 @@ const db = firebase.database();
 const CATS = { "Admin": ["Flight Plan Approval","Engineering","Tow Truck Pushback"], "Cabin": ["PAX Boarding (F)","PAX Boarding (B)","Catering"], "Ground": ["Baggage Load","Fueling","Water","Lavatory"] };
 let currentF = null, allFlights = {}, useUTC = true;
 
-// 时间格式化：YYYY-MM-DD HH:mm:ss
 function formatDate(isoStr) {
     if(!isoStr) return "-";
     const d = new Date(isoStr);
+    const pad = (n) => String(n).padStart(2,'0');
     if(useUTC) {
-        return d.getUTCFullYear() + "-" + String(d.getUTCMonth()+1).padStart(2,'0') + "-" + String(d.getUTCDate()).padStart(2,'0') + " " + 
-               String(d.getUTCHours()).padStart(2,'0') + ":" + String(d.getUTCMinutes()).padStart(2,'0') + ":" + String(d.getUTCSeconds()).padStart(2,'0') + " (UTC)";
-    } else {
-        return d.getFullYear() + "-" + String(d.getMonth()+1).padStart(2,'0') + "-" + String(d.getDate()).padStart(2,'0') + " " + 
-               String(d.getHours()).padStart(2,'0') + ":" + String(d.getMinutes()).padStart(2,'0') + ":" + String(d.getSeconds()).padStart(2,'0');
+        return `${d.getUTCFullYear()}-${pad(d.getUTCMonth()+1)}-${pad(d.getUTCDate())} ${pad(d.getUTCHours())}:${pad(d.getUTCMinutes())}:${pad(d.getUTCSeconds())} (UTC)`;
     }
+    return `${d.getFullYear()}-${pad(d.getMonth()+1)}-${pad(d.getDate())} ${pad(d.getHours())}:${pad(d.getMinutes())}:${pad(d.getSeconds())}`;
 }
 
 function checkLogin() {
@@ -149,10 +142,8 @@ function initApp() {
     document.body.setAttribute('data-theme', localStorage.getItem('theme') || 'light');
     document.getElementById('loginOverlay').style.display='none';
     document.getElementById('mainContent').style.display='block';
-    document.getElementById('userDisplay').innerText = u.name + " (" + u.pos + ")";
+    document.getElementById('userDisplay').innerText = u.name;
     document.getElementById('watermark').innerText = u.id;
-    document.getElementById('msgCollapse').open = localStorage.getItem('msgCollapse') === 'true';
-    document.getElementById('actCollapse').open = localStorage.getItem('actCollapse') === 'true';
     db.ref('flights').on('value', s => { allFlights = s.val() || {}; renderFlights(); if(currentF) openEditor(currentF); });
 }
 
@@ -162,16 +153,12 @@ function renderFlights() {
     for(let f in allFlights) {
         const d = allFlights[f];
         if(!f.includes(s) && !d.apron.includes(s)) continue;
-        const lastMsg = (d.logs || []).filter(l => l.task === "Message").pop();
+        const unread = (d.logs || []).some(l => l.task === "Message" && l.user === "Admin" && !l.read);
         const card = document.createElement("div"); card.className = "card";
-        let borderColor = '#666';
-        if(d['Overall Status']==='Completed') borderColor = '#238636';
-        else if(d['Overall Status']==='Delayed') borderColor = '#da3633';
-        else if(d['Overall Status']==='Required Assistance') borderColor = '#f1c40f';
-        card.style.borderLeftColor = borderColor;
+        card.style.borderLeftColor = d['Overall Status']==='Completed'?'#238636':(d['Overall Status']==='Delayed'?'#da3633':'#f1c40f');
         card.onclick = () => openEditor(f);
         card.innerHTML = `
-            ${lastMsg ? `<div class="card-msg">NEW MSG: ${lastMsg.status}</div>` : ""}
+            ${unread ? `<div class="card-msg">⚠️ UNREAD MESSAGE FROM ADMIN</div>` : ""}
             <b>${f}</b> <span style="float:right">Apron: ${d.apron}</span><br>
             <small>Status: ${d['Overall Status']} | ETD: ${d.etd ? d.etd.substring(11,16) : '-'}</small>`;
         list.appendChild(card);
@@ -206,11 +193,16 @@ function openEditor(f) {
     document.getElementById('editorOverlay').style.display='block';
 }
 
+function markAsRead(index) {
+    db.ref(`flights/${currentF}/logs/${index}/read`).set(true);
+}
+
 function confirmUpdate() {
     const u = JSON.parse(sessionStorage.getItem("user"));
     const now = new Date().toISOString();
     let fData = JSON.parse(JSON.stringify(allFlights[currentF]));
     let summary = [];
+    let changed = false;
 
     const check = (id, key, label) => {
         const v = document.getElementById(id).value;
@@ -218,38 +210,297 @@ function confirmUpdate() {
             summary.push(`${label}: ${fData[key] || 'Empty'} -> ${v}`);
             if(!fData.logs) fData.logs = [];
             fData.logs.push({time:now, task:label, status:v, user:u.name}); 
-            fData[key] = v; return true;
+            fData[key] = v; changed = true;
         }
-        return false;
     };
 
-    let changed = false;
-    ['Overall Status','Apron','ETD','ETA','AT'].forEach((k,i)=> {
-        const ids = ['t-Overall_Status','t-Apron','depTime','etaTime','atTime'];
-        if(check(ids[i], k.toLowerCase()==='etd'||k.toLowerCase()==='eta'||k.toLowerCase()==='at'?k.toLowerCase():k, k)) changed=true;
-    });
-    Object.values(CATS).flat().forEach(t => { if(check(`t-${t.replace(/\s+/g,'_')}`, t, t)) changed = true; });
+    check('t-Overall_Status', 'Overall Status', 'Overall Status');
+    check('t-Apron', 'apron', 'Apron');
+    check('depTime', 'etd', 'ETD');
+    check('etaTime', 'eta', 'ETA');
+    check('atTime', 'at', 'AT');
+    Object.values(CATS).flat().forEach(t => check(`t-${t.replace(/\s+/g,'_')}`, t, t));
 
     const msg = document.getElementById('msgInput').value.trim();
-    if(msg) { summary.push(`New Message: ${msg}`); fData.logs.push({time:now, task:"Message", status:msg, user:u.name}); changed = true; }
+    if(msg) { 
+        if(!fData.logs) fData.logs = [];
+        fData.logs.push({time:now, task:"Message", status:msg, user:u.name, read: false}); 
+        summary.push(`Msg: ${msg}`); changed = true; 
+    }
 
-    if(changed) {
-        if(confirm("Confirm Updates?\n\n" + summary.join("\n"))) {
-            db.ref('flights/' + currentF).set(fData).then(() => { document.getElementById('msgInput').value=""; });
-        }
-    } else alert("No changes detected.");
+    if(changed && confirm("Confirm Updates?\n\n" + summary.join("\n"))) {
+        db.ref('flights/' + currentF).set(fData).then(() => { document.getElementById('msgInput').value=""; });
+    }
 }
 
 function renderLogs(logs) {
-    const msgs = logs.filter(l => l.task === "Message").reverse();
+    const msgs = logs.map((l, i) => ({...l, idx: i})).filter(l => l.task === "Message").reverse();
     const acts = logs.filter(l => l.task !== "Message").reverse();
-    document.getElementById('msgLogArea').innerHTML = msgs.map(m => `<div class="msg-display"><b>${m.user}</b> <small>(${formatDate(m.time)})</small><br>${m.status}</div>`).join('');
+    document.getElementById('msgLogArea').innerHTML = msgs.map(m => `
+        <div class="msg-display" style="${m.user==='Admin'?'background:rgba(255,235,59,0.1)':''}">
+            <b>${m.user}</b> <small>(${formatDate(m.time)})</small>
+            ${m.user==='Admin' && !m.read ? `<button class="read-btn" onclick="markAsRead(${m.idx})">✔ Mark Read</button>` : ""}
+            <br>${m.status}
+        </div>`).join('');
     document.getElementById('actionLogArea').innerHTML = acts.map(a => `<div>[${formatDate(a.time)}] ${a.task} -> ${a.status} (${a.user})</div>`).join('');
 }
 
-function saveFoldState(id) { localStorage.setItem(id, document.getElementById(id).open); }
-function toggleTheme() { const next = document.body.getAttribute('data-theme')==='dark'?'light':'dark'; document.body.setAttribute('data-theme', next); localStorage.setItem('theme', next); }
-function toggleTZ() { useUTC = !useUTC; document.getElementById('tzBtn').innerText = useUTC?"UTC":"Local"; if(currentF) renderLogs(allFlights[currentF].logs || []); renderFlights(); }
+function toggleTZ() { useUTC = !useUTC; document.getElementById('tzBtn').innerText = useUTC?"UTC":"Local"; renderFlights(); if(currentF) renderLogs(allFlights[currentF].logs); }
+function toggleTheme() { const n = document.body.getAttribute('data-theme')==='dark'?'light':'dark'; document.body.setAttribute('data-theme', n); localStorage.setItem('theme', n); }
+function closeEditor() { currentF = null; document.getElementById('editorOverlay').style.display='none'; }
+function logout() { sessionStorage.clear(); location.reload(); }
+window.onload = () => { if(sessionStorage.getItem("user")) initApp(); };
+</script>
+</body>
+</html><!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Apron Updating System - Staff</title>
+<script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-database-compat.js"></script>
+<style>
+  :root { --bg: #f0f2f5; --card: #ffffff; --text: #333; --border: #ddd; --primary: #1a237e; --accent: #007bff; --watermark: rgba(0,0,0,0.15); }
+  [data-theme='dark'] { --bg: #0b1117; --card: #161b22; --text: #c9d1d9; --border: #30363d; --primary: #58a6ff; --accent: #1f6feb; --watermark: rgba(255,255,255,0.1); }
+  body { font-family: 'Segoe UI', sans-serif; background: var(--bg); color: var(--text); margin: 0; transition: 0.3s; padding-bottom: 80px; }
+  .watermark { position: fixed; bottom: 10px; left: 50%; transform: translateX(-50%); font-size: 14px; font-weight: bold; color: var(--watermark); pointer-events: none; z-index: 9999; }
+  .header { background: var(--primary); color: white; padding: 12px 20px; display: flex; justify-content: space-between; align-items: center; position: sticky; top: 0; z-index: 1000; }
+  .btn { padding: 8px 15px; border-radius: 8px; border: none; font-weight: bold; cursor: pointer; transition: 0.2s; }
+  .btn-primary { background: var(--accent); color: white; }
+  .btn-success { background: #238636; color: white; }
+  .btn-danger { background: #da3633; color: white; }
+  .btn-gray { background: #666; color: white; }
+  .card { background: var(--card); padding: 15px; margin: 12px auto; border-radius: 12px; border: 1px solid var(--border); border-left: 10px solid #666; cursor: pointer; max-width: 800px; position: relative; }
+  .overlay { display: none; position: fixed; inset: 0; background: var(--bg); z-index: 1500; overflow-y: auto; padding: 20px; }
+  .input-wrapper { margin-bottom: 12px; text-align: left; }
+  .input-wrapper label { font-size: 11px; font-weight: bold; color: #666; display: block; margin-bottom: 4px; }
+  input, select, textarea { padding: 10px; border-radius: 8px; border: 1px solid var(--border); background: var(--card); color: var(--text); width: 100%; box-sizing: border-box; }
+  .task-section { background: rgba(128,128,128,0.05); padding: 12px; border-radius: 10px; margin-bottom: 12px; border: 1px solid var(--border); }
+  .task-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(140px, 1fr)); gap: 8px; }
+  .msg-display { background: rgba(0,123,255,0.1); padding: 10px; border-radius: 8px; margin-top: 8px; font-size: 12px; border-left: 4px solid var(--accent); position: relative; }
+  .read-btn { position: absolute; right: 10px; top: 10px; background: #238636; color: white; border: none; border-radius: 4px; padding: 2px 6px; cursor: pointer; }
+  .card-msg { background: #ffeb3b; color: #000; padding: 5px 10px; border-radius: 6px; font-size: 12px; margin-bottom: 8px; border-left: 5px solid #fbc02d; font-weight: bold; animation: pulse 2s infinite; }
+  @keyframes pulse { 0% { opacity: 1; } 50% { opacity: 0.6; } 100% { opacity: 1; } }
+</style>
+</head>
+<body data-theme="light">
+
+<div id="watermark" class="watermark"></div>
+
+<div id="loginOverlay" style="position:fixed; inset:0; background:var(--primary); z-index:5000; display:flex; align-items:center; justify-content:center;">
+    <div style="background:white; padding:30px; border-radius:15px; width:90%; max-width:400px; text-align:center;">
+        <h2 style="color:#333">STAFF LOGIN</h2>
+        <input id="loginId" placeholder="Staff ID">
+        <input id="loginPass" type="password" placeholder="Password" style="margin-top:10px">
+        <button onclick="checkLogin()" class="btn btn-primary" style="width:100%; margin-top:15px">Login</button>
+    </div>
+</div>
+
+<div id="mainContent" style="display:none">
+    <div class="header">
+        <div id="userDisplay" style="font-weight:bold; cursor:pointer" onclick="document.getElementById('profileOverlay').style.display='block'">Profile</div>
+        <div style="display:flex; gap:10px">
+            <button id="tzBtn" onclick="toggleTZ()" class="btn" style="background:rgba(255,255,255,0.2); color:white">UTC</button>
+            <button onclick="toggleTheme()" class="btn" style="background:none; font-size:20px">🌓</button>
+            <button onclick="logout()" class="btn btn-danger">Logout</button>
+        </div>
+    </div>
+    <div style="max-width:800px; margin:20px auto; padding:0 15px">
+        <div style="display:flex; gap:10px; margin-bottom:15px">
+            <input id="search" placeholder="Search Flight/Apron..." onkeyup="renderFlights()" style="flex:1">
+            <button onclick="document.getElementById('addModal').style.display='block'" class="btn btn-success">+ New Flight</button>
+        </div>
+        <div id="list">Connecting...</div>
+    </div>
+</div>
+
+<div id="editorOverlay" class="overlay">
+    <div style="max-width:800px; margin:auto">
+        <div style="display:flex; justify-content:space-between; align-items:center">
+            <h2 id="editTitle">Update</h2>
+            <button onclick="closeEditor()" class="btn btn-gray">✕ Close</button>
+        </div>
+        <div style="display:grid; grid-template-columns: 1fr 1fr; gap:10px">
+            <div class="input-wrapper"><label>Overall Status</label>
+                <select id="t-Overall_Status">
+                    <option>Not Started</option>
+                    <option>In Progress</option>
+                    <option>Delayed</option>
+                    <option>Completed</option>
+                    <option>Required Assistance</option>
+                </select>
+            </div>
+            <div class="input-wrapper"><label>Apron Number</label><input id="t-Apron"></div>
+            <div class="input-wrapper"><label>ETD (UTC)</label><input type="datetime-local" id="depTime"></div>
+            <div class="input-wrapper"><label>ETA (UTC)</label><input type="datetime-local" id="etaTime"></div>
+            <div class="input-wrapper"><label>AT (UTC)</label><input type="datetime-local" id="atTime"></div>
+        </div>
+        <div id="categoryContainer"></div>
+        <div class="input-wrapper"><label>Quick Message</label><textarea id="msgInput" placeholder="Enter notes..."></textarea></div>
+        <button onclick="confirmUpdate()" class="btn btn-success" style="width:100%; height:50px;">SYNC TO CLOUD</button>
+        <div id="logSections" style="margin-top:20px">
+            <details id="msgCollapse" open><summary style="cursor:pointer; font-weight:bold; padding:10px; background:var(--border); border-radius:5px">💬 Messages</summary><div id="msgLogArea"></div></details>
+            <details id="actCollapse" style="margin-top:10px" open><summary style="cursor:pointer; font-weight:bold; padding:10px; background:var(--border); border-radius:5px">⚙️ Activity Logs</summary><div id="actionLogArea" style="font-size:12px"></div></details>
+        </div>
+    </div>
+</div>
+
+<div id="addModal" class="overlay">
+    <div style="max-width:500px; margin:auto; background:var(--card); padding:20px; border-radius:12px; margin-top:50px">
+        <h2>Add New Flight</h2>
+        <input id="newF" placeholder="Flight No (e.g. MH123)" style="margin-bottom:10px">
+        <input id="newA" placeholder="Apron (e.g. A12)" style="margin-bottom:15px">
+        <button onclick="saveNewFlight()" class="btn btn-success" style="width:100%">Create</button>
+    </div>
+</div>
+
+<script>
+const firebaseConfig = {
+  apiKey: "AIzaSyBNcUXtBufxeST6EzJEa2Me562cdkzBJMM",
+  authDomain: "im-apron-turnaround-system.firebaseapp.com",
+  databaseURL: "https://im-apron-turnaround-system-default-rtdb.asia-southeast1.firebasedatabase.app",
+  projectId: "im-apron-turnaround-system",
+  storageBucket: "im-apron-turnaround-system.firebasestorage.app",
+  messagingSenderId: "984848540764",
+  appId: "1:984848540764:web:4a54026553c971acb33299"
+};
+firebase.initializeApp(firebaseConfig);
+const db = firebase.database();
+const CATS = { "Admin": ["Flight Plan Approval","Engineering","Tow Truck Pushback"], "Cabin": ["PAX Boarding (F)","PAX Boarding (B)","Catering"], "Ground": ["Baggage Load","Fueling","Water","Lavatory"] };
+let currentF = null, allFlights = {}, useUTC = true;
+
+function formatDate(isoStr) {
+    if(!isoStr) return "-";
+    const d = new Date(isoStr);
+    const pad = (n) => String(n).padStart(2,'0');
+    if(useUTC) {
+        return `${d.getUTCFullYear()}-${pad(d.getUTCMonth()+1)}-${pad(d.getUTCDate())} ${pad(d.getUTCHours())}:${pad(d.getUTCMinutes())}:${pad(d.getUTCSeconds())} (UTC)`;
+    }
+    return `${d.getFullYear()}-${pad(d.getMonth()+1)}-${pad(d.getDate())} ${pad(d.getHours())}:${pad(d.getMinutes())}:${pad(d.getSeconds())}`;
+}
+
+function checkLogin() {
+    const id = document.getElementById('loginId').value;
+    const pass = document.getElementById('loginPass').value;
+    db.ref('users/' + id).once('value').then(s => {
+        const u = s.val();
+        if(u && u.pass === pass) { sessionStorage.setItem("user", JSON.stringify(u)); initApp(); }
+        else alert("Login Failed");
+    });
+}
+
+function initApp() {
+    const u = JSON.parse(sessionStorage.getItem("user"));
+    if(!u) return;
+    document.body.setAttribute('data-theme', localStorage.getItem('theme') || 'light');
+    document.getElementById('loginOverlay').style.display='none';
+    document.getElementById('mainContent').style.display='block';
+    document.getElementById('userDisplay').innerText = u.name;
+    document.getElementById('watermark').innerText = u.id;
+    db.ref('flights').on('value', s => { allFlights = s.val() || {}; renderFlights(); if(currentF) openEditor(currentF); });
+}
+
+function renderFlights() {
+    const s = document.getElementById('search').value.toUpperCase();
+    const list = document.getElementById("list"); list.innerHTML = "";
+    for(let f in allFlights) {
+        const d = allFlights[f];
+        if(!f.includes(s) && !d.apron.includes(s)) continue;
+        const unread = (d.logs || []).some(l => l.task === "Message" && l.user === "Admin" && !l.read);
+        const card = document.createElement("div"); card.className = "card";
+        card.style.borderLeftColor = d['Overall Status']==='Completed'?'#238636':(d['Overall Status']==='Delayed'?'#da3633':'#f1c40f');
+        card.onclick = () => openEditor(f);
+        card.innerHTML = `
+            ${unread ? `<div class="card-msg">⚠️ UNREAD MESSAGE FROM ADMIN</div>` : ""}
+            <b>${f}</b> <span style="float:right">Apron: ${d.apron}</span><br>
+            <small>Status: ${d['Overall Status']} | ETD: ${d.etd ? d.etd.substring(11,16) : '-'}</small>`;
+        list.appendChild(card);
+    }
+}
+
+function openEditor(f) {
+    currentF = f; const d = allFlights[f];
+    document.getElementById('editTitle').innerText = "Update: " + f;
+    document.getElementById('t-Overall_Status').value = d['Overall Status'];
+    document.getElementById('t-Apron').value = d.apron;
+    document.getElementById('depTime').value = d.etd || "";
+    document.getElementById('etaTime').value = d.eta || "";
+    document.getElementById('atTime').value = d.at || "";
+    let h = "";
+    for(let c in CATS) {
+        h += `<div class="task-section"><h4>${c} Tasks</h4><div class="task-grid">`;
+        CATS[c].forEach(t => {
+            const val = d[t] || 'Not Started';
+            h += `<div><label style="font-size:10px">${t}</label><select id="t-${t.replace(/\s+/g,'_')}">
+                <option ${val==='Not Started'?'selected':''}>Not Started</option>
+                <option ${val==='In Progress'?'selected':''}>In Progress</option>
+                <option ${val==='Completed'?'selected':''}>Completed</option>
+                <option ${val==='Delayed'?'selected':''}>Delayed</option>
+                <option ${val==='Required Assistance'?'selected':''}>Required Assistance</option>
+            </select></div>`;
+        });
+        h += `</div></div>`;
+    }
+    document.getElementById('categoryContainer').innerHTML = h;
+    renderLogs(d.logs || []);
+    document.getElementById('editorOverlay').style.display='block';
+}
+
+function markAsRead(index) {
+    db.ref(`flights/${currentF}/logs/${index}/read`).set(true);
+}
+
+function confirmUpdate() {
+    const u = JSON.parse(sessionStorage.getItem("user"));
+    const now = new Date().toISOString();
+    let fData = JSON.parse(JSON.stringify(allFlights[currentF]));
+    let summary = [];
+    let changed = false;
+
+    const check = (id, key, label) => {
+        const v = document.getElementById(id).value;
+        if(fData[key] !== v) {
+            summary.push(`${label}: ${fData[key] || 'Empty'} -> ${v}`);
+            if(!fData.logs) fData.logs = [];
+            fData.logs.push({time:now, task:label, status:v, user:u.name}); 
+            fData[key] = v; changed = true;
+        }
+    };
+
+    check('t-Overall_Status', 'Overall Status', 'Overall Status');
+    check('t-Apron', 'apron', 'Apron');
+    check('depTime', 'etd', 'ETD');
+    check('etaTime', 'eta', 'ETA');
+    check('atTime', 'at', 'AT');
+    Object.values(CATS).flat().forEach(t => check(`t-${t.replace(/\s+/g,'_')}`, t, t));
+
+    const msg = document.getElementById('msgInput').value.trim();
+    if(msg) { 
+        if(!fData.logs) fData.logs = [];
+        fData.logs.push({time:now, task:"Message", status:msg, user:u.name, read: false}); 
+        summary.push(`Msg: ${msg}`); changed = true; 
+    }
+
+    if(changed && confirm("Confirm Updates?\n\n" + summary.join("\n"))) {
+        db.ref('flights/' + currentF).set(fData).then(() => { document.getElementById('msgInput').value=""; });
+    }
+}
+
+function renderLogs(logs) {
+    const msgs = logs.map((l, i) => ({...l, idx: i})).filter(l => l.task === "Message").reverse();
+    const acts = logs.filter(l => l.task !== "Message").reverse();
+    document.getElementById('msgLogArea').innerHTML = msgs.map(m => `
+        <div class="msg-display" style="${m.user==='Admin'?'background:rgba(255,235,59,0.1)':''}">
+            <b>${m.user}</b> <small>(${formatDate(m.time)})</small>
+            ${m.user==='Admin' && !m.read ? `<button class="read-btn" onclick="markAsRead(${m.idx})">✔ Mark Read</button>` : ""}
+            <br>${m.status}
+        </div>`).join('');
+    document.getElementById('actionLogArea').innerHTML = acts.map(a => `<div>[${formatDate(a.time)}] ${a.task} -> ${a.status} (${a.user})</div>`).join('');
+}
+
+function toggleTZ() { useUTC = !useUTC; document.getElementById('tzBtn').innerText = useUTC?"UTC":"Local"; renderFlights(); if(currentF) renderLogs(allFlights[currentF].logs); }
+function toggleTheme() { const n = document.body.getAttribute('data-theme')==='dark'?'light':'dark'; document.body.setAttribute('data-theme', n); localStorage.setItem('theme', n); }
 function closeEditor() { currentF = null; document.getElementById('editorOverlay').style.display='none'; }
 function logout() { sessionStorage.clear(); location.reload(); }
 window.onload = () => { if(sessionStorage.getItem("user")) initApp(); };

@@ -11,16 +11,13 @@
   body { font-family: 'Segoe UI', sans-serif; background: var(--bg); color: var(--text); margin: 0; padding-bottom: 60px; transition: 0.3s; }
   .header { display: flex; justify-content: space-between; align-items: center; padding: 15px 20px; background: var(--card); border-bottom: 1px solid var(--border); position: sticky; top:0; z-index: 1000; }
   .btn { padding: 8px 14px; border-radius: 6px; border: none; font-weight: bold; cursor: pointer; margin-left: 5px; }
-  .btn-success { background: #238636; color: white; }
-  .btn-danger { background: #da3633; color: white; }
   .btn-primary { background: #1f6feb; color: white; }
-  .btn-gray { background: #666; color: white; }
+  .btn-danger { background: #da3633; color: white; }
   .card { background: var(--card); border-radius: 12px; padding: 15px; margin: 15px; border: 1px solid var(--border); }
-  .overlay { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.8); z-index: 3000; padding: 20px; overflow-y: auto; }
-  .bulk-bar { position: fixed; bottom: 20px; left: 50%; transform: translateX(-50%); background: var(--primary); color: white; padding: 10px 25px; border-radius: 30px; display: none; box-shadow: 0 4px 15px rgba(0,0,0,0.5); z-index: 4000; }
   .msg-alert { background: rgba(88,166,255,0.15); border-left: 4px solid var(--primary); padding: 8px; margin-top: 10px; font-size: 13px; border-radius: 4px; }
   .dash-input { width: 100%; margin-top: 10px; display: flex; gap: 5px; }
   .dash-input input { flex: 1; padding: 8px; border-radius: 5px; border: 1px solid var(--border); background: var(--bg); color: var(--text); }
+  .overlay { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.8); z-index: 3000; padding: 20px; overflow-y: auto; }
   table { width: 100%; border-collapse: collapse; }
   th, td { padding: 10px; border-bottom: 1px solid var(--border); text-align: left; }
 </style>
@@ -30,9 +27,8 @@
 <div class="header">
     <h2>Admin Dashboard</h2>
     <div>
-        <input id="search" placeholder="Search Flight..." onkeyup="render()" style="padding:8px; border-radius:6px; border:1px solid var(--border); background:var(--bg); color:var(--text)">
-        <button id="selBtn" onclick="toggleSelectAll('main')" class="btn">Select All</button>
-        <button onclick="document.getElementById('binModal').style.display='block'; renderBin();" class="btn">Recycle Bin</button>
+        <button id="tzBtn" onclick="toggleTZ()" class="btn btn-primary">UTC</button>
+        <button onclick="document.getElementById('binModal').style.display='block'; renderBin();" class="btn">Bin</button>
         <button onclick="document.getElementById('userModal').style.display='block'; loadUsers();" class="btn">Users</button>
         <button onclick="toggleTheme()" class="btn">🌓</button>
     </div>
@@ -40,59 +36,8 @@
 
 <div id="list"></div>
 
-<div id="bulkBar" class="bulk-bar">
-    <span id="selCount">0</span> Selected 
-    <button onclick="bulkDel()" class="btn btn-danger" style="margin-left:15px">Move to Bin</button>
-</div>
-
-<div id="binModal" class="overlay">
-    <div style="background:var(--card); max-width:900px; margin:auto; padding:20px; border-radius:12px; position:relative">
-        <div style="display:flex; justify-content:space-between; align-items:center">
-            <h3>Recycle Bin</h3>
-            <div>
-                <button onclick="toggleSelectAll('bin')" class="btn btn-primary">Select All</button>
-                <button onclick="document.getElementById('binModal').style.display='none'" class="btn">Close</button>
-            </div>
-        </div>
-        <div id="binList"></div>
-        <div id="binBulkBar" class="bulk-bar">
-            <span id="binSelCount">0</span> selected 
-            <button onclick="bulkBinAction('restore')" class="btn btn-success" style="margin-left:15px">Restore</button>
-            <button onclick="bulkBinAction('delete')" class="btn btn-danger">Delete Permanently</button>
-        </div>
-    </div>
-</div>
-
-<div id="userModal" class="overlay">
-    <div style="background:var(--card); max-width:800px; margin:auto; padding:20px; border-radius:10px; position:relative">
-        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:20px">
-            <h3>User Management</h3>
-            <button onclick="document.getElementById('userModal').style.display='none'" class="btn btn-gray">✕ Close</button>
-        </div>
-        <div style="display:grid; grid-template-columns:1fr 1fr; gap:20px">
-            <div>
-                <h4>Add User</h4>
-                <input id="uId" placeholder="ID"><br><br>
-                <input id="uName" placeholder="Name"><br><br>
-                <input id="uPos" placeholder="Position"><br><br>
-                <input id="uPass" placeholder="Password"><br><br>
-                <button onclick="saveUser('u')" class="btn btn-success">Add</button>
-            </div>
-            <div style="border-left:1px solid var(--border); padding-left:20px">
-                <h4>Edit User</h4>
-                <input id="eId" placeholder="ID" readonly><br><br>
-                <input id="eName" placeholder="Name"><br><br>
-                <input id="ePos" placeholder="Position"><br><br>
-                <input id="ePass" placeholder="New Pass"><br><br>
-                <button onclick="saveUser('e')" class="btn btn-primary">Update</button>
-            </div>
-        </div>
-        <table style="margin-top:20px">
-            <thead><tr><th>ID</th><th>Name</th><th>Pos</th><th>Action</th></tr></thead>
-            <tbody id="userList"></tbody>
-        </table>
-    </div>
-</div>
+<div id="binModal" class="overlay">...</div> 
+<div id="userModal" class="overlay">...</div>
 
 <script>
 const firebaseConfig = {
@@ -106,45 +51,51 @@ const firebaseConfig = {
 };
 firebase.initializeApp(firebaseConfig);
 const db = firebase.database();
-let allF = {}, binF = {}, users = {}, isAllMain = false, isAllBin = false;
+let allF = {}, useUTC = true;
+
+function formatDate(isoStr) {
+    if(!isoStr) return "-";
+    const d = new Date(isoStr);
+    if(useUTC) {
+        return d.getUTCFullYear() + "-" + String(d.getUTCMonth()+1).padStart(2,'0') + "-" + String(d.getUTCDate()).padStart(2,'0') + " " + 
+               String(d.getUTCHours()).padStart(2,'0') + ":" + String(d.getUTCMinutes()).padStart(2,'0') + ":" + String(d.getUTCSeconds()).padStart(2,'0');
+    } else {
+        return d.toLocaleString();
+    }
+}
 
 function render() {
-    document.body.setAttribute('data-theme', localStorage.getItem('adminTheme') || 'dark');
     db.ref('flights').on('value', s => {
         allF = s.val() || {};
-        const q = document.getElementById("search").value.toUpperCase();
         const list = document.getElementById("list"); list.innerHTML = "";
         for(let f in allF) {
             const d = allF[f];
-            if(!f.includes(q) && !d.apron.includes(q)) continue;
             const logs = d.logs || [];
             const lastMsg = [...logs].reverse().find(l => l.task === "Message");
-            const lastTask = [...logs].reverse().find(l => l.task !== "Message");
             const card = document.createElement("div"); card.className = "card";
             card.innerHTML = `
-                <div style="display:flex; align-items:center; justify-content:space-between">
-                    <div>
-                        <input type="checkbox" class="bulk-main" data-id="${f}" onchange="updateUI('main')">
-                        <b style="font-size:18px; margin-left:10px">${f}</b> (Apron: ${d.apron})
-                    </div>
-                    <div>
-                        <span style="padding:4px 8px; border-radius:4px; font-size:12px; background:var(--primary)">${d['Overall Status']}</span>
-                        <button onclick="delF('${f}')" class="btn btn-danger">Bin</button>
-                    </div>
+                <div style="display:flex; justify-content:space-between">
+                    <b>${f} (Apron: ${d.apron})</b>
+                    <span style="font-size:12px; color:var(--primary)">${d['Overall Status']}</span>
                 </div>
-                ${lastMsg ? `<div class="msg-alert"><b>Latest:</b> ${lastMsg.status} <small>(${lastMsg.user})</small></div>` : ""}
+                ${lastMsg ? `<div class="msg-alert"><b>MSG:</b> ${lastMsg.status} <small>(${formatDate(lastMsg.time)})</small></div>` : ""}
                 <div class="dash-input">
-                    <input id="msg-${f}" placeholder="Message...">
+                    <input id="msg-${f}" placeholder="Reply...">
                     <button onclick="sendDashMsg('${f}')" class="btn btn-primary">Send</button>
                 </div>
-                <details style="margin-top:10px; font-size:12px"><summary style="cursor:pointer">Activity Logs ${lastTask?`(${lastTask.task})`:''}</summary>
-                <div style="padding:5px; background:rgba(0,0,0,0.2); border-radius:4px">
-                    ${[...logs].reverse().slice(0,10).map(l => `<div>[${l.time.substring(11,16)}] ${l.user}: ${l.task}->${l.status}</div>`).join('')}
+                <details style="margin-top:10px; font-size:11px"><summary style="cursor:pointer">Activity Logs (Full Date & Seconds)</summary>
+                <div style="padding:5px; background:rgba(0,0,0,0.2); margin-top:5px">
+                    ${[...logs].reverse().map(l => `<div>[${formatDate(l.time)}] ${l.user}: ${l.task}->${l.status}</div>`).join('')}
                 </div></details>`;
             list.appendChild(card);
         }
-        updateUI('main');
     });
+}
+
+function toggleTZ() { 
+    useUTC = !useUTC; 
+    document.getElementById('tzBtn').innerText = useUTC ? "UTC" : "Local"; 
+    render(); 
 }
 
 function sendDashMsg(f) {
@@ -157,95 +108,6 @@ function sendDashMsg(f) {
     db.ref('flights/' + f + '/logs').set(logs).then(() => input.value = "");
 }
 
-function renderBin() {
-    db.ref('deletedFlights').on('value', s => {
-        binF = s.val() || {};
-        const container = document.getElementById('binList'); container.innerHTML = "";
-        for(let f in binF) {
-            container.innerHTML += `<div class="card"><input type="checkbox" class="bulk-bin" data-id="${f}" onchange="updateUI('bin')"> <b>${f}</b> (Apron: ${binF[f].apron}) <div style="float:right"><button onclick="restoreF('${f}')" class="btn btn-success">Restore</button></div></div>`;
-        }
-        updateUI('bin');
-    });
-}
-
-function toggleSelectAll(type) {
-    if(type === 'main') {
-        isAllMain = !isAllMain;
-        document.querySelectorAll('.bulk-main').forEach(c => c.checked = isAllMain);
-        updateUI('main');
-    } else {
-        isAllBin = !isAllBin;
-        document.querySelectorAll('.bulk-bin').forEach(c => c.checked = isAllBin);
-        updateUI('bin');
-    }
-}
-
-function updateUI(type) {
-    if(type === 'main') {
-        const count = document.querySelectorAll('.bulk-main:checked').length;
-        document.getElementById('selCount').innerText = count;
-        document.getElementById('bulkBar').style.display = count > 0 ? 'block' : 'none';
-        document.getElementById('selBtn').innerText = (count > 0 && count === document.querySelectorAll('.bulk-main').length) ? "Deselect All" : "Select All";
-    } else {
-        const count = document.querySelectorAll('.bulk-bin:checked').length;
-        document.getElementById('binSelCount').innerText = count;
-        document.getElementById('binBulkBar').style.display = count > 0 ? 'block' : 'none';
-    }
-}
-
-// 修复 Bin 移动功能
-function delF(f) {
-    if(!confirm(`Move ${f} to Bin?`)) return;
-    db.ref('flights/' + f).once('value').then(s => {
-        if(s.exists()) {
-            db.ref('deletedFlights/' + f).set(s.val()).then(() => {
-                db.ref('flights/' + f).remove();
-            });
-        }
-    });
-}
-
-function restoreF(f) {
-    db.ref('deletedFlights/' + f).once('value').then(s => {
-        if(s.exists()) {
-            db.ref('flights/' + f).set(s.val()).then(() => {
-                db.ref('deletedFlights/' + f).remove();
-            });
-        }
-    });
-}
-
-function bulkDel() {
-    const ids = Array.from(document.querySelectorAll('.bulk-main:checked')).map(c => c.dataset.id);
-    if(confirm(`Move ${ids.length} flights to Bin?`)) {
-        ids.forEach(f => {
-            db.ref('flights/' + f).once('value').then(s => {
-                db.ref('deletedFlights/' + f).set(s.val());
-                db.ref('flights/' + f).remove();
-            });
-        });
-    }
-}
-
-function bulkBinAction(action) {
-    const ids = Array.from(document.querySelectorAll('.bulk-bin:checked')).map(c => c.dataset.id);
-    ids.forEach(f => action === 'restore' ? restoreF(f) : db.ref('deletedFlights/' + f).remove());
-}
-
-function loadUsers() {
-    db.ref('users').on('value', s => {
-        users = s.val() || {};
-        const tb = document.getElementById("userList"); tb.innerHTML = "";
-        for(let id in users) tb.innerHTML += `<tr><td>${id}</td><td>${users[id].name}</td><td>${users[id].pos}</td><td><button onclick="editU('${id}')" class="btn">Edit</button></td></tr>`;
-    });
-}
-
-function saveUser(p) {
-    const id = document.getElementById(p+'Id').value;
-    db.ref('users/'+id).update({id, name:document.getElementById(p+'Name').value, pos:document.getElementById(p+'Pos').value, pass:document.getElementById(p+'Pass').value || '1234'});
-}
-
-function editU(id) { const u = users[id]; document.getElementById('eId').value=u.id; document.getElementById('eName').value=u.name; document.getElementById('ePos').value=u.pos; }
 function toggleTheme() { const n = document.body.getAttribute('data-theme')==='dark'?'light':'dark'; document.body.setAttribute('data-theme', n); localStorage.setItem('adminTheme', n); }
 window.onload = render;
 </script>

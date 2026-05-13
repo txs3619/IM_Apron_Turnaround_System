@@ -443,6 +443,7 @@ function showFormMsg(msg, isError) {
 }
 
 
+window.onload = () => {
     // FIX: Restore saved theme
     const savedTheme = localStorage.getItem('theme') || 'dark';
     document.body.setAttribute('data-theme', savedTheme);

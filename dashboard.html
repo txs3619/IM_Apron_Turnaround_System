@@ -80,8 +80,53 @@
         <button onclick="toggleAllLogs()" class="btn btn-primary" style="width:100%; margin-bottom:10px">📂 Expand/Collapse All Logs</button>
         <button onclick="toggleTheme()" class="btn" style="width:100%; margin-bottom:10px">🌓 Toggle Theme</button>
         <button onclick="openRecycleBin()" class="btn btn-warning" style="width:100%; margin-bottom:10px">🗑️ Recycle Bin</button>
-        <button onclick="alert('Users clicked')" class="btn" style="width:100%; margin-bottom:10px">👥 User Management</button>
+        <button onclick="openUserMgmt()" class="btn" style="width:100%; margin-bottom:10px">👥 User Management</button>
         <button onclick="document.getElementById('setModal').style.display='none'" class="btn btn-danger" style="width:100%; margin-top:10px">Close</button>
+    </div>
+</div>
+
+<!-- User Management overlay -->
+<div id="userMgmtOverlay" style="display:none; position:fixed; inset:0; background:rgba(0,0,0,0.85); z-index:4000; padding:20px; overflow-y:auto;">
+    <div style="background:var(--card); max-width:650px; margin:40px auto; padding:24px; border-radius:12px; border:1px solid var(--border);">
+        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:20px">
+            <h3 style="margin:0">👥 User Management</h3>
+            <button onclick="document.getElementById('userMgmtOverlay').style.display='none'" class="btn btn-danger">Close</button>
+        </div>
+
+        <!-- Add / Edit form -->
+        <div id="userFormBox" style="background:rgba(128,128,128,0.08); border:1px solid var(--border); border-radius:10px; padding:16px; margin-bottom:20px;">
+            <h4 id="userFormTitle" style="margin:0 0 14px 0">➕ Add New User</h4>
+            <div style="display:grid; grid-template-columns:1fr 1fr; gap:10px; margin-bottom:10px">
+                <div>
+                    <label style="font-size:11px; font-weight:bold; color:#888; display:block; margin-bottom:4px">Staff ID <span style="color:#da3633">*</span></label>
+                    <input id="uId" placeholder="e.g. S001" style="padding:9px; border-radius:7px; border:1px solid var(--border); background:var(--bg); color:var(--text); width:100%; box-sizing:border-box">
+                </div>
+                <div>
+                    <label style="font-size:11px; font-weight:bold; color:#888; display:block; margin-bottom:4px">Full Name <span style="color:#da3633">*</span></label>
+                    <input id="uName" placeholder="e.g. Ahmad Razif" style="padding:9px; border-radius:7px; border:1px solid var(--border); background:var(--bg); color:var(--text); width:100%; box-sizing:border-box">
+                </div>
+                <div>
+                    <label style="font-size:11px; font-weight:bold; color:#888; display:block; margin-bottom:4px">Position <span style="color:#da3633">*</span></label>
+                    <input id="uPos" placeholder="e.g. Ground Staff" style="padding:9px; border-radius:7px; border:1px solid var(--border); background:var(--bg); color:var(--text); width:100%; box-sizing:border-box">
+                </div>
+                <div>
+                    <label style="font-size:11px; font-weight:bold; color:#888; display:block; margin-bottom:4px" id="uPassLabel">Password <span style="color:#da3633">*</span></label>
+                    <input id="uPass" type="password" placeholder="Set password" style="padding:9px; border-radius:7px; border:1px solid var(--border); background:var(--bg); color:var(--text); width:100%; box-sizing:border-box">
+                </div>
+            </div>
+            <div style="display:flex; gap:8px">
+                <button onclick="saveUser()" class="btn btn-success" style="flex:1">💾 Save User</button>
+                <button id="cancelEditBtn" onclick="cancelEdit()" class="btn btn-danger" style="display:none">✕ Cancel Edit</button>
+            </div>
+            <p id="userFormMsg" style="margin:8px 0 0; font-size:12px; color:#58a6ff; display:none"></p>
+        </div>
+
+        <!-- User list -->
+        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:10px">
+            <b>Existing Users</b>
+            <input id="userSearch" placeholder="Search..." onkeyup="filterUsers()" style="padding:7px 10px; border-radius:7px; border:1px solid var(--border); background:var(--bg); color:var(--text); width:160px">
+        </div>
+        <div id="userList"><i style="color:#888">Loading...</i></div>
     </div>
 </div>
 
@@ -286,7 +331,118 @@ function toggleTheme() {
     localStorage.setItem('theme', t);
 }
 
-window.onload = () => {
+
+// ── User Management ─────────────────────────────────────────────
+let allUsers = {}, editingUserId = null;
+
+function openUserMgmt() {
+    document.getElementById('setModal').style.display = 'none';
+    document.getElementById('userMgmtOverlay').style.display = 'block';
+    cancelEdit();
+    loadUsers();
+}
+
+function loadUsers() {
+    document.getElementById('userList').innerHTML = "<i style='color:#888'>Loading...</i>";
+    db.ref('users').once('value', s => {
+        allUsers = s.val() || {};
+        renderUsers();
+    });
+}
+
+function renderUsers(filter) {
+    const container = document.getElementById('userList');
+    const keys = Object.keys(allUsers).filter(k => {
+        if(!filter) return true;
+        const u = allUsers[k];
+        return k.toLowerCase().includes(filter) || (u.name||'').toLowerCase().includes(filter) || (u.pos||'').toLowerCase().includes(filter);
+    });
+    if(keys.length === 0) { container.innerHTML = "<p style='color:#888; text-align:center; padding:20px'>No users found.</p>"; return; }
+    container.innerHTML = keys.map(k => {
+        const u = allUsers[k];
+        return `<div style="display:flex; justify-content:space-between; align-items:center; padding:12px 10px; border-bottom:1px solid var(--border); gap:10px">
+            <div style="flex:1; min-width:0">
+                <b>${u.name || '-'}</b>
+                <span style="background:rgba(88,166,255,0.15); color:var(--primary); font-size:11px; padding:2px 7px; border-radius:10px; margin-left:6px">${u.id || k}</span><br>
+                <small style="color:#888">${u.pos || 'No position'}</small>
+            </div>
+            <div style="display:flex; gap:6px; flex-shrink:0">
+                <button onclick="editUser('${k}')" class="btn btn-primary" style="font-size:12px; padding:5px 10px">✏️ Edit</button>
+                <button onclick="deleteUser('${k}')" class="btn btn-danger" style="font-size:12px; padding:5px 10px">🗑️</button>
+            </div>
+        </div>`;
+    }).join('');
+}
+
+function filterUsers() {
+    const q = document.getElementById('userSearch').value.toLowerCase().trim();
+    renderUsers(q || null);
+}
+
+function editUser(id) {
+    editingUserId = id;
+    const u = allUsers[id];
+    document.getElementById('uId').value = u.id || id;
+    document.getElementById('uId').disabled = true; // can't change ID (it's the key)
+    document.getElementById('uName').value = u.name || '';
+    document.getElementById('uPos').value = u.pos || '';
+    document.getElementById('uPass').value = '';
+    document.getElementById('uPassLabel').innerHTML = 'New Password <span style="color:#888; font-weight:normal">(leave blank to keep)</span>';
+    document.getElementById('userFormTitle').innerText = '✏️ Edit User: ' + (u.name || id);
+    document.getElementById('cancelEditBtn').style.display = 'inline-block';
+    showFormMsg('');
+    document.getElementById('uName').focus();
+}
+
+function cancelEdit() {
+    editingUserId = null;
+    document.getElementById('uId').value = '';
+    document.getElementById('uId').disabled = false;
+    document.getElementById('uName').value = '';
+    document.getElementById('uPos').value = '';
+    document.getElementById('uPass').value = '';
+    document.getElementById('uPassLabel').innerHTML = 'Password <span style="color:#da3633">*</span>';
+    document.getElementById('userFormTitle').innerText = '➕ Add New User';
+    document.getElementById('cancelEditBtn').style.display = 'none';
+    showFormMsg('');
+}
+
+function saveUser() {
+    const id = (editingUserId || document.getElementById('uId').value.trim());
+    const name = document.getElementById('uName').value.trim();
+    const pos = document.getElementById('uPos').value.trim();
+    const pass = document.getElementById('uPass').value.trim();
+
+    if(!id) { showFormMsg('⚠️ Staff ID is required.', true); return; }
+    if(!name) { showFormMsg('⚠️ Full Name is required.', true); return; }
+    if(!pos) { showFormMsg('⚠️ Position is required.', true); return; }
+    if(!editingUserId && !pass) { showFormMsg('⚠️ Password is required for new users.', true); return; }
+
+    const userData = { id, name, pos };
+    if(pass) userData.pass = pass;
+    else if(editingUserId && allUsers[editingUserId]) userData.pass = allUsers[editingUserId].pass; // keep existing
+
+    db.ref('users/' + id).update(userData).then(() => {
+        showFormMsg(editingUserId ? '✅ User updated!' : '✅ User created!');
+        cancelEdit();
+        loadUsers();
+    }).catch(e => showFormMsg('❌ Error: ' + e.message, true));
+}
+
+function deleteUser(id) {
+    const u = allUsers[id];
+    if(!confirm(`Delete user "${u.name || id}" (${id})?\nThis cannot be undone.`)) return;
+    db.ref('users/' + id).remove().then(() => loadUsers());
+}
+
+function showFormMsg(msg, isError) {
+    const el = document.getElementById('userFormMsg');
+    el.style.display = msg ? 'block' : 'none';
+    el.style.color = isError ? '#da3633' : '#58a6ff';
+    el.innerText = msg;
+}
+
+
     // FIX: Restore saved theme
     const savedTheme = localStorage.getItem('theme') || 'dark';
     document.body.setAttribute('data-theme', savedTheme);

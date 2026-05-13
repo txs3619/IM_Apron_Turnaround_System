@@ -30,6 +30,13 @@
   .msg-read { opacity: 0.7; background: rgba(128,128,128,0.05); }
 </style>
 </head>
+<!-- FIX: Apply saved theme BEFORE body renders to avoid flash -->
+<script>
+  (function() {
+    const t = localStorage.getItem('theme') || 'light';
+    document.documentElement.setAttribute('data-theme-init', t);
+  })();
+</script>
 <body data-theme="light">
 
 <div id="watermark" class="watermark"></div>
@@ -115,11 +122,12 @@ firebase.initializeApp(firebaseConfig);
 const db = firebase.database();
 const CATS = { "Admin": ["Flight Plan Approval","Engineering","Tow Truck Pushback"], "Cabin": ["PAX Boarding (F)","PAX Boarding (B)","Catering"], "Ground": ["Baggage Load","Fueling","Water","Lavatory"] };
 let currentF = null, allFlights = {}, useUTC = true;
+// FIX: Track whether Firebase listener is already attached
+let flightsListenerAttached = false;
 
 function formatDate(iso) {
     if(!iso) return "-";
     const d = new Date(iso);
-    const options = { year:'numeric', month:'2-digit', day:'2-digit', hour:'2-digit', minute:'2-digit', second:'2-digit', hour12:false };
     if(useUTC) return d.getUTCFullYear()+'-'+String(d.getUTCMonth()+1).padStart(2,'0')+'-'+String(d.getUTCDate()).padStart(2,'0')+' '+String(d.getUTCHours()).padStart(2,'0')+':'+String(d.getUTCMinutes()).padStart(2,'0')+':'+String(d.getUTCSeconds()).padStart(2,'0') + " (UTC)";
     return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0')+' '+String(d.getHours()).padStart(2,'0')+':'+String(d.getMinutes()).padStart(2,'0')+':'+String(d.getSeconds()).padStart(2,'0');
 }
@@ -141,11 +149,18 @@ function init() {
     document.getElementById('mainContent').style.display='block';
     document.getElementById('userDisplay').innerText = u.name + " (" + u.pos + ")";
     document.getElementById('watermark').innerText = u.id;
-    db.ref('flights').on('value', s => { 
-        allFlights = s.val() || {}; 
-        renderFlights(); 
-        if(currentF) renderLogs(allFlights[currentF]);
-    });
+
+    // FIX: Only attach listener once to prevent stacking
+    if(!flightsListenerAttached) {
+        flightsListenerAttached = true;
+        db.ref('flights').on('value', s => {
+            allFlights = s.val() || {};
+            // Filter out deleted (recycled) flights for staff view
+            for(let f in allFlights) { if(allFlights[f]._deleted) delete allFlights[f]; }
+            renderFlights();
+            if(currentF) renderLogs(allFlights[currentF]);
+        });
+    }
 }
 
 function renderFlights() {
@@ -153,7 +168,7 @@ function renderFlights() {
     const list = document.getElementById("list"); list.innerHTML = "";
     for(let f in allFlights) {
         const d = allFlights[f];
-        if(!f.includes(s) && !d.apron.includes(s)) continue;
+        if(!f.includes(s) && !(d.apron||'').includes(s)) continue;
         const unread = (d.msgs || []).some(m => m.user === "Admin" && !m.read);
         const card = document.createElement("div"); card.className = "card";
         let bc = '#666';
@@ -236,6 +251,7 @@ function confirmUpdate() {
 }
 
 function renderLogs(d) {
+    if(!d) return;
     const msgs = (d.msgs || []).slice().reverse();
     const logs = (d.logs || []).slice().reverse();
     
@@ -250,7 +266,14 @@ function renderLogs(d) {
 
 function markReadStaff(idx) { db.ref('flights/'+currentF+'/msgs/'+idx+'/read').set(true); }
 function toggleTZ() { useUTC = !useUTC; document.getElementById('tzBtn').innerText = useUTC?"UTC":"Local"; renderFlights(); if(currentF) renderLogs(allFlights[currentF]); }
-function toggleTheme() { const t = document.body.getAttribute('data-theme')==='dark'?'light':'dark'; document.body.setAttribute('data-theme', t); localStorage.setItem('theme', t); }
+
+// FIX: Read theme from localStorage and apply on load; save on toggle
+function toggleTheme() {
+    const t = document.body.getAttribute('data-theme')==='dark'?'light':'dark';
+    document.body.setAttribute('data-theme', t);
+    localStorage.setItem('theme', t);
+}
+
 function saveNewFlight() {
     const f = document.getElementById('newF').value.trim().toUpperCase();
     const a = document.getElementById('newA').value.trim().toUpperCase();
@@ -261,7 +284,14 @@ function saveNewFlight() {
 }
 function logout() { sessionStorage.clear(); location.reload(); }
 function closeEditor() { currentF = null; document.getElementById('editorOverlay').style.display='none'; }
-window.onload = () => { if(sessionStorage.getItem("user")) init(); };
+
+window.onload = () => {
+    // FIX: Apply saved theme on page load
+    const savedTheme = localStorage.getItem('theme') || 'light';
+    document.body.setAttribute('data-theme', savedTheme);
+
+    if(sessionStorage.getItem("user")) init();
+};
 </script>
 </body>
 </html>

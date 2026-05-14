@@ -7,323 +7,420 @@
 <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-database-compat.js"></script>
 <style>
-  :root { --bg: #f0f2f5; --card: #ffffff; --text: #333; --border: #ddd; --primary: #1a237e; --accent: #007bff; --watermark: rgba(0,0,0,0.1); }
-  [data-theme='dark'] { --bg: #0b1117; --card: #161b22; --text: #c9d1d9; --border: #30363d; --primary: #58a6ff; --accent: #1f6feb; --watermark: rgba(255,255,255,0.05); }
-  body { font-family: 'Segoe UI', sans-serif; background: var(--bg); color: var(--text); margin: 0; transition: 0.3s; padding-bottom: 80px; }
-  .watermark { position: fixed; bottom: 10px; left: 50%; transform: translateX(-50%); font-size: 14px; font-weight: bold; color: var(--watermark); pointer-events: none; z-index: 9999; }
-  .header { background: var(--primary); color: white; padding: 12px 20px; display: flex; justify-content: space-between; align-items: center; position: sticky; top: 0; z-index: 1000; }
-  .btn { padding: 8px 15px; border-radius: 8px; border: none; font-weight: bold; cursor: pointer; transition: 0.2s; }
-  .btn-primary { background: var(--accent); color: white; }
-  .btn-success { background: #238636; color: white; }
-  .btn-danger { background: #da3633; color: white; }
-  .btn-gray { background: #666; color: white; }
-  .card { background: var(--card); padding: 15px; margin: 12px auto; border-radius: 12px; border: 1px solid var(--border); border-left: 10px solid #666; cursor: pointer; max-width: 800px; position: relative; }
-  .card-msg-badge { background: #ffc107; color: #000; padding: 4px 8px; border-radius: 4px; font-size: 11px; font-weight: bold; margin-bottom: 8px; display: inline-block; }
-  .overlay { display: none; position: fixed; inset: 0; background: var(--bg); z-index: 1500; overflow-y: auto; padding: 20px; }
-  .input-wrapper { margin-bottom: 12px; }
-  .input-wrapper label { font-size: 11px; font-weight: bold; color: #888; display: block; margin-bottom: 4px; }
-  input, select, textarea { padding: 10px; border-radius: 8px; border: 1px solid var(--border); background: var(--card); color: var(--text); width: 100%; box-sizing: border-box; }
-  .task-section { background: rgba(128,128,128,0.05); padding: 12px; border-radius: 10px; margin-bottom: 12px; border: 1px solid var(--border); }
-  .task-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(140px, 1fr)); gap: 8px; }
-  .msg-box { padding: 10px; border-radius: 8px; margin-bottom: 8px; font-size: 13px; position: relative; border-left: 4px solid transparent; }
-  .msg-unread { border-left-color: #ffc107; background: rgba(255,193,7,0.1); }
-  .msg-read { opacity: 0.7; background: rgba(128,128,128,0.05); }
+  :root{--bg:#f0f2f5;--card:#fff;--text:#333;--border:#ddd;--primary:#1a237e;--accent:#007bff;--wm:rgba(0,0,0,0.07);}
+  [data-theme='dark']{--bg:#0b1117;--card:#161b22;--text:#c9d1d9;--border:#30363d;--primary:#58a6ff;--accent:#1f6feb;--wm:rgba(255,255,255,0.04);}
+  *{box-sizing:border-box;}
+  body{font-family:'Segoe UI',sans-serif;background:var(--bg);color:var(--text);margin:0;transition:.3s;padding-bottom:80px;}
+  .wm{position:fixed;bottom:10px;left:50%;transform:translateX(-50%);font-size:14px;font-weight:bold;color:var(--wm);pointer-events:none;z-index:9999;}
+  .hdr{background:var(--primary);color:white;padding:11px 18px;display:flex;justify-content:space-between;align-items:center;position:sticky;top:0;z-index:1000;gap:8px;}
+  .btn{padding:7px 13px;border-radius:7px;border:none;font-weight:bold;cursor:pointer;font-size:13px;transition:opacity .15s;}
+  .btn:hover{opacity:.85;}
+  .btn-primary{background:var(--accent);color:white;}
+  .btn-success{background:#238636;color:white;}
+  .btn-danger{background:#da3633;color:white;}
+  .btn-gray{background:#555;color:white;}
+  .btn-ghost{background:rgba(255,255,255,0.15);color:white;}
+  .fcard{background:var(--card);padding:13px 15px;margin:10px auto;border-radius:12px;border:1px solid var(--border);border-left:8px solid #666;cursor:pointer;max-width:820px;}
+  .badge{background:#ffc107;color:#000;padding:3px 8px;border-radius:4px;font-size:11px;font-weight:bold;display:inline-block;margin-bottom:6px;}
+  .pill{display:inline-block;padding:2px 9px;border-radius:12px;font-size:11px;font-weight:bold;}
+  .overlay{display:none;position:fixed;inset:0;background:var(--bg);z-index:1500;overflow-y:auto;padding:18px;}
+  .fw{max-width:820px;margin:auto;}
+  .iw{margin-bottom:11px;}
+  .iw label{font-size:11px;font-weight:bold;color:#888;display:block;margin-bottom:3px;}
+  input,select,textarea{padding:9px;border-radius:7px;border:1px solid var(--border);background:var(--card);color:var(--text);width:100%;}
+  .tsec{background:rgba(128,128,128,0.05);padding:11px;border-radius:9px;margin-bottom:10px;border:1px solid var(--border);}
+  .tgrid{display:grid;grid-template-columns:repeat(auto-fill,minmax(145px,1fr));gap:7px;}
+  .mbox{padding:9px;border-radius:7px;margin-bottom:7px;font-size:13px;border-left:4px solid transparent;}
+  .munread{border-left-color:#ffc107;background:rgba(255,193,7,0.1);}
+  .mread{opacity:.7;background:rgba(128,128,128,0.05);}
+  /* task mini chips on card */
+  .task-strip{display:flex;flex-wrap:wrap;gap:3px;margin-top:6px;}
+  .ts-chip{font-size:10px;padding:2px 7px;border-radius:10px;font-weight:600;}
+  /* profile panel */
+  #profilePanel{display:none;position:fixed;top:55px;right:12px;background:var(--card);border:1px solid var(--border);border-radius:12px;padding:16px;width:270px;z-index:2000;box-shadow:0 8px 28px rgba(0,0,0,0.35);}
+  #profilePanel.open{display:block;}
+  #profilePanel h4{margin:0 0 12px;font-size:14px;color:var(--primary);}
+  .pp-row{margin-bottom:10px;}
+  .pp-row label{font-size:11px;font-weight:bold;color:#888;display:block;margin-bottom:3px;}
+  .pp-row input{padding:8px;border-radius:7px;border:1px solid var(--border);background:var(--bg);color:var(--text);width:100%;}
+  /* banner */
+  #banner{display:none;position:fixed;top:60px;left:50%;transform:translateX(-50%);background:#da3633;color:white;padding:10px 22px;border-radius:9px;font-weight:bold;font-size:13px;z-index:9999;box-shadow:0 4px 18px rgba(0,0,0,0.4);max-width:92%;text-align:center;}
 </style>
 </head>
-<!-- FIX: Apply saved theme BEFORE body renders to avoid flash -->
-<script>
-  (function() {
-    const t = localStorage.getItem('theme') || 'light';
-    document.documentElement.setAttribute('data-theme-init', t);
-  })();
-</script>
+<script>(function(){const t=localStorage.getItem('theme')||'light';if(t==='dark')document.documentElement.setAttribute('data-theme','dark');})();</script>
 <body data-theme="light">
 
-<div id="watermark" class="watermark"></div>
+<div id="banner"></div>
+<div id="wm" class="wm"></div>
 
-<div id="loginOverlay" style="position:fixed; inset:0; background:var(--primary); z-index:5000; display:flex; align-items:center; justify-content:center;">
-    <div style="background:white; padding:30px; border-radius:15px; width:90%; max-width:400px; text-align:center;">
-        <h2 style="color:#333">STAFF LOGIN</h2>
-        <input id="loginId" placeholder="Staff ID">
-        <input id="loginPass" type="password" placeholder="Password" style="margin-top:10px">
-        <button onclick="checkLogin()" class="btn btn-primary" style="width:100%; margin-top:15px">Login</button>
-    </div>
+<!-- LOGIN -->
+<div id="loginScreen" style="position:fixed;inset:0;background:var(--primary);z-index:5000;display:flex;align-items:center;justify-content:center;">
+  <div style="background:white;padding:30px;border-radius:14px;width:90%;max-width:380px;text-align:center;">
+    <h2 style="color:#1a237e;margin-bottom:20px">✈ STAFF LOGIN</h2>
+    <input id="loginId" placeholder="Staff ID" style="margin-bottom:10px;padding:10px;border-radius:8px;border:1px solid #ccc;width:100%;">
+    <input id="loginPass" type="password" placeholder="Password" style="margin-bottom:16px;padding:10px;border-radius:8px;border:1px solid #ccc;width:100%;">
+    <button onclick="checkLogin()" style="width:100%;padding:12px;background:#1a237e;color:white;border:none;border-radius:8px;font-weight:bold;font-size:15px;cursor:pointer;">Login</button>
+    <p id="loginErr" style="color:#da3633;font-size:12px;margin-top:10px;display:none"></p>
+  </div>
 </div>
 
+<!-- MAIN -->
 <div id="mainContent" style="display:none">
-    <div class="header">
-        <div id="userDisplay" style="font-weight:bold">Profile</div>
-        <div style="display:flex; gap:10px">
-            <button id="tzBtn" onclick="toggleTZ()" class="btn" style="background:rgba(255,255,255,0.2); color:white">UTC</button>
-            <button onclick="toggleTheme()" class="btn" style="background:none; font-size:20px">🌓</button>
-            <button onclick="logout()" class="btn btn-danger">Logout</button>
-        </div>
+  <div class="hdr">
+    <div style="display:flex;align-items:center;gap:10px">
+      <span style="font-size:18px">✈</span>
+      <span id="userDisplay" style="font-weight:bold;font-size:14px;cursor:pointer;user-select:none" onclick="toggleProfile()">...</span>
     </div>
-    <div style="max-width:800px; margin:20px auto; padding:0 15px">
-        <div style="display:flex; gap:10px; margin-bottom:15px">
-            <input id="search" placeholder="Search Flight/Apron..." onkeyup="renderFlights()" style="flex:1">
-            <button onclick="document.getElementById('addModal').style.display='block'" class="btn btn-success">+ New Flight</button>
-        </div>
-        <div id="list">Loading...</div>
+    <div style="display:flex;gap:7px;align-items:center">
+      <button id="tzBtn" onclick="toggleTZ()" class="btn btn-ghost" style="font-size:12px;padding:5px 10px">UTC</button>
+      <button onclick="toggleTheme()" class="btn btn-ghost" style="font-size:17px;padding:4px 8px">🌓</button>
+      <button onclick="logout()" class="btn btn-danger" style="font-size:12px;padding:5px 10px">Logout</button>
     </div>
+  </div>
+
+  <!-- PROFILE PANEL -->
+  <div id="profilePanel">
+    <h4>👤 My Profile</h4>
+    <div class="pp-row">
+      <label>Staff ID</label>
+      <input id="ppId" disabled style="opacity:.55;cursor:not-allowed">
+    </div>
+    <div class="pp-row"><label>Full Name</label><input id="ppName" placeholder="Your name"></div>
+    <div class="pp-row"><label>Position / Role</label><input id="ppPos" placeholder="e.g. Ground Staff"></div>
+    <div class="pp-row">
+      <label>New Password <span style="font-weight:normal;color:#888">(blank = keep current)</span></label>
+      <input id="ppPass" type="password" placeholder="New password">
+    </div>
+    <div class="pp-row">
+      <label>Confirm New Password</label>
+      <input id="ppPassConfirm" type="password" placeholder="Repeat new password">
+    </div>
+    <button onclick="saveProfile()" class="btn btn-success" style="width:100%;margin-bottom:7px">💾 Save Changes</button>
+    <p id="ppMsg" style="font-size:12px;margin:4px 0 8px;display:none"></p>
+    <button onclick="toggleProfile()" class="btn btn-gray" style="width:100%;font-size:12px">Close</button>
+  </div>
+
+  <div style="max-width:820px;margin:18px auto;padding:0 14px">
+    <div style="display:flex;gap:8px;margin-bottom:13px">
+      <input id="search" placeholder="Search Flight / Apron..." onkeyup="renderFlights()" style="flex:1">
+      <button onclick="openAddModal()" class="btn btn-success">+ Flight</button>
+    </div>
+    <div id="list">Loading...</div>
+  </div>
 </div>
 
+<!-- EDITOR OVERLAY -->
 <div id="editorOverlay" class="overlay">
-    <div style="max-width:800px; margin:auto">
-        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:20px">
-            <h2 id="editTitle">Update</h2>
-            <button onclick="closeEditor()" class="btn btn-gray">✕ Close</button>
-        </div>
-        
-        <div style="display:grid; grid-template-columns: 1fr 1fr; gap:10px">
-            <div class="input-wrapper"><label>Overall Status</label>
-                <select id="t-Overall_Status">
-                    <option>Not Started</option><option>In Progress</option>
-                    <option>Delayed</option><option>Completed</option><option>Required Assistance</option>
-                </select>
-            </div>
-            <div class="input-wrapper"><label>Apron</label><input id="t-Apron"></div>
-            <div class="input-wrapper"><label>ETD (UTC)</label><input type="datetime-local" id="depTime"></div>
-            <div class="input-wrapper"><label>ETA (UTC)</label><input type="datetime-local" id="etaTime"></div>
-            <div class="input-wrapper"><label>AT (UTC)</label><input type="datetime-local" id="atTime"></div>
-        </div>
-
-        <div id="taskContainer"></div>
-
-        <div class="input-wrapper"><label>Quick Message</label><textarea id="msgInput" placeholder="Type a message..."></textarea></div>
-        <button onclick="confirmUpdate()" class="btn btn-success" style="width:100%; height:50px; margin-bottom:20px">SYNC TO CLOUD</button>
-        
-        <details id="msgCollapse" open><summary style="cursor:pointer; font-weight:bold; padding:10px; background:var(--border); border-radius:5px">💬 Messages</summary><div id="msgLogArea" style="padding:10px 0"></div></details>
-        <details id="actCollapse" style="margin-top:10px"><summary style="cursor:pointer; font-weight:bold; padding:10px; background:var(--border); border-radius:5px">⚙️ Activity Logs</summary><div id="actionLogArea" style="font-size:12px; padding:10px 0"></div></details>
+  <div class="fw">
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px">
+      <h2 id="editTitle" style="margin:0;font-size:17px">Update</h2>
+      <button onclick="closeEditor()" class="btn btn-gray">✕ Close</button>
     </div>
+
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:9px">
+      <div class="iw"><label>Overall Status</label>
+        <select id="t-Overall_Status">
+          <option>Arriving</option>
+          <option>On Chocked</option>
+          <option>Delayed</option>
+          <option>PB Attached</option>
+          <option>Push Backed</option>
+        </select>
+      </div>
+      <div class="iw"><label>Apron</label><input id="t-Apron"></div>
+      <div class="iw"><label>ETD (UTC)</label><input type="datetime-local" id="depTime"></div>
+      <div class="iw"><label>ETA (UTC)</label><input type="datetime-local" id="etaTime"></div>
+      <div class="iw"><label>ATA (UTC)</label><input type="datetime-local" id="atTime"></div>
+    </div>
+
+    <div id="taskContainer"></div>
+
+    <div class="iw"><label>Quick Message to Admin</label><textarea id="msgInput" placeholder="Type a message..." rows="2"></textarea></div>
+    <button onclick="confirmUpdate()" class="btn btn-success" style="width:100%;height:46px;margin-bottom:18px;font-size:15px">☁ SYNC TO CLOUD</button>
+
+    <details id="msgCollapse" open style="margin-bottom:10px">
+      <summary style="cursor:pointer;font-weight:bold;padding:9px 12px;background:rgba(128,128,128,0.1);border-radius:7px">💬 Messages</summary>
+      <div id="msgLogArea" style="padding:8px 0"></div>
+    </details>
+    <details id="actCollapse">
+      <summary style="cursor:pointer;font-weight:bold;padding:9px 12px;background:rgba(128,128,128,0.1);border-radius:7px">⚙️ Activity Log</summary>
+      <div id="actionLogArea" style="font-size:12px;padding:8px 0"></div>
+    </details>
+  </div>
 </div>
 
+<!-- ADD FLIGHT MODAL -->
 <div id="addModal" class="overlay">
-    <div style="max-width:500px; margin:auto; background:var(--card); padding:20px; border-radius:12px; margin-top:50px">
-        <h2>Add Flight</h2>
-        <input id="newF" placeholder="Flight No (e.g MH123)" style="margin-bottom:10px">
-        <input id="newA" placeholder="Apron No" style="margin-bottom:10px">
-        <button onclick="saveNewFlight()" class="btn btn-success" style="width:100%">Create</button>
-        <button onclick="document.getElementById('addModal').style.display='none'" class="btn btn-gray" style="width:100%; margin-top:10px">Cancel</button>
-    </div>
+  <div style="max-width:480px;margin:60px auto;background:var(--card);padding:22px;border-radius:13px;border:1px solid var(--border)">
+    <h2 style="margin:0 0 16px">Add New Flight</h2>
+    <div class="iw"><label>Flight No</label><input id="newF" placeholder="e.g. MH123" oninput="this.value=this.value.toUpperCase()"></div>
+    <div class="iw"><label>Apron No</label><input id="newA" placeholder="e.g. A12" oninput="this.value=this.value.toUpperCase()"></div>
+    <p id="addErr" style="color:#da3633;font-size:12px;margin-bottom:10px;display:none"></p>
+    <button onclick="saveNewFlight()" class="btn btn-success" style="width:100%;margin-bottom:8px">Create</button>
+    <button onclick="document.getElementById('addModal').style.display='none'" class="btn btn-gray" style="width:100%">Cancel</button>
+  </div>
 </div>
 
 <script>
-const firebaseConfig = {
-  apiKey: "AIzaSyBNcUXtBufxeST6EzJEa2Me562cdkzBJMM",
-  authDomain: "im-apron-turnaround-system.firebaseapp.com",
-  databaseURL: "https://im-apron-turnaround-system-default-rtdb.asia-southeast1.firebasedatabase.app",
-  projectId: "im-apron-turnaround-system",
-  storageBucket: "im-apron-turnaround-system.firebasestorage.app",
-  messagingSenderId: "984848540764",
-  appId: "1:984848540764:web:4a54026553c971acb33299"
+const firebaseConfig={
+  apiKey:"AIzaSyBNcUXtBufxeST6EzJEa2Me562cdkzBJMM",
+  authDomain:"im-apron-turnaround-system.firebaseapp.com",
+  databaseURL:"https://im-apron-turnaround-system-default-rtdb.asia-southeast1.firebasedatabase.app",
+  projectId:"im-apron-turnaround-system",
+  storageBucket:"im-apron-turnaround-system.firebasestorage.app",
+  messagingSenderId:"984848540764",
+  appId:"1:984848540764:web:4a54026553c971acb33299"
 };
 firebase.initializeApp(firebaseConfig);
-const db = firebase.database();
-const CATS = { "Admin": ["Flight Plan Approval","Engineering","Tow Truck Pushback"], "Cabin": ["PAX Boarding (F)","PAX Boarding (B)","Catering"], "Ground": ["Baggage Load","Fueling","Water","Lavatory"] };
-let currentF = null, allFlights = {}, useUTC = true;
-// FIX: Track whether Firebase listener is already attached
-let flightsListenerAttached = false;
+const db=firebase.database();
 
-function formatDate(iso) {
-    if(!iso) return "-";
-    const d = new Date(iso);
-    if(useUTC) return d.getUTCFullYear()+'-'+String(d.getUTCMonth()+1).padStart(2,'0')+'-'+String(d.getUTCDate()).padStart(2,'0')+' '+String(d.getUTCHours()).padStart(2,'0')+':'+String(d.getUTCMinutes()).padStart(2,'0')+':'+String(d.getUTCSeconds()).padStart(2,'0') + " (UTC)";
-    return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0')+' '+String(d.getHours()).padStart(2,'0')+':'+String(d.getMinutes()).padStart(2,'0')+':'+String(d.getSeconds()).padStart(2,'0');
+const CATS={
+  "Admin":  ["Flight Plan Approval","Engineering","Tow Truck Pushback"],
+  "Cabin":  ["PAX Boarding (F)","PAX Boarding (B)","Catering"],
+  "Ground": ["Baggage Load","Fueling","Water","Lavatory"]
+};
+const TASK_STATUSES=["Not Started","In Progress","Completed","Delayed","Required Assistance"];
+const OVERALL_STATUSES=["Arriving","On Chocked","Delayed","PB Attached","Push Backed"];
+
+let currentF=null, allFlights={}, useUTC=true, listenerOn=false, currentUser=null;
+
+function pad(n){return String(n).padStart(2,'0');}
+function formatDate(iso){
+  if(!iso) return '-';
+  const d=new Date(iso);
+  if(useUTC) return [d.getUTCFullYear(),pad(d.getUTCMonth()+1),pad(d.getUTCDate())].join('-')+' '+[pad(d.getUTCHours()),pad(d.getUTCMinutes()),pad(d.getUTCSeconds())].join(':');
+  return d.toLocaleString();
 }
 
-function checkLogin() {
-    const id = document.getElementById('loginId').value;
-    const pass = document.getElementById('loginPass').value;
-    db.ref('users/'+id).once('value', s => {
-        const u = s.val();
-        if(u && u.pass === pass) { sessionStorage.setItem("user", JSON.stringify(u)); init(); }
-        else alert("Invalid Credentials");
+// ── Status colours ───────────────────────────────────────────────
+function overallColor(s){
+  if(s==='Push Backed'||s==='On Chocked') return '#238636';
+  if(s==='Delayed') return '#da3633';
+  if(s==='PB Attached') return '#e3b341';
+  if(s==='Arriving') return '#1f6feb';
+  return '#555';
+}
+function taskChipStyle(s){
+  if(s==='Completed') return 'background:rgba(35,134,54,0.2);color:#3fb950';
+  if(s==='Delayed'||s==='Required Assistance') return 'background:rgba(218,54,51,0.2);color:#f85149';
+  if(s==='In Progress') return 'background:rgba(31,111,235,0.2);color:#58a6ff';
+  return 'background:rgba(128,128,128,0.12);color:#888';
+}
+
+// ── Login ────────────────────────────────────────────────────────
+function checkLogin(){
+  const id=document.getElementById('loginId').value.trim();
+  const pass=document.getElementById('loginPass').value;
+  if(!id||!pass){showLoginErr('Please enter ID and password.');return;}
+  db.ref('users/'+id).once('value',s=>{
+    const u=s.val();
+    if(u&&u.pass===pass){sessionStorage.setItem('user',JSON.stringify(u));currentUser=u;init();}
+    else showLoginErr('Invalid credentials.');
+  });
+}
+function showLoginErr(m){const e=document.getElementById('loginErr');e.innerText=m;e.style.display='block';}
+document.addEventListener('keydown',e=>{if(e.key==='Enter'&&document.getElementById('loginScreen').style.zIndex!=='-1')checkLogin();});
+
+// ── Init ─────────────────────────────────────────────────────────
+function init(){
+  currentUser=JSON.parse(sessionStorage.getItem('user'));
+  if(!currentUser) return;
+  document.getElementById('loginScreen').style.display='none';
+  document.getElementById('mainContent').style.display='block';
+  document.getElementById('userDisplay').innerText=currentUser.name+' ('+currentUser.pos+') ▾';
+  document.getElementById('wm').innerText=currentUser.id;
+
+  if(!listenerOn){
+    listenerOn=true;
+    db.ref('flights').on('value',s=>{
+      const raw=s.val()||{};
+      if(currentF&&raw[currentF]&&raw[currentF]._deleted){
+        closeEditor();
+        showBanner('⚠️ Flight '+currentF+' was removed by Admin. Changes not saved.');
+      }
+      allFlights={};
+      for(let f in raw){if(!raw[f]._deleted) allFlights[f]=raw[f];}
+      renderFlights();
+      if(currentF&&allFlights[currentF]) renderLogs(allFlights[currentF]);
     });
+  }
 }
 
-function init() {
-    const u = JSON.parse(sessionStorage.getItem("user"));
-    if(!u) return;
-    document.getElementById('loginOverlay').style.display='none';
-    document.getElementById('mainContent').style.display='block';
-    document.getElementById('userDisplay').innerText = u.name + " (" + u.pos + ")";
-    document.getElementById('watermark').innerText = u.id;
+// ── Profile panel ────────────────────────────────────────────────
+function toggleProfile(){
+  const p=document.getElementById('profilePanel');
+  if(p.classList.contains('open')){p.classList.remove('open');return;}
+  document.getElementById('ppId').value=currentUser.id||'';
+  document.getElementById('ppName').value=currentUser.name||'';
+  document.getElementById('ppPos').value=currentUser.pos||'';
+  document.getElementById('ppPass').value='';
+  document.getElementById('ppPassConfirm').value='';
+  document.getElementById('ppMsg').style.display='none';
+  p.classList.add('open');
+}
+document.addEventListener('click',e=>{
+  const p=document.getElementById('profilePanel'),ud=document.getElementById('userDisplay');
+  if(p&&p.classList.contains('open')&&!p.contains(e.target)&&e.target!==ud) p.classList.remove('open');
+});
+function saveProfile(){
+  const name=document.getElementById('ppName').value.trim();
+  const pos=document.getElementById('ppPos').value.trim();
+  const pass=document.getElementById('ppPass').value;
+  const pass2=document.getElementById('ppPassConfirm').value;
+  if(!name||!pos){showPpMsg('Name and Position are required.',true);return;}
+  if(pass&&pass!==pass2){showPpMsg('Passwords do not match.',true);return;}
+  const upd={name,pos};
+  if(pass) upd.pass=pass;
+  db.ref('users/'+currentUser.id).update(upd).then(()=>{
+    currentUser={...currentUser,...upd};
+    sessionStorage.setItem('user',JSON.stringify(currentUser));
+    document.getElementById('userDisplay').innerText=currentUser.name+' ('+currentUser.pos+') ▾';
+    showPpMsg('✅ Profile updated!');
+    document.getElementById('ppPass').value='';
+    document.getElementById('ppPassConfirm').value='';
+  }).catch(e=>showPpMsg('❌ '+e.message,true));
+}
+function showPpMsg(m,err){const el=document.getElementById('ppMsg');el.style.display='block';el.style.color=err?'#da3633':'#3fb950';el.innerText=m;}
 
-    // FIX: Only attach listener once to prevent stacking
-    if(!flightsListenerAttached) {
-        flightsListenerAttached = true;
-        db.ref('flights').on('value', s => {
-            const raw = s.val() || {};
-            // Detect if currently open flight was deleted by admin
-            if(currentF && raw[currentF] && raw[currentF]._deleted) {
-                closeEditor();
-                showBanner(`⚠️ Flight ${currentF} has been removed by Admin. Your changes were not saved.`);
-            }
-            allFlights = raw;
-            // Filter out deleted (recycled) flights for staff view
-            for(let f in allFlights) { if(allFlights[f]._deleted) delete allFlights[f]; }
-            renderFlights();
-            if(currentF && allFlights[currentF]) renderLogs(allFlights[currentF]);
-        });
-    }
+// ── Flight list ──────────────────────────────────────────────────
+function renderFlights(){
+  const q=(document.getElementById('search').value||'').toUpperCase();
+  const list=document.getElementById('list'); list.innerHTML='';
+  const keys=Object.keys(allFlights);
+  if(!keys.length){list.innerHTML='<p style="color:#888;text-align:center;padding:30px">No active flights.</p>';return;}
+  keys.forEach(f=>{
+    const d=allFlights[f];
+    if(q&&!f.includes(q)&&!(d.apron||'').includes(q)) return;
+    const unread=(d.msgs||[]).some(m=>m.user==='Admin'&&!m.read);
+    const card=document.createElement('div'); card.className='fcard';
+    card.style.borderLeftColor=overallColor(d['Overall Status']);
+    card.onclick=()=>openEditor(f);
+    const allTasks=Object.values(CATS).flat();
+    const strip=allTasks.map(t=>{
+      const sv=d[t]||'Not Started';
+      if(sv==='Not Started') return '';
+      return `<span class="ts-chip" style="${taskChipStyle(sv)}">${t.replace(' (F)','(F)').replace(' (B)','(B)')}</span>`;
+    }).filter(Boolean).join('');
+    card.innerHTML=`
+      ${unread?`<div class="badge">💬 NEW MSG FROM ADMIN</div>`:''}
+      <div style="display:flex;justify-content:space-between;align-items:flex-start">
+        <div><b style="font-size:15px">${f}</b> <span style="color:#888;font-size:12px">Apron ${d.apron}</span></div>
+        <span class="pill" style="${taskChipStyle(d['Overall Status']||'')}">${d['Overall Status']||'—'}</span>
+      </div>
+      <div style="font-size:12px;color:#888;margin-top:3px">ETD: ${d.etd?d.etd.substring(11,16):'-'} | ETA: ${d.eta?d.eta.substring(11,16):'-'}</div>
+      ${strip?`<div class="task-strip">${strip}</div>`:''}`;
+    list.appendChild(card);
+  });
 }
 
-function renderFlights() {
-    const s = document.getElementById('search').value.toUpperCase();
-    const list = document.getElementById("list"); list.innerHTML = "";
-    for(let f in allFlights) {
-        const d = allFlights[f];
-        if(!f.includes(s) && !(d.apron||'').includes(s)) continue;
-        const unread = (d.msgs || []).some(m => m.user === "Admin" && !m.read);
-        const card = document.createElement("div"); card.className = "card";
-        let bc = '#666';
-        if(d['Overall Status']==='Completed') bc = '#238636';
-        else if(d['Overall Status']==='Delayed') bc = '#da3633';
-        else if(d['Overall Status']==='Required Assistance') bc = '#f1c40f';
-        card.style.borderLeftColor = bc;
-        card.onclick = () => openEditor(f);
-        card.innerHTML = `
-            ${unread ? `<div class="card-msg-badge">NEW ADMIN MESSAGE</div>` : ""}
-            <div><b>${f}</b> <span style="float:right">Apron: ${d.apron}</span></div>
-            <small>Status: ${d['Overall Status']} | ETD: ${d.etd ? d.etd.substring(11,16) : '-'}</small>`;
-        list.appendChild(card);
-    }
-}
-
-function openEditor(f) {
-    currentF = f; const d = allFlights[f];
-    document.getElementById('editTitle').innerText = "Update Flight: " + f;
-    document.getElementById('t-Overall_Status').value = d['Overall Status'] || 'Not Started';
-    document.getElementById('t-Apron').value = d.apron;
-    document.getElementById('depTime').value = d.etd || "";
-    document.getElementById('etaTime').value = d.eta || "";
-    document.getElementById('atTime').value = d.at || "";
-    let h = "";
-    for(let c in CATS) {
-        h += `<div class="task-section"><h4>${c}</h4><div class="task-grid">`;
-        CATS[c].forEach(t => {
-            const val = d[t] || 'Not Started';
-            h += `<div><label>${t}</label><select id="t-${t.replace(/\s+/g,'_')}">
-                <option ${val==='Not Started'?'selected':''}>Not Started</option>
-                <option ${val==='In Progress'?'selected':''}>In Progress</option>
-                <option ${val==='Completed'?'selected':''}>Completed</option>
-                <option ${val==='Delayed'?'selected':''}>Delayed</option>
-                <option ${val==='Required Assistance'?'selected':''}>Required Assistance</option>
-            </select></div>`;
-        });
-        h += `</div></div>`;
-    }
-    document.getElementById('taskContainer').innerHTML = h;
-    renderLogs(d);
-    document.getElementById('editorOverlay').style.display = 'block';
-}
-
-function confirmUpdate() {
-    const u = JSON.parse(sessionStorage.getItem("user"));
-    const now = new Date().toISOString();
-    let d = allFlights[currentF];
-    let updates = {}, logs = d.logs || [], msgs = d.msgs || [], changed = false, summary = [];
-
-    const check = (id, key, label) => {
-        const v = document.getElementById(id).value;
-        if((d[key] || "") !== v) {
-            logs.push({time:now, task:label, status:v, user:u.name});
-            updates[key] = v; summary.push(`${label}: -> ${v}`); changed = true;
-        }
-    };
-
-    check('t-Overall_Status', 'Overall Status', 'Overall Status');
-    check('t-Apron', 'apron', 'Apron');
-    check('depTime', 'etd', 'ETD');
-    check('etaTime', 'eta', 'ETA');
-    check('atTime', 'at', 'AT');
-    Object.values(CATS).flat().forEach(t => check(`t-${t.replace(/\s+/g,'_')}`, t, t));
-
-    const msg = document.getElementById('msgInput').value.trim();
-    if(msg) { 
-        msgs.push({time:now, user:u.name, status:msg, read:false}); 
-        updates['msgs'] = msgs; summary.push("New Message sent"); changed = true;
-    }
-
-    if(changed) {
-        if(confirm("Confirm changes?\n" + summary.join("\n"))) {
-            updates['logs'] = logs;
-            db.ref('flights/'+currentF).update(updates).then(() => {
-                document.getElementById('msgInput').value = "";
-            });
-        }
-    } else alert("No changes detected.");
-}
-
-function renderLogs(d) {
-    if(!d) return;
-    const msgs = (d.msgs || []).slice().reverse();
-    const logs = (d.logs || []).slice().reverse();
-    
-    document.getElementById('msgLogArea').innerHTML = msgs.map((m, i) => {
-        const originalIdx = d.msgs.length - 1 - i;
-        const markBtn = (m.user==="Admin" && !m.read) ? `<button onclick="markReadStaff(${originalIdx})" class="btn-primary" style="float:right; font-size:10px; padding:2px 5px">Mark Read</button>` : "";
-        return `<div class="msg-box ${m.read?'msg-read':'msg-unread'}">${markBtn}<b>${m.user}</b> <small>${formatDate(m.time)}</small><br>${m.status}</div>`;
-    }).join('');
-
-    document.getElementById('actionLogArea').innerHTML = logs.map(l => `<div>[${formatDate(l.time)}] ${l.task} -> ${l.status} (${l.user})</div>`).join('');
-}
-
-function markReadStaff(idx) { db.ref('flights/'+currentF+'/msgs/'+idx+'/read').set(true); }
-function toggleTZ() { useUTC = !useUTC; document.getElementById('tzBtn').innerText = useUTC?"UTC":"Local"; renderFlights(); if(currentF) renderLogs(allFlights[currentF]); }
-
-// FIX: Read theme from localStorage and apply on load; save on toggle
-function toggleTheme() {
-    const t = document.body.getAttribute('data-theme')==='dark'?'light':'dark';
-    document.body.setAttribute('data-theme', t);
-    localStorage.setItem('theme', t);
-}
-
-function showBanner(msg) {
-    let b = document.getElementById('infoBanner');
-    if(!b) {
-        b = document.createElement('div');
-        b.id = 'infoBanner';
-        b.style.cssText = 'position:fixed;top:70px;left:50%;transform:translateX(-50%);background:#da3633;color:white;padding:12px 24px;border-radius:10px;font-weight:bold;font-size:14px;z-index:9999;box-shadow:0 4px 20px rgba(0,0,0,0.4);max-width:90%;text-align:center';
-        document.body.appendChild(b);
-    }
-    b.innerText = msg; b.style.display = 'block';
-    clearTimeout(b._t);
-    b._t = setTimeout(() => b.style.display='none', 5000);
-}
-
-function saveNewFlight() {
-    const f = document.getElementById('newF').value.trim().toUpperCase();
-    const a = document.getElementById('newA').value.trim().toUpperCase();
-    if(!f || !a) { alert('Please fill in both Flight No and Apron No.'); return; }
-
-    // Duplicate check: flight number already exists (active)
-    if(allFlights[f]) {
-        alert(`⚠️ Flight "${f}" already exists and is active.`);
-        return;
-    }
-    // Duplicate check: apron already in use by another active flight
-    const apronConflict = Object.entries(allFlights).find(([key, d]) => (d.apron||'').toUpperCase() === a);
-    if(apronConflict) {
-        if(!confirm(`⚠️ Apron "${a}" is already occupied by flight ${apronConflict[0]}.\nProceed anyway?`)) return;
-    }
-
-    db.ref('flights/'+f).set({apron:a, 'Overall Status':'Not Started', logs:[], msgs:[]}).then(()=>{
-        document.getElementById('addModal').style.display='none';
-        document.getElementById('newF').value='';
-        document.getElementById('newA').value='';
+// ── Editor ───────────────────────────────────────────────────────
+function openEditor(f){
+  currentF=f; const d=allFlights[f];
+  document.getElementById('editTitle').innerText='✈ '+f+' — Apron '+d.apron;
+  document.getElementById('t-Overall_Status').value=d['Overall Status']||'Arriving';
+  document.getElementById('t-Apron').value=d.apron||'';
+  document.getElementById('depTime').value=d.etd||'';
+  document.getElementById('etaTime').value=d.eta||'';
+  document.getElementById('atTime').value=d.at||'';
+  let h='';
+  for(let c in CATS){
+    h+=`<div class="tsec"><h4 style="margin:0 0 8px;font-size:13px;color:var(--primary)">${c}</h4><div class="tgrid">`;
+    CATS[c].forEach(t=>{
+      const val=d[t]||'Not Started';
+      h+=`<div class="iw"><label>${t}</label><select id="t-${t.replace(/[\s()]/g,'_')}">
+        ${TASK_STATUSES.map(s=>`<option${val===s?' selected':''}>${s}</option>`).join('')}
+      </select></div>`;
     });
+    h+=`</div></div>`;
+  }
+  document.getElementById('taskContainer').innerHTML=h;
+  renderLogs(d);
+  document.getElementById('editorOverlay').style.display='block';
 }
-function logout() { sessionStorage.clear(); location.reload(); }
-function closeEditor() { currentF = null; document.getElementById('editorOverlay').style.display='none'; }
 
-window.onload = () => {
-    // FIX: Apply saved theme on page load
-    const savedTheme = localStorage.getItem('theme') || 'light';
-    document.body.setAttribute('data-theme', savedTheme);
+function confirmUpdate(){
+  const u=currentUser; const now=new Date().toISOString();
+  const d=allFlights[currentF];
+  let updates={}, newLogs=[], msgs=d.msgs||[], changed=false, summary=[];
 
-    if(sessionStorage.getItem("user")) init();
+  // Only log + save changed fields
+  const check=(elId,key,label)=>{
+    const v=document.getElementById(elId).value;
+    const old=d[key]||'';
+    if(old!==v){
+      newLogs.push({time:now,task:label,status:v,user:u.name});
+      updates[key]=v; summary.push(label+': '+old+' → '+v); changed=true;
+    }
+  };
+  check('t-Overall_Status','Overall Status','Overall Status');
+  check('t-Apron','apron','Apron');
+  check('depTime','etd','ETD');
+  check('etaTime','eta','ETA');
+  check('atTime','at','ATA');
+  Object.values(CATS).flat().forEach(t=>check('t-'+t.replace(/[\s()]/g,'_'),t,t));
+
+  const msg=document.getElementById('msgInput').value.trim();
+  if(msg){msgs.push({time:now,user:u.name,status:msg,read:false});updates.msgs=msgs;summary.push('Message: "'+msg+'"');changed=true;}
+
+  if(!changed){alert('No changes detected.');return;}
+  if(confirm('Confirm changes?\n'+summary.join('\n'))){
+    updates.logs=[...(d.logs||[]),...newLogs]; // append only new log entries
+    db.ref('flights/'+currentF).update(updates).then(()=>{
+      document.getElementById('msgInput').value='';
+    });
+  }
+}
+
+function renderLogs(d){
+  if(!d) return;
+  const msgs=(d.msgs||[]).slice().reverse();
+  const logs=(d.logs||[]).slice().reverse();
+  document.getElementById('msgLogArea').innerHTML=msgs.map((m,i)=>{
+    const oi=d.msgs.length-1-i;
+    const btn=(m.user==='Admin'&&!m.read)?`<button onclick="markReadStaff(${oi})" style="float:right;font-size:10px;padding:2px 6px;background:#1f6feb;color:white;border:none;border-radius:4px;cursor:pointer">Mark Read</button>`:'';
+    return `<div class="mbox ${m.read?'mread':'munread'}">${btn}<b>${m.user}</b> <small style="color:#888">${formatDate(m.time)}</small><br>${m.status}</div>`;
+  }).join('')||'<p style="color:#888;font-size:13px">No messages.</p>';
+  document.getElementById('actionLogArea').innerHTML=logs.map(l=>`<div style="margin-bottom:3px;font-size:12px">[${formatDate(l.time)}] <b>${l.task}</b> → ${l.status} <span style="color:#888">(${l.user})</span></div>`).join('')||'<p style="color:#888;font-size:13px">No activity.</p>';
+}
+
+function markReadStaff(idx){db.ref('flights/'+currentF+'/msgs/'+idx+'/read').set(true);}
+function closeEditor(){currentF=null;document.getElementById('editorOverlay').style.display='none';}
+
+// ── Add flight ───────────────────────────────────────────────────
+function openAddModal(){
+  document.getElementById('addErr').style.display='none';
+  document.getElementById('newF').value='';
+  document.getElementById('newA').value='';
+  document.getElementById('addModal').style.display='block';
+}
+function saveNewFlight(){
+  const f=document.getElementById('newF').value.trim().toUpperCase();
+  const a=document.getElementById('newA').value.trim().toUpperCase();
+  const errEl=document.getElementById('addErr'); errEl.style.display='none';
+  if(!f||!a){errEl.innerText='Both fields are required.';errEl.style.display='block';return;}
+  if(allFlights[f]){errEl.innerText='Flight "'+f+'" already exists and is active.';errEl.style.display='block';return;}
+  const taken=Object.entries(allFlights).find(([,d])=>(d.apron||'').toUpperCase()===a);
+  if(taken){
+    if(!confirm('⚠️ Apron "'+a+'" is occupied by flight '+taken[0]+'. Proceed anyway?')) return;
+  }
+  db.ref('flights/'+f).set({apron:a,'Overall Status':'Arriving',logs:[],msgs:[]}).then(()=>{
+    document.getElementById('addModal').style.display='none';
+  });
+}
+
+// ── Misc ─────────────────────────────────────────────────────────
+function showBanner(msg){
+  const b=document.getElementById('banner');
+  b.innerText=msg; b.style.display='block';
+  clearTimeout(b._t); b._t=setTimeout(()=>b.style.display='none',5500);
+}
+function toggleTZ(){useUTC=!useUTC;document.getElementById('tzBtn').innerText=useUTC?'UTC':'Local';renderFlights();if(currentF)renderLogs(allFlights[currentF]);}
+function toggleTheme(){const t=document.body.getAttribute('data-theme')==='dark'?'light':'dark';document.body.setAttribute('data-theme',t);localStorage.setItem('theme',t);}
+function logout(){sessionStorage.clear();location.reload();}
+
+window.onload=()=>{
+  document.body.setAttribute('data-theme',localStorage.getItem('theme')||'light');
+  if(sessionStorage.getItem('user')) init();
 };
 </script>
 </body>

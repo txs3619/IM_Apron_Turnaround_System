@@ -6,383 +6,579 @@
 <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-database-compat.js"></script>
 <style>
-  :root { --bg: #0b1117; --card: #161b22; --text: #c9d1d9; --border: #30363d; --primary: #58a6ff; }
-  [data-theme='light'] { --bg: #f0f2f5; --card: #ffffff; --text: #333; --border: #ddd; --primary: #1a237e; }
-  * { box-sizing: border-box; }
-  body { font-family: 'Segoe UI', sans-serif; background: var(--bg); color: var(--text); margin: 0; padding-bottom: 80px; transition: background 0.3s, color 0.3s; }
-  .header { display: flex; justify-content: space-between; align-items: center; padding: 11px 18px; background: var(--card); border-bottom: 1px solid var(--border); position: sticky; top: 0; z-index: 1000; gap: 8px; flex-wrap: wrap; }
-  .btn { padding: 7px 12px; border-radius: 6px; border: none; font-weight: bold; cursor: pointer; font-size: 13px; transition: opacity 0.15s; }
-  .btn:hover { opacity: 0.85; }
-  .btn-primary { background: #1f6feb; color: white; }
-  .btn-danger  { background: #da3633; color: white; }
-  .btn-warning { background: #e3b341; color: #000; }
-  .btn-success { background: #238636; color: white; }
-  .btn-ghost   { background: rgba(128,128,128,0.15); color: var(--text); }
-  #bulkToolbar { display: none; position: sticky; top: 55px; z-index: 900; background: #1f6feb; color: white; padding: 8px 18px; align-items: center; gap: 8px; flex-wrap: wrap; }
-  #bulkToolbar.active { display: flex; }
-  #bulkStatusSelect { padding: 6px 10px; border-radius: 6px; border: none; font-weight: bold; cursor: pointer; }
-  #settingsPanel { display: none; position: fixed; bottom: 20px; right: 20px; background: var(--card); border: 1px solid var(--border); border-radius: 14px; padding: 14px 16px; width: 210px; z-index: 3000; box-shadow: 0 8px 32px rgba(0,0,0,0.45); }
-  #settingsPanel.open { display: block; }
-  #settingsPanel h4 { margin: 0 0 10px; font-size: 13px; color: var(--primary); }
-  .sp-btn { display: block; width: 100%; margin-bottom: 7px; text-align: left; padding: 8px 11px; border-radius: 8px; border: none; background: rgba(128,128,128,0.12); color: var(--text); font-size: 13px; cursor: pointer; font-weight: 600; }
-  .sp-btn:hover { background: rgba(128,128,128,0.25); }
-  .card { background: var(--card); border-radius: 12px; padding: 13px 15px; margin: 10px 14px; border: 1px solid var(--border); border-left: 6px solid #555; }
-  .card.selected { box-shadow: 0 0 0 2px #58a6ff; }
-  .status-pill { display: inline-block; padding: 3px 9px; border-radius: 20px; font-size: 11px; font-weight: bold; white-space: nowrap; }
-  .s-ns { background: rgba(128,128,128,0.2); color: #999; }
-  .s-ip { background: rgba(31,111,235,0.2); color: #58a6ff; }
-  .s-ok { background: rgba(35,134,54,0.2); color: #3fb950; }
-  .s-dl { background: rgba(218,54,51,0.2); color: #f85149; }
-  .s-ra { background: rgba(225,183,64,0.2); color: #e3b341; }
-  .task-mini-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(128px, 1fr)); gap: 4px; margin-top: 8px; }
-  .task-mini { font-size: 11px; padding: 4px 7px; border-radius: 6px; display: flex; align-items: center; gap: 4px; }
-  .task-mini .t-label { flex: 1; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-  .task-mini .t-dot { width: 7px; height: 7px; border-radius: 50%; flex-shrink: 0; }
-  .msg-alert { background: rgba(88,166,255,0.1); border-left: 4px solid var(--primary); padding: 8px 10px; border-radius: 4px; margin: 8px 0; font-size: 13px; }
-  .log-scroll { max-height: 130px; overflow-y: auto; background: rgba(0,0,0,0.15); padding: 7px; font-size: 11px; border-radius: 5px; margin-top: 5px; }
-  .select-check { width: 16px; height: 16px; cursor: pointer; accent-color: #58a6ff; flex-shrink: 0; }
-  .big-overlay { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.85); z-index: 4000; padding: 20px; overflow-y: auto; }
-  .modal-box { background: var(--card); max-width: 640px; margin: 40px auto; padding: 22px; border-radius: 14px; border: 1px solid var(--border); }
-  .recycle-item { display: flex; justify-content: space-between; align-items: center; padding: 10px 4px; border-bottom: 1px solid var(--border); gap: 8px; }
-  .reply-row { display: flex; gap: 6px; margin-top: 10px; }
-  .reply-row input { flex: 1; padding: 7px 10px; border-radius: 6px; border: 1px solid var(--border); background: var(--bg); color: var(--text); font-size: 13px; }
-  #toast { position: fixed; bottom: 80px; left: 50%; transform: translateX(-50%); background: #da3633; color: white; padding: 10px 22px; border-radius: 10px; font-weight: bold; font-size: 14px; z-index: 9999; display: none; box-shadow: 0 4px 20px rgba(0,0,0,0.4); white-space: nowrap; }
+  :root{--bg:#0b1117;--card:#161b22;--text:#c9d1d9;--border:#30363d;--primary:#58a6ff;}
+  [data-theme='light']{--bg:#f0f2f5;--card:#fff;--text:#333;--border:#ddd;--primary:#1a237e;}
+  *{box-sizing:border-box;}
+  body{font-family:'Segoe UI',sans-serif;background:var(--bg);color:var(--text);margin:0;padding-bottom:80px;transition:background .3s,color .3s;}
+  .hdr{display:flex;justify-content:space-between;align-items:center;padding:10px 16px;background:var(--card);border-bottom:1px solid var(--border);position:sticky;top:0;z-index:1000;gap:8px;flex-wrap:wrap;}
+  .btn{padding:6px 12px;border-radius:6px;border:none;font-weight:bold;cursor:pointer;font-size:12px;transition:opacity .15s;}
+  .btn:hover{opacity:.85;}
+  .btn-primary{background:#1f6feb;color:white;}
+  .btn-danger{background:#da3633;color:white;}
+  .btn-warning{background:#e3b341;color:#000;}
+  .btn-success{background:#238636;color:white;}
+  .btn-ghost{background:rgba(128,128,128,0.15);color:var(--text);}
+
+  /* Bulk toolbar */
+  #bulkBar{display:none;position:sticky;top:53px;z-index:900;background:#1f6feb;color:white;padding:7px 16px;align-items:center;gap:8px;flex-wrap:wrap;}
+  #bulkBar.on{display:flex;}
+
+  /* Search bar */
+  #searchWrap{padding:10px 16px 0;}
+  #searchWrap input{width:100%;padding:8px 12px;border-radius:8px;border:1px solid var(--border);background:var(--card);color:var(--text);font-size:13px;}
+
+  /* Groups */
+  .group-header{display:flex;align-items:center;gap:8px;padding:10px 16px 4px;flex-wrap:wrap;}
+  .group-title{font-weight:bold;font-size:13px;flex:1;}
+  .group-body{padding:0 2px;}
+
+  /* Flight card */
+  .fcard{background:var(--card);border-radius:11px;padding:12px 14px;margin:7px 14px;border:1px solid var(--border);border-left:6px solid #555;}
+  .fcard.sel{box-shadow:0 0 0 2px #58a6ff;}
+
+  /* Status pills */
+  .pill{display:inline-block;padding:2px 8px;border-radius:12px;font-size:11px;font-weight:bold;white-space:nowrap;}
+  .s-ar{background:rgba(31,111,235,0.2);color:#58a6ff;}
+  .s-oc{background:rgba(35,134,54,0.2);color:#3fb950;}
+  .s-dl{background:rgba(218,54,51,0.2);color:#f85149;}
+  .s-pb{background:rgba(225,183,64,0.2);color:#e3b341;}
+  .s-px{background:rgba(35,134,54,0.15);color:#3fb950;}
+  .s-ns{background:rgba(128,128,128,0.15);color:#888;}
+
+  /* Task status chips on card */
+  .task-row{display:flex;flex-wrap:wrap;gap:3px;margin-top:7px;}
+  .tc{font-size:10px;padding:2px 7px;border-radius:10px;font-weight:600;}
+
+  /* Unread alert */
+  .msg-alert{background:rgba(88,166,255,0.1);border-left:4px solid var(--primary);padding:7px 10px;border-radius:4px;margin:7px 0;font-size:13px;}
+
+  /* Log scrollbox */
+  .log-scroll{max-height:120px;overflow-y:auto;background:rgba(0,0,0,0.15);padding:6px;font-size:11px;border-radius:5px;margin-top:4px;}
+
+  .check{width:15px;height:15px;cursor:pointer;accent-color:#58a6ff;flex-shrink:0;}
+  .reply-row{display:flex;gap:6px;margin-top:9px;}
+  .reply-row input{flex:1;padding:7px 9px;border-radius:6px;border:1px solid var(--border);background:var(--bg);color:var(--text);font-size:13px;}
+
+  /* Corner settings */
+  #settingsPanel{display:none;position:fixed;bottom:18px;right:18px;background:var(--card);border:1px solid var(--border);border-radius:13px;padding:13px 15px;width:200px;z-index:3000;box-shadow:0 8px 30px rgba(0,0,0,0.45);}
+  #settingsPanel.open{display:block;}
+  #settingsPanel h4{margin:0 0 9px;font-size:12px;color:var(--primary);}
+  .sp-btn{display:block;width:100%;margin-bottom:6px;text-align:left;padding:7px 10px;border-radius:7px;border:none;background:rgba(128,128,128,0.12);color:var(--text);font-size:12px;cursor:pointer;font-weight:600;}
+  .sp-btn:hover{background:rgba(128,128,128,0.25);}
+
+  /* Overlays */
+  .big-ov{display:none;position:fixed;inset:0;background:rgba(0,0,0,0.85);z-index:4000;padding:20px;overflow-y:auto;}
+  .mbox{background:var(--card);max-width:640px;margin:36px auto;padding:20px;border-radius:13px;border:1px solid var(--border);}
+  .ri{display:flex;justify-content:space-between;align-items:center;padding:9px 4px;border-bottom:1px solid var(--border);gap:8px;}
+
+  /* Group management modal items */
+  .gitem{display:flex;align-items:center;gap:8px;padding:8px 6px;border-bottom:1px solid var(--border);}
+  .gitem input[type=text]{flex:1;padding:6px 9px;border-radius:6px;border:1px solid var(--border);background:var(--bg);color:var(--text);font-size:13px;}
 </style>
 </head>
 <body data-theme="dark">
 
-<div id="toast"></div>
-
-<div class="header">
-  <div style="display:flex;align-items:center;gap:12px">
-    <h2 style="margin:0;font-size:17px">✈ Admin Console</h2>
-    <label style="font-size:13px;cursor:pointer;display:flex;align-items:center;gap:5px;user-select:none">
-      <input type="checkbox" id="selectAllChk" class="select-check" onchange="toggleSelectAll(this.checked)"> All
+<!-- HEADER -->
+<div class="hdr">
+  <div style="display:flex;align-items:center;gap:10px">
+    <h2 style="margin:0;font-size:16px">✈ Admin Console</h2>
+    <label style="font-size:12px;cursor:pointer;display:flex;align-items:center;gap:4px;user-select:none">
+      <input type="checkbox" id="selAllChk" class="check" onchange="toggleSelAll(this.checked)"> All
     </label>
   </div>
-  <div style="display:flex;align-items:center;gap:7px">
+  <div style="display:flex;align-items:center;gap:6px;flex-wrap:wrap">
     <button id="tzBtn" onclick="toggleTZ()" class="btn btn-primary">UTC</button>
+    <button onclick="toggleAllLogs()" class="btn btn-ghost" id="logsBtn">📂 Logs</button>
     <button onclick="openRecycleBin()" class="btn btn-warning">🗑️ Bin</button>
-    <button onclick="toggleAllLogs()" class="btn btn-ghost">📂 Logs</button>
     <button onclick="toggleSettings()" class="btn btn-ghost" id="settingsBtn">⚙️</button>
   </div>
 </div>
 
-<div id="bulkToolbar">
-  <span id="selectedCount" style="font-weight:bold">0 selected</span>
-  <select id="bulkStatusSelect">
-    <option value="">— Set Status —</option>
-    <option>Not Started</option><option>In Progress</option>
-    <option>Completed</option><option>Delayed</option><option>Required Assistance</option>
-  </select>
-  <button onclick="applyBulkStatus()" class="btn btn-success">✓ Apply</button>
-  <button onclick="bulkRecycle()" class="btn btn-danger">🗑️ Recycle</button>
-  <button onclick="clearSelection()" class="btn" style="background:rgba(255,255,255,0.2);color:white;margin-left:auto">✕ Cancel</button>
+<!-- BULK BAR -->
+<div id="bulkBar">
+  <span id="selCount" style="font-weight:bold;font-size:13px">0 selected</span>
+  <button onclick="bulkRecycle()" class="btn btn-danger">🗑️ Move to Bin</button>
+  <button onclick="clearSel()" class="btn" style="background:rgba(255,255,255,0.2);color:white;margin-left:auto">✕ Cancel</button>
 </div>
 
-<div id="list"></div>
+<!-- SEARCH -->
+<div id="searchWrap">
+  <input id="searchIn" placeholder="🔍  Search flight, apron, status..." oninput="renderAll()">
+</div>
 
+<!-- MAIN LIST -->
+<div id="mainList" style="margin-top:4px"></div>
+
+<!-- CORNER SETTINGS -->
 <div id="settingsPanel">
   <h4>⚙️ Settings</h4>
   <button class="sp-btn" onclick="toggleTheme()">🌓 Toggle Theme</button>
+  <button class="sp-btn" onclick="openGroupMgmt()">📁 Manage Groups</button>
   <button class="sp-btn" onclick="openUserMgmt()">👥 User Management</button>
-  <hr style="border-color:var(--border);margin:8px 0">
+  <hr style="border-color:var(--border);margin:7px 0">
   <button class="sp-btn" onclick="toggleSettings()" style="color:#da3633">✕ Close</button>
 </div>
 
-<div id="recycleOverlay" class="big-overlay">
-  <div class="modal-box">
-    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px">
+<!-- RECYCLE BIN OVERLAY -->
+<div id="recycleOv" class="big-ov">
+  <div class="mbox">
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:14px">
       <h3 style="margin:0">🗑️ Recycle Bin</h3>
-      <button onclick="document.getElementById('recycleOverlay').style.display='none'" class="btn btn-danger">Close</button>
+      <button onclick="document.getElementById('recycleOv').style.display='none'" class="btn btn-danger">Close</button>
     </div>
+    <!-- Recycle bin bulk actions -->
+    <div id="recycleBulkBar" style="display:none;background:#1f6feb;color:white;padding:7px 10px;border-radius:8px;margin-bottom:10px;display:flex;align-items:center;gap:8px;flex-wrap:wrap">
+      <span id="recycleSelCount" style="font-weight:bold;font-size:13px">0 selected</span>
+      <button onclick="bulkRestoreRecycle()" class="btn btn-success" style="font-size:12px;padding:4px 10px">↩ Restore Selected</button>
+      <button onclick="bulkPermDelete()" class="btn btn-danger" style="font-size:12px;padding:4px 10px">✕ Delete Selected</button>
+      <button onclick="clearRecycleSel()" class="btn" style="background:rgba(255,255,255,0.2);color:white;margin-left:auto;font-size:12px;padding:4px 8px">✕ Cancel</button>
+    </div>
+    <label style="font-size:12px;cursor:pointer;display:flex;align-items:center;gap:5px;margin-bottom:8px;user-select:none">
+      <input type="checkbox" id="recycleSelAll" class="check" onchange="toggleRecycleSelAll(this.checked)"> Select All
+    </label>
     <div id="recycleList"><i>Loading...</i></div>
   </div>
 </div>
 
-<div id="userMgmtOverlay" class="big-overlay">
-  <div class="modal-box" style="max-width:660px">
-    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:18px">
-      <h3 style="margin:0">👥 User Management</h3>
-      <button onclick="document.getElementById('userMgmtOverlay').style.display='none'" class="btn btn-danger">Close</button>
+<!-- GROUP MANAGEMENT OVERLAY -->
+<div id="groupOv" class="big-ov">
+  <div class="mbox" style="max-width:500px">
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:14px">
+      <h3 style="margin:0">📁 Manage Groups</h3>
+      <button onclick="document.getElementById('groupOv').style.display='none'" class="btn btn-danger">Close</button>
     </div>
-    <div style="background:rgba(128,128,128,0.07);border:1px solid var(--border);border-radius:10px;padding:14px;margin-bottom:18px">
-      <h4 id="userFormTitle" style="margin:0 0 12px">➕ Add New User</h4>
-      <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:10px">
+    <p style="font-size:12px;color:#888;margin-top:0">Drag to reorder. Flights not assigned to any group appear under "Unassigned".</p>
+    <div id="groupList"></div>
+    <div style="display:flex;gap:8px;margin-top:12px">
+      <input id="newGroupName" placeholder="New group name..." style="flex:1;padding:8px;border-radius:7px;border:1px solid var(--border);background:var(--bg);color:var(--text)">
+      <button onclick="addGroup()" class="btn btn-success">+ Add</button>
+    </div>
+  </div>
+</div>
+
+<!-- USER MANAGEMENT OVERLAY -->
+<div id="userOv" class="big-ov">
+  <div class="mbox" style="max-width:660px">
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px">
+      <h3 style="margin:0">👥 User Management</h3>
+      <button onclick="document.getElementById('userOv').style.display='none'" class="btn btn-danger">Close</button>
+    </div>
+    <div style="background:rgba(128,128,128,0.07);border:1px solid var(--border);border-radius:10px;padding:13px;margin-bottom:16px">
+      <h4 id="uFormTitle" style="margin:0 0 11px">➕ Add New User</h4>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:9px;margin-bottom:9px">
         <div><label style="font-size:11px;font-weight:bold;color:#888;display:block;margin-bottom:3px">Staff ID *</label>
           <input id="uId" placeholder="e.g. S001" style="padding:8px;border-radius:7px;border:1px solid var(--border);background:var(--bg);color:var(--text);width:100%"></div>
         <div><label style="font-size:11px;font-weight:bold;color:#888;display:block;margin-bottom:3px">Full Name *</label>
-          <input id="uName" placeholder="e.g. Ahmad Razif" style="padding:8px;border-radius:7px;border:1px solid var(--border);background:var(--bg);color:var(--text);width:100%"></div>
+          <input id="uName" placeholder="e.g. Ahmad" style="padding:8px;border-radius:7px;border:1px solid var(--border);background:var(--bg);color:var(--text);width:100%"></div>
         <div><label style="font-size:11px;font-weight:bold;color:#888;display:block;margin-bottom:3px">Position *</label>
           <input id="uPos" placeholder="e.g. Ground Staff" style="padding:8px;border-radius:7px;border:1px solid var(--border);background:var(--bg);color:var(--text);width:100%"></div>
-        <div><label id="uPassLabel" style="font-size:11px;font-weight:bold;color:#888;display:block;margin-bottom:3px">Password *</label>
+        <div><label id="uPassLbl" style="font-size:11px;font-weight:bold;color:#888;display:block;margin-bottom:3px">Password *</label>
           <input id="uPass" type="password" placeholder="Set password" style="padding:8px;border-radius:7px;border:1px solid var(--border);background:var(--bg);color:var(--text);width:100%"></div>
       </div>
-      <div style="display:flex;gap:8px">
+      <div style="display:flex;gap:7px">
         <button onclick="saveUser()" class="btn btn-success" style="flex:1">💾 Save</button>
-        <button id="cancelEditBtn" onclick="cancelUserEdit()" class="btn btn-danger" style="display:none">✕ Cancel</button>
+        <button id="uCancelBtn" onclick="cancelUserEdit()" class="btn btn-danger" style="display:none">✕ Cancel</button>
       </div>
-      <p id="userFormMsg" style="margin:7px 0 0;font-size:12px;display:none"></p>
+      <p id="uMsg" style="margin:6px 0 0;font-size:12px;display:none"></p>
     </div>
-    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px">
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:7px">
       <b>Existing Users</b>
-      <input id="userSearch" placeholder="Search..." onkeyup="filterUsers()" style="padding:6px 10px;border-radius:7px;border:1px solid var(--border);background:var(--bg);color:var(--text);width:150px">
+      <input id="uSearch" placeholder="Search..." onkeyup="filterUsers()" style="padding:6px 9px;border-radius:7px;border:1px solid var(--border);background:var(--bg);color:var(--text);width:145px">
     </div>
-    <div id="userList"><i style="color:#888">Loading...</i></div>
+    <div id="uList"><i style="color:#888">Loading...</i></div>
   </div>
 </div>
 
 <script>
-const firebaseConfig = {
-  apiKey: "AIzaSyBNcUXtBufxeST6EzJEa2Me562cdkzBJMM",
-  authDomain: "im-apron-turnaround-system.firebaseapp.com",
-  databaseURL: "https://im-apron-turnaround-system-default-rtdb.asia-southeast1.firebasedatabase.app",
-  projectId: "im-apron-turnaround-system",
-  storageBucket: "im-apron-turnaround-system.firebasestorage.app",
-  messagingSenderId: "984848540764",
-  appId: "1:984848540764:web:4a54026553c971acb33299"
+const firebaseConfig={
+  apiKey:"AIzaSyBNcUXtBufxeST6EzJEa2Me562cdkzBJMM",
+  authDomain:"im-apron-turnaround-system.firebaseapp.com",
+  databaseURL:"https://im-apron-turnaround-system-default-rtdb.asia-southeast1.firebasedatabase.app",
+  projectId:"im-apron-turnaround-system",
+  storageBucket:"im-apron-turnaround-system.firebasestorage.app",
+  messagingSenderId:"984848540764",
+  appId:"1:984848540764:web:4a54026553c971acb33299"
 };
 firebase.initializeApp(firebaseConfig);
-const db = firebase.database();
+const db=firebase.database();
 
-const ALL_TASKS = ["Flight Plan Approval","Engineering","Tow Truck Pushback","PAX Boarding (F)","PAX Boarding (B)","Catering","Baggage Load","Fueling","Water","Lavatory"];
-let allF = {}, useUTC = true, allOpen = false, selectedFlights = new Set(), flightsRef = null;
+const ALL_TASKS=["Flight Plan Approval","Engineering","Tow Truck Pushback","PAX Boarding (F)","PAX Boarding (B)","Catering","Baggage Load","Fueling","Water","Lavatory"];
+let allF={}, useUTC=true, allOpen=false, selFlights=new Set(), flightsRef=null;
+// groups: [{id, name, flights:[flightKey,...]}]
+let groups=[], groupsRef=null;
 
-function pad(n) { return String(n).padStart(2,'0'); }
-function formatDate(iso) {
-    if(!iso) return '-';
-    const d = new Date(iso);
-    if(useUTC) return [d.getUTCFullYear(),pad(d.getUTCMonth()+1),pad(d.getUTCDate())].join('-')+' '+[pad(d.getUTCHours()),pad(d.getUTCMinutes()),pad(d.getUTCSeconds())].join(':');
-    return d.toLocaleString();
+// ── Helpers ──────────────────────────────────────────────────────
+function pad(n){return String(n).padStart(2,'0');}
+function fmtDate(iso){
+  if(!iso) return '-';
+  const d=new Date(iso);
+  if(useUTC) return [d.getUTCFullYear(),pad(d.getUTCMonth()+1),pad(d.getUTCDate())].join('-')+' '+[pad(d.getUTCHours()),pad(d.getUTCMinutes()),pad(d.getUTCSeconds())].join(':');
+  return d.toLocaleString();
 }
-function statusPill(s) {
-    const m={'Not Started':'s-ns','In Progress':'s-ip','Completed':'s-ok','Delayed':'s-dl','Required Assistance':'s-ra'};
-    return `<span class="status-pill ${m[s]||'s-ns'}">${s||'—'}</span>`;
+function overallPill(s){
+  const map={'Arriving':'s-ar','On Chocked':'s-oc','Delayed':'s-dl','PB Attached':'s-pb','Push Backed':'s-px'};
+  return `<span class="pill ${map[s]||'s-ns'}">${s||'—'}</span>`;
 }
-function dotColor(s) {
-    if(s==='Completed') return '#3fb950';
-    if(s==='Delayed'||s==='Required Assistance') return '#f85149';
-    if(s==='In Progress') return '#58a6ff';
-    return '#444';
+function overallBorder(s){
+  if(s==='Push Backed'||s==='On Chocked') return '#238636';
+  if(s==='Delayed') return '#da3633';
+  if(s==='PB Attached') return '#e3b341';
+  if(s==='Arriving') return '#1f6feb';
+  return '#555';
 }
-function taskBg(s) {
-    if(s==='Completed') return 'background:rgba(35,134,54,0.15);color:#3fb950';
-    if(s==='Delayed'||s==='Required Assistance') return 'background:rgba(218,54,51,0.15);color:#f85149';
-    if(s==='In Progress') return 'background:rgba(31,111,235,0.15);color:#58a6ff';
-    return 'background:rgba(128,128,128,0.08);color:#777';
-}
-function borderColor(s) {
-    if(s==='Completed') return '#238636';
-    if(s==='Delayed') return '#da3633';
-    if(s==='Required Assistance') return '#e3b341';
-    if(s==='In Progress') return '#1f6feb';
-    return '#555';
-}
-function showToast(msg, duration=4500) {
-    const t = document.getElementById('toast');
-    t.innerText = msg; t.style.display = 'block';
-    clearTimeout(t._timer);
-    t._timer = setTimeout(()=>t.style.display='none', duration);
+function tcStyle(s){
+  if(s==='Completed') return 'background:rgba(35,134,54,0.2);color:#3fb950';
+  if(s==='Delayed'||s==='Required Assistance') return 'background:rgba(218,54,51,0.2);color:#f85149';
+  if(s==='In Progress') return 'background:rgba(31,111,235,0.2);color:#58a6ff';
+  return 'background:rgba(128,128,128,0.1);color:#777';
 }
 
-// ── Single Firebase listener ─────────────────────────────────────
-function render() {
-    if(flightsRef) return;
-    flightsRef = db.ref('flights');
-    flightsRef.on('value', s => { allF = s.val()||{}; renderList(); });
-}
-
-function renderList() {
-    const list = document.getElementById('list'); list.innerHTML = '';
-    const active = Object.entries(allF).filter(([,d])=>!d._deleted);
-    if(!active.length) { list.innerHTML='<p style="text-align:center;color:#888;padding:40px">No active flights.</p>'; return; }
-
-    active.forEach(([f,d]) => {
-        const msgs = d.msgs||[], logs = d.logs||[];
-        const unreadMsg = msgs.slice().reverse().find(m=>m.user!=='Admin'&&!m.read);
-        const isSelected = selectedFlights.has(f);
-        const totalEntries = msgs.length + logs.length;
-
-        const taskHtml = ALL_TASKS.map(t => {
-            const s = d[t]||'Not Started';
-            return `<div class="task-mini" style="${taskBg(s)}">
-                <span class="t-dot" style="background:${dotColor(s)}"></span>
-                <span class="t-label">${t}</span>
-            </div>`;
-        }).join('');
-
-        const card = document.createElement('div');
-        card.className = 'card'+(isSelected?' selected':'');
-        card.id = 'card-'+f;
-        card.style.borderLeftColor = borderColor(d['Overall Status']);
-
-        card.innerHTML = `
-          <div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap">
-            <input type="checkbox" class="select-check" ${isSelected?'checked':''} onchange="toggleSelect('${f}',this.checked)" onclick="event.stopPropagation()">
-            <div style="flex:1;min-width:0">
-              <b style="font-size:15px">${f}</b>
-              <span style="color:#888;font-size:12px;margin-left:8px">Apron ${d.apron}</span>
-              ${d.etd?`<span style="color:#888;font-size:12px;margin-left:8px">ETD ${d.etd.substring(11,16)}</span>`:''}
-            </div>
-            ${statusPill(d['Overall Status'])}
-          </div>
-          <div class="task-mini-grid">${taskHtml}</div>
-          ${unreadMsg?`<div class="msg-alert">
-            <button onclick="markReadAdmin('${f}',${msgs.indexOf(unreadMsg)});event.stopPropagation()" class="btn btn-primary" style="float:right;font-size:10px;padding:2px 6px">Mark Read</button>
-            <b>STAFF:</b> ${unreadMsg.status} <small>(${formatDate(unreadMsg.time)})</small>
-          </div>`:''}
-          <div class="reply-row">
-            <input id="reply-${f}" placeholder="Reply to staff..." onclick="event.stopPropagation()">
-            <button onclick="sendReply('${f}');event.stopPropagation()" class="btn btn-primary">Send</button>
-            <button onclick="toggleLogs('${f}');event.stopPropagation()" class="btn btn-ghost" id="logBtn-${f}" style="white-space:nowrap">
-              📋 ${allOpen?'Hide':'Logs'}${totalEntries>0?` <span style="background:#1f6feb;color:white;border-radius:10px;padding:1px 6px;font-size:10px">${totalEntries}</span>`:''}
-            </button>
-          </div>
-          <div id="logs-${f}" style="display:${allOpen?'block':'none'};margin-top:10px">
-            <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px">
-              <div>
-                <div style="font-size:11px;font-weight:bold;margin-bottom:4px;color:var(--primary)">💬 Messages (${msgs.length})</div>
-                <div class="log-scroll">${msgs.slice().reverse().map(m=>`<div style="margin-bottom:4px;padding-bottom:4px;border-bottom:1px solid rgba(128,128,128,0.15)"><b style="font-size:10px">${m.user}</b> <span style="color:#888;font-size:10px">${formatDate(m.time)}</span>${m.read?' <span style="color:#3fb950;font-size:10px">✓</span>':''}<br>${m.status}</div>`).join('')||'<i style="color:#888">None</i>'}</div>
-              </div>
-              <div>
-                <div style="font-size:11px;font-weight:bold;margin-bottom:4px;color:var(--primary)">⚙️ Actions (${logs.length})</div>
-                <div class="log-scroll">${logs.slice().reverse().map(l=>`<div style="margin-bottom:3px">[${formatDate(l.time)}] <b>${l.task}</b>→${l.status}</div>`).join('')||'<i style="color:#888">None</i>'}</div>
-              </div>
-            </div>
-          </div>`;
-        list.appendChild(card);
+// ── Firebase listeners (single attach) ──────────────────────────
+function startListeners(){
+  if(!flightsRef){
+    flightsRef=db.ref('flights');
+    flightsRef.on('value',s=>{allF=s.val()||{};renderAll();});
+  }
+  if(!groupsRef){
+    groupsRef=db.ref('groups');
+    groupsRef.on('value',s=>{
+      const raw=s.val();
+      groups=raw?Object.entries(raw).map(([id,g])=>({id,...g})):[];
+      // sort by order field
+      groups.sort((a,b)=>(a.order||0)-(b.order||0));
+      renderAll();
     });
-    updateToolbar();
+  }
 }
 
-function toggleLogs(f) {
-    const el = document.getElementById('logs-'+f), btn = document.getElementById('logBtn-'+f);
-    const show = el.style.display==='none';
-    el.style.display = show?'block':'none';
-    const d = allF[f], total = ((d.msgs||[]).length+(d.logs||[]).length);
-    btn.innerHTML = `📋 ${show?'Hide':'Logs'}${total>0?` <span style="background:#1f6feb;color:white;border-radius:10px;padding:1px 6px;font-size:10px">${total}</span>`:''}`;
+// ── Main renderer ────────────────────────────────────────────────
+function renderAll(){
+  const q=(document.getElementById('searchIn').value||'').toLowerCase();
+  const container=document.getElementById('mainList'); container.innerHTML='';
+
+  const active=Object.entries(allF).filter(([,d])=>!d._deleted);
+  // search filter
+  const filtered=active.filter(([f,d])=>{
+    if(!q) return true;
+    return f.toLowerCase().includes(q)||
+      (d.apron||'').toLowerCase().includes(q)||
+      (d['Overall Status']||'').toLowerCase().includes(q);
+  });
+
+  if(!filtered.length){
+    container.innerHTML='<p style="text-align:center;color:#888;padding:40px">No flights found.</p>';
+    updateBulkBar(); return;
+  }
+
+  // Build group buckets
+  const assigned=new Set();
+  const groupBuckets=groups.map(g=>{
+    const gFlights=(g.flights||[]).filter(f=>filtered.find(([k])=>k===f));
+    gFlights.forEach(f=>assigned.add(f));
+    return {g, flights:gFlights};
+  });
+  const unassigned=filtered.filter(([f])=>!assigned.has(f));
+
+  // Render each group
+  groupBuckets.forEach(({g,flights})=>{
+    if(!flights.length) return;
+    const sec=document.createElement('div');
+    sec.innerHTML=`<div class="group-header">
+      <span class="group-title">📁 ${g.name} <span style="color:#888;font-weight:normal;font-size:12px">(${flights.length})</span></span>
+    </div><div class="group-body" id="gb-${g.id}"></div>`;
+    container.appendChild(sec);
+    const body=sec.querySelector('#gb-'+g.id);
+    flights.forEach(fKey=>{
+      const entry=filtered.find(([k])=>k===fKey);
+      if(entry) body.appendChild(makeCard(entry[0],entry[1]));
+    });
+  });
+
+  // Unassigned group
+  if(unassigned.length){
+    const sec=document.createElement('div');
+    sec.innerHTML=`<div class="group-header">
+      <span class="group-title" style="color:#888">📋 Unassigned <span style="font-weight:normal;font-size:12px">(${unassigned.length})</span></span>
+    </div><div class="group-body" id="gb-unassigned"></div>`;
+    container.appendChild(sec);
+    const body=sec.querySelector('#gb-unassigned');
+    unassigned.forEach(([f,d])=>body.appendChild(makeCard(f,d)));
+  }
+
+  updateBulkBar();
+}
+
+function makeCard(f,d){
+  const msgs=d.msgs||[], logs=d.logs||[];
+  const unreadMsg=msgs.slice().reverse().find(m=>m.user!=='Admin'&&!m.read);
+  const isSel=selFlights.has(f);
+  const totalEntries=msgs.length+logs.length;
+
+  // All tasks chip row
+  const taskHtml=ALL_TASKS.map(t=>{
+    const s=d[t]||'Not Started';
+    return `<span class="tc" style="${tcStyle(s)}">${t.replace(' (F)','(F)').replace(' (B)','(B)')}</span>`;
+  }).join('');
+
+  const card=document.createElement('div');
+  card.className='fcard'+(isSel?' sel':'');
+  card.id='card-'+f;
+  card.style.borderLeftColor=overallBorder(d['Overall Status']);
+  card.innerHTML=`
+    <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap">
+      <input type="checkbox" class="check" ${isSel?'checked':''} onchange="toggleSel('${f}',this.checked)" onclick="event.stopPropagation()">
+      <div style="flex:1;min-width:0">
+        <b style="font-size:14px">${f}</b>
+        <span style="color:#888;font-size:12px;margin-left:7px">Apron ${d.apron}</span>
+        ${d.etd?`<span style="color:#888;font-size:11px;margin-left:7px">ETD ${d.etd.substring(11,16)}</span>`:''}
+      </div>
+      ${overallPill(d['Overall Status'])}
+    </div>
+    <div class="task-row">${taskHtml}</div>
+    ${unreadMsg?`<div class="msg-alert">
+      <button onclick="markRead('${f}',${msgs.indexOf(unreadMsg)});event.stopPropagation()" class="btn btn-primary" style="float:right;font-size:10px;padding:2px 5px">Mark Read</button>
+      <b>STAFF:</b> ${unreadMsg.status} <small>(${fmtDate(unreadMsg.time)})</small>
+    </div>`:''}
+    <div class="reply-row">
+      <input id="reply-${f}" placeholder="Reply to staff..." onclick="event.stopPropagation()">
+      <button onclick="sendReply('${f}');event.stopPropagation()" class="btn btn-primary" style="font-size:12px">Send</button>
+      <button onclick="toggleLogs('${f}');event.stopPropagation()" class="btn btn-ghost" id="logBtn-${f}" style="font-size:12px;white-space:nowrap">
+        📋 ${allOpen?'Hide':'Logs'}${totalEntries>0?` <span style="background:#1f6feb;color:white;border-radius:9px;padding:1px 5px;font-size:10px">${totalEntries}</span>`:''}
+      </button>
+    </div>
+    <div id="logs-${f}" style="display:${allOpen?'block':'none'};margin-top:9px">
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:7px">
+        <div>
+          <div style="font-size:11px;font-weight:bold;color:var(--primary);margin-bottom:3px">💬 Messages (${msgs.length})</div>
+          <div class="log-scroll">${msgs.slice().reverse().map(m=>`<div style="margin-bottom:3px;padding-bottom:3px;border-bottom:1px solid rgba(128,128,128,0.12)"><b style="font-size:10px">${m.user}</b> <span style="color:#888;font-size:10px">${fmtDate(m.time)}</span>${m.read?' <span style="color:#3fb950;font-size:9px">✓</span>':''}<br>${m.status}</div>`).join('')||'<i style="color:#888">None</i>'}</div>
+        </div>
+        <div>
+          <div style="font-size:11px;font-weight:bold;color:var(--primary);margin-bottom:3px">⚙️ Actions (${logs.length})</div>
+          <div class="log-scroll">${logs.slice().reverse().map(l=>`<div style="margin-bottom:2px">[${fmtDate(l.time)}] <b>${l.task}</b>→${l.status}</div>`).join('')||'<i style="color:#888">None</i>'}</div>
+        </div>
+      </div>
+    </div>`;
+  return card;
+}
+
+function toggleLogs(f){
+  const el=document.getElementById('logs-'+f),btn=document.getElementById('logBtn-'+f);
+  const show=el.style.display==='none';
+  el.style.display=show?'block':'none';
+  const d=allF[f], total=((d.msgs||[]).length+(d.logs||[]).length);
+  btn.innerHTML=`📋 ${show?'Hide':'Logs'}${total>0?` <span style="background:#1f6feb;color:white;border-radius:9px;padding:1px 5px;font-size:10px">${total}</span>`:''}`;
 }
 
 // ── Multi-select ─────────────────────────────────────────────────
-function toggleSelect(f, checked) {
-    if(checked) selectedFlights.add(f); else selectedFlights.delete(f);
-    document.getElementById('card-'+f)?.classList.toggle('selected', checked);
-    updateToolbar();
+function toggleSel(f,checked){
+  if(checked) selFlights.add(f); else selFlights.delete(f);
+  document.getElementById('card-'+f)?.classList.toggle('sel',checked);
+  updateBulkBar();
 }
-function toggleSelectAll(checked) {
-    selectedFlights.clear();
-    if(checked) Object.keys(allF).filter(f=>!allF[f]._deleted).forEach(f=>selectedFlights.add(f));
-    renderList();
+function toggleSelAll(checked){
+  selFlights.clear();
+  if(checked) Object.entries(allF).filter(([,d])=>!d._deleted).forEach(([f])=>selFlights.add(f));
+  renderAll();
 }
-function clearSelection() {
-    selectedFlights.clear();
-    document.getElementById('selectAllChk').checked = false;
-    renderList();
+function clearSel(){selFlights.clear();document.getElementById('selAllChk').checked=false;renderAll();}
+function updateBulkBar(){
+  const n=selFlights.size;
+  document.getElementById('bulkBar').classList.toggle('on',n>0);
+  document.getElementById('selCount').innerText=n+' selected';
 }
-function updateToolbar() {
-    const n = selectedFlights.size;
-    document.getElementById('bulkToolbar').classList.toggle('active', n>0);
-    document.getElementById('selectedCount').innerText = n+' selected';
-}
-
-// ── Bulk actions ─────────────────────────────────────────────────
-function applyBulkStatus() {
-    const s = document.getElementById('bulkStatusSelect').value;
-    if(!s) { alert('Choose a status first.'); return; }
-    if(!confirm(`Set ${selectedFlights.size} flight(s) to "${s}"?`)) return;
-    const u = {}; selectedFlights.forEach(f => u['flights/'+f+'/Overall Status']=s);
-    db.ref().update(u).then(clearSelection);
-}
-function bulkRecycle() {
-    if(!confirm(`Move ${selectedFlights.size} flight(s) to Recycle Bin?`)) return;
-    const now = new Date().toISOString(), u = {};
-    selectedFlights.forEach(f => { u['flights/'+f+'/_deleted']=true; u['flights/'+f+'/_deletedAt']=now; });
-    db.ref().update(u).then(clearSelection);
+function bulkRecycle(){
+  if(!confirm('Move '+selFlights.size+' flight(s) to Recycle Bin?')) return;
+  const now=new Date().toISOString(),u={};
+  selFlights.forEach(f=>{u['flights/'+f+'/_deleted']=true;u['flights/'+f+'/_deletedAt']=now;});
+  db.ref().update(u).then(clearSel);
 }
 
 // ── Recycle Bin ──────────────────────────────────────────────────
-function openRecycleBin() { document.getElementById('recycleOverlay').style.display='block'; loadRecycleBin(); }
-function loadRecycleBin() {
-    const c = document.getElementById('recycleList'); c.innerHTML='<i>Loading...</i>';
-    db.ref('flights').once('value', s => {
-        const del = Object.entries(s.val()||{}).filter(([,v])=>v._deleted);
-        if(!del.length) { c.innerHTML="<p style='color:#888'>Recycle bin is empty.</p>"; return; }
-        c.innerHTML = del.map(([f,d])=>`<div class="recycle-item">
-          <div><b>${f}</b> — Apron: ${d.apron}<br><small style="color:#888">Deleted: ${formatDate(d._deletedAt)}</small></div>
-          <div style="display:flex;gap:6px">
-            <button onclick="restoreFlight('${f}')" class="btn btn-success" style="font-size:12px;padding:4px 10px">↩ Restore</button>
-            <button onclick="permDelete('${f}')" class="btn btn-danger" style="font-size:12px;padding:4px 10px">✕ Delete</button>
-          </div></div>`).join('');
-    });
+let recycleSel=new Set();
+function openRecycleBin(){document.getElementById('recycleOv').style.display='block';loadRecycleBin();}
+function loadRecycleBin(){
+  const c=document.getElementById('recycleList'); c.innerHTML='<i>Loading...</i>';
+  recycleSel.clear(); updateRecycleBulkBar();
+  document.getElementById('recycleSelAll').checked=false;
+  db.ref('flights').once('value',s=>{
+    const del=Object.entries(s.val()||{}).filter(([,v])=>v._deleted);
+    if(!del.length){c.innerHTML="<p style='color:#888'>Recycle bin is empty.</p>";return;}
+    c.innerHTML=del.map(([f,d])=>`
+      <div class="ri" id="ri-${f}">
+        <div style="display:flex;align-items:center;gap:8px">
+          <input type="checkbox" class="check recycle-chk" data-f="${f}" onchange="toggleRecycleSel('${f}',this.checked)">
+          <div><b>${f}</b> — Apron: ${d.apron}<br><small style="color:#888">Deleted: ${fmtDate(d._deletedAt)}</small></div>
+        </div>
+        <div style="display:flex;gap:5px">
+          <button onclick="restoreFlight('${f}')" class="btn btn-success" style="font-size:11px;padding:3px 9px">↩</button>
+          <button onclick="permDelete('${f}')" class="btn btn-danger" style="font-size:11px;padding:3px 9px">✕</button>
+        </div>
+      </div>`).join('');
+  });
 }
-function restoreFlight(f) { db.ref('flights/'+f+'/_deleted').remove(); db.ref('flights/'+f+'/_deletedAt').remove(); loadRecycleBin(); }
-function permDelete(f) { if(!confirm(`Permanently delete ${f}?`)) return; db.ref('flights/'+f).remove().then(loadRecycleBin); }
+function toggleRecycleSel(f,checked){
+  if(checked) recycleSel.add(f); else recycleSel.delete(f);
+  updateRecycleBulkBar();
+}
+function toggleRecycleSelAll(checked){
+  recycleSel.clear();
+  document.querySelectorAll('.recycle-chk').forEach(chk=>{chk.checked=checked;if(checked) recycleSel.add(chk.dataset.f);});
+  updateRecycleBulkBar();
+}
+function clearRecycleSel(){
+  recycleSel.clear();
+  document.querySelectorAll('.recycle-chk').forEach(c=>c.checked=false);
+  document.getElementById('recycleSelAll').checked=false;
+  updateRecycleBulkBar();
+}
+function updateRecycleBulkBar(){
+  const bar=document.getElementById('recycleBulkBar');
+  bar.style.display=recycleSel.size>0?'flex':'none';
+  document.getElementById('recycleSelCount').innerText=recycleSel.size+' selected';
+}
+function bulkRestoreRecycle(){
+  if(!recycleSel.size) return;
+  const u={};
+  recycleSel.forEach(f=>{u['flights/'+f+'/_deleted']=null;u['flights/'+f+'/_deletedAt']=null;});
+  db.ref().update(u).then(()=>loadRecycleBin());
+}
+function bulkPermDelete(){
+  if(!confirm('Permanently delete '+recycleSel.size+' flight(s)? Cannot be undone.')) return;
+  const promises=[...recycleSel].map(f=>db.ref('flights/'+f).remove());
+  Promise.all(promises).then(()=>loadRecycleBin());
+}
+function restoreFlight(f){db.ref('flights/'+f+'/_deleted').remove();db.ref('flights/'+f+'/_deletedAt').remove();loadRecycleBin();}
+function permDelete(f){if(!confirm('Permanently delete '+f+'?'))return;db.ref('flights/'+f).remove().then(loadRecycleBin);}
+
+// ── Groups ───────────────────────────────────────────────────────
+function openGroupMgmt(){
+  document.getElementById('settingsPanel').classList.remove('open');
+  document.getElementById('groupOv').style.display='block';
+  renderGroupMgmt();
+}
+function renderGroupMgmt(){
+  const container=document.getElementById('groupList'); container.innerHTML='';
+  if(!groups.length){container.innerHTML='<p style="color:#888;font-size:13px">No groups yet. Add one below.</p>';return;}
+  groups.forEach((g,idx)=>{
+    const div=document.createElement('div'); div.className='gitem';
+    // Flights assigned to this group as a multi-select
+    const activeFlightKeys=Object.keys(allF).filter(f=>!allF[f]._deleted);
+    const assignedStr=(g.flights||[]).filter(f=>activeFlightKeys.includes(f)).join(', ')||'None';
+    div.innerHTML=`
+      <div style="display:flex;flex-direction:column;gap:5px;flex:1">
+        <input type="text" value="${g.name}" id="gname-${g.id}" style="font-weight:bold">
+        <div style="font-size:11px;color:#888">Flights: 
+          <select multiple id="gfl-${g.id}" style="font-size:11px;padding:2px;border-radius:5px;border:1px solid var(--border);background:var(--bg);color:var(--text);min-width:180px;max-height:70px">
+            ${activeFlightKeys.map(f=>`<option value="${f}" ${(g.flights||[]).includes(f)?'selected':''}>${f}</option>`).join('')}
+          </select>
+        </div>
+      </div>
+      <div style="display:flex;flex-direction:column;gap:4px">
+        <button onclick="saveGroup('${g.id}')" class="btn btn-success" style="font-size:11px;padding:3px 8px">💾</button>
+        <button onclick="moveGroup('${g.id}',-1)" class="btn btn-ghost" style="font-size:11px;padding:3px 8px" ${idx===0?'disabled':''}>▲</button>
+        <button onclick="moveGroup('${g.id}',1)" class="btn btn-ghost" style="font-size:11px;padding:3px 8px" ${idx===groups.length-1?'disabled':''}>▼</button>
+        <button onclick="deleteGroup('${g.id}')" class="btn btn-danger" style="font-size:11px;padding:3px 8px">🗑️</button>
+      </div>`;
+    container.appendChild(div);
+  });
+}
+function saveGroup(id){
+  const name=document.getElementById('gname-'+id).value.trim(); if(!name) return;
+  const sel=document.getElementById('gfl-'+id);
+  const flights=[...sel.options].filter(o=>o.selected).map(o=>o.value);
+  db.ref('groups/'+id).update({name,flights}).then(()=>renderGroupMgmt());
+}
+function addGroup(){
+  const name=document.getElementById('newGroupName').value.trim(); if(!name) return;
+  const newId='g'+Date.now();
+  const order=groups.length?Math.max(...groups.map(g=>g.order||0))+1:0;
+  db.ref('groups/'+newId).set({name,flights:[],order}).then(()=>{
+    document.getElementById('newGroupName').value='';
+  });
+}
+function deleteGroup(id){
+  if(!confirm('Delete this group? Flights will be moved to Unassigned.')) return;
+  db.ref('groups/'+id).remove();
+}
+function moveGroup(id,dir){
+  const idx=groups.findIndex(g=>g.id===id);
+  const swapIdx=idx+dir;
+  if(swapIdx<0||swapIdx>=groups.length) return;
+  const u={};
+  u['groups/'+groups[idx].id+'/order']=swapIdx;
+  u['groups/'+groups[swapIdx].id+'/order']=idx;
+  db.ref().update(u);
+}
 
 // ── Misc ─────────────────────────────────────────────────────────
-function sendReply(f) {
-    const inp = document.getElementById('reply-'+f), val = inp.value.trim(); if(!val) return;
-    let msgs = allF[f].msgs||[];
-    msgs.push({time:new Date().toISOString(), user:'Admin', status:val, read:false});
-    db.ref('flights/'+f+'/msgs').set(msgs).then(()=>inp.value='');
+function sendReply(f){
+  const inp=document.getElementById('reply-'+f),val=inp.value.trim(); if(!val) return;
+  let msgs=allF[f].msgs||[];
+  msgs.push({time:new Date().toISOString(),user:'Admin',status:val,read:false});
+  db.ref('flights/'+f+'/msgs').set(msgs).then(()=>inp.value='');
 }
-function markReadAdmin(f, idx) { db.ref('flights/'+f+'/msgs/'+idx+'/read').set(true); }
-function toggleAllLogs() { allOpen=!allOpen; renderList(); }
-function toggleTZ() { useUTC=!useUTC; document.getElementById('tzBtn').innerText=useUTC?'UTC':'Local'; renderList(); }
-function toggleTheme() {
-    const t = document.body.getAttribute('data-theme')==='dark'?'light':'dark';
-    document.body.setAttribute('data-theme',t); localStorage.setItem('theme',t);
+function markRead(f,idx){db.ref('flights/'+f+'/msgs/'+idx+'/read').set(true);}
+function toggleAllLogs(){
+  allOpen=!allOpen;
+  document.getElementById('logsBtn').innerText=allOpen?'📂 Collapse':'📂 Logs';
+  renderAll();
 }
-function toggleSettings() { document.getElementById('settingsPanel').classList.toggle('open'); }
-document.addEventListener('click', e => {
-    const p = document.getElementById('settingsPanel'), b = document.getElementById('settingsBtn');
-    if(p.classList.contains('open') && !p.contains(e.target) && e.target!==b) p.classList.remove('open');
+function toggleTZ(){useUTC=!useUTC;document.getElementById('tzBtn').innerText=useUTC?'UTC':'Local';renderAll();}
+function toggleTheme(){
+  const t=document.body.getAttribute('data-theme')==='dark'?'light':'dark';
+  document.body.setAttribute('data-theme',t);localStorage.setItem('theme',t);
+}
+function toggleSettings(){document.getElementById('settingsPanel').classList.toggle('open');}
+document.addEventListener('click',e=>{
+  const p=document.getElementById('settingsPanel'),b=document.getElementById('settingsBtn');
+  if(p.classList.contains('open')&&!p.contains(e.target)&&e.target!==b) p.classList.remove('open');
 });
 
 // ── User Management ──────────────────────────────────────────────
-let allUsers = {}, editingUserId = null;
-function openUserMgmt() { document.getElementById('settingsPanel').classList.remove('open'); document.getElementById('userMgmtOverlay').style.display='block'; cancelUserEdit(); loadUsers(); }
-function loadUsers() { document.getElementById('userList').innerHTML="<i style='color:#888'>Loading...</i>"; db.ref('users').once('value',s=>{allUsers=s.val()||{};renderUsers();}); }
-function renderUsers(filter) {
-    const c = document.getElementById('userList');
-    const keys = Object.keys(allUsers).filter(k=>{
-        if(!filter) return true;
-        const u=allUsers[k]; return k.toLowerCase().includes(filter)||(u.name||'').toLowerCase().includes(filter)||(u.pos||'').toLowerCase().includes(filter);
-    });
-    if(!keys.length){c.innerHTML="<p style='color:#888;text-align:center;padding:20px'>No users found.</p>";return;}
-    c.innerHTML=keys.map(k=>{const u=allUsers[k];return `<div style="display:flex;justify-content:space-between;align-items:center;padding:10px 4px;border-bottom:1px solid var(--border);gap:8px">
-      <div style="flex:1;min-width:0"><b>${u.name||'-'}</b> <span style="background:rgba(88,166,255,0.15);color:var(--primary);font-size:11px;padding:2px 7px;border-radius:10px;margin-left:4px">${u.id||k}</span><br><small style="color:#888">${u.pos||'No position'}</small></div>
-      <div style="display:flex;gap:6px"><button onclick="editUser('${k}')" class="btn btn-primary" style="font-size:12px;padding:4px 9px">✏️</button><button onclick="deleteUser('${k}')" class="btn btn-danger" style="font-size:12px;padding:4px 9px">🗑️</button></div></div>`;}).join('');
+let allUsers={},editingUid=null;
+function openUserMgmt(){document.getElementById('settingsPanel').classList.remove('open');document.getElementById('userOv').style.display='block';cancelUserEdit();loadUsers();}
+function loadUsers(){document.getElementById('uList').innerHTML="<i style='color:#888'>Loading...</i>";db.ref('users').once('value',s=>{allUsers=s.val()||{};renderUsers();});}
+function renderUsers(filter){
+  const c=document.getElementById('uList');
+  const keys=Object.keys(allUsers).filter(k=>{
+    if(!filter) return true;
+    const u=allUsers[k]; return k.toLowerCase().includes(filter)||(u.name||'').toLowerCase().includes(filter)||(u.pos||'').toLowerCase().includes(filter);
+  });
+  if(!keys.length){c.innerHTML="<p style='color:#888;text-align:center;padding:16px'>No users found.</p>";return;}
+  c.innerHTML=keys.map(k=>{const u=allUsers[k];return `<div style="display:flex;justify-content:space-between;align-items:center;padding:9px 4px;border-bottom:1px solid var(--border);gap:7px">
+    <div style="flex:1;min-width:0"><b>${u.name||'-'}</b> <span style="background:rgba(88,166,255,0.15);color:var(--primary);font-size:10px;padding:1px 6px;border-radius:9px;margin-left:4px">${u.id||k}</span><br><small style="color:#888">${u.pos||'—'}</small></div>
+    <div style="display:flex;gap:5px"><button onclick="editUser('${k}')" class="btn btn-primary" style="font-size:11px;padding:3px 8px">✏️</button><button onclick="delUser('${k}')" class="btn btn-danger" style="font-size:11px;padding:3px 8px">🗑️</button></div></div>`;}).join('');
 }
-function filterUsers(){renderUsers(document.getElementById('userSearch').value.toLowerCase().trim()||null);}
+function filterUsers(){renderUsers(document.getElementById('uSearch').value.toLowerCase().trim()||null);}
 function editUser(id){
-    editingUserId=id; const u=allUsers[id];
-    document.getElementById('uId').value=u.id||id; document.getElementById('uId').disabled=true;
-    document.getElementById('uName').value=u.name||''; document.getElementById('uPos').value=u.pos||''; document.getElementById('uPass').value='';
-    document.getElementById('uPassLabel').innerHTML='New Password <span style="color:#888;font-weight:normal">(blank=keep)</span>';
-    document.getElementById('userFormTitle').innerText='✏️ Edit: '+(u.name||id);
-    document.getElementById('cancelEditBtn').style.display='inline-block'; showUserMsg('');
-    document.getElementById('uName').focus();
+  editingUid=id; const u=allUsers[id];
+  document.getElementById('uId').value=u.id||id; document.getElementById('uId').disabled=true;
+  document.getElementById('uName').value=u.name||''; document.getElementById('uPos').value=u.pos||''; document.getElementById('uPass').value='';
+  document.getElementById('uPassLbl').innerHTML='New Password <span style="color:#888;font-weight:normal">(blank=keep)</span>';
+  document.getElementById('uFormTitle').innerText='✏️ Edit: '+(u.name||id);
+  document.getElementById('uCancelBtn').style.display='inline-block'; showUMsg('');
+  document.getElementById('uName').focus();
 }
 function cancelUserEdit(){
-    editingUserId=null; ['uId','uName','uPos','uPass'].forEach(id=>document.getElementById(id).value='');
-    document.getElementById('uId').disabled=false; document.getElementById('uPassLabel').innerHTML='Password *';
-    document.getElementById('userFormTitle').innerText='➕ Add New User';
-    document.getElementById('cancelEditBtn').style.display='none'; showUserMsg('');
+  editingUid=null; ['uId','uName','uPos','uPass'].forEach(id=>document.getElementById(id).value='');
+  document.getElementById('uId').disabled=false; document.getElementById('uPassLbl').innerHTML='Password *';
+  document.getElementById('uFormTitle').innerText='➕ Add New User';
+  document.getElementById('uCancelBtn').style.display='none'; showUMsg('');
 }
 function saveUser(){
-    const id=editingUserId||document.getElementById('uId').value.trim();
-    const name=document.getElementById('uName').value.trim(), pos=document.getElementById('uPos').value.trim(), pass=document.getElementById('uPass').value.trim();
-    if(!id){showUserMsg('⚠️ Staff ID required.',true);return;} if(!name){showUserMsg('⚠️ Name required.',true);return;}
-    if(!pos){showUserMsg('⚠️ Position required.',true);return;} if(!editingUserId&&!pass){showUserMsg('⚠️ Password required.',true);return;}
-    const data={id,name,pos,pass:pass||(editingUserId?allUsers[editingUserId].pass:'')};
-    db.ref('users/'+id).update(data).then(()=>{showUserMsg(editingUserId?'✅ Updated!':'✅ Created!');cancelUserEdit();loadUsers();}).catch(e=>showUserMsg('❌ '+e.message,true));
+  const id=editingUid||document.getElementById('uId').value.trim();
+  const name=document.getElementById('uName').value.trim(),pos=document.getElementById('uPos').value.trim(),pass=document.getElementById('uPass').value.trim();
+  if(!id){showUMsg('⚠️ Staff ID required.',true);return;} if(!name){showUMsg('⚠️ Name required.',true);return;}
+  if(!pos){showUMsg('⚠️ Position required.',true);return;} if(!editingUid&&!pass){showUMsg('⚠️ Password required.',true);return;}
+  const data={id,name,pos,pass:pass||(editingUid?allUsers[editingUid].pass:'')};
+  db.ref('users/'+id).update(data).then(()=>{showUMsg(editingUid?'✅ Updated!':'✅ Created!');cancelUserEdit();loadUsers();}).catch(e=>showUMsg('❌ '+e.message,true));
 }
-function deleteUser(id){if(!confirm(`Delete "${allUsers[id]?.name||id}"?`))return;db.ref('users/'+id).remove().then(loadUsers);}
-function showUserMsg(msg,isErr){const el=document.getElementById('userFormMsg');el.style.display=msg?'block':'none';el.style.color=isErr?'#da3633':'#3fb950';el.innerText=msg;}
+function delUser(id){if(!confirm('Delete "'+( allUsers[id]?.name||id)+'"?'))return;db.ref('users/'+id).remove().then(loadUsers);}
+function showUMsg(m,e){const el=document.getElementById('uMsg');el.style.display=m?'block':'none';el.style.color=e?'#da3633':'#3fb950';el.innerText=m;}
 
-window.onload = () => {
-    document.body.setAttribute('data-theme', localStorage.getItem('theme')||'dark');
-    render();
+window.onload=()=>{
+  document.body.setAttribute('data-theme',localStorage.getItem('theme')||'dark');
+  startListeners();
 };
 </script>
 </body>

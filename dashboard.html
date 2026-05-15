@@ -10,8 +10,10 @@
   [data-theme='light']{--bg:#f0f2f5;--card:#fff;--text:#333;--border:#ddd;--primary:#1a237e;}
   *{box-sizing:border-box;}
   body{font-family:'Segoe UI',sans-serif;background:var(--bg);color:var(--text);margin:0;padding-bottom:80px;transition:background .3s,color .3s;}
-  .hdr{display:flex;justify-content:space-between;align-items:center;padding:10px 16px;background:var(--card);border-bottom:1px solid var(--border);position:sticky;top:0;z-index:1000;gap:8px;flex-wrap:wrap;}
-  .btn{padding:6px 12px;border-radius:6px;border:none;font-weight:bold;cursor:pointer;font-size:12px;transition:opacity .15s;}
+
+  /* Header */
+  .hdr{display:flex;justify-content:space-between;align-items:center;padding:9px 14px;background:var(--card);border-bottom:1px solid var(--border);position:sticky;top:0;z-index:1000;gap:8px;flex-wrap:wrap;}
+  .btn{padding:5px 11px;border-radius:6px;border:none;font-weight:bold;cursor:pointer;font-size:12px;transition:opacity .15s;}
   .btn:hover{opacity:.85;}
   .btn-primary{background:#1f6feb;color:white;}
   .btn-danger{background:#da3633;color:white;}
@@ -19,22 +21,31 @@
   .btn-success{background:#238636;color:white;}
   .btn-ghost{background:rgba(128,128,128,0.15);color:var(--text);}
 
+  /* Live clock */
+  #liveClock{font-size:11px;font-weight:bold;letter-spacing:.4px;opacity:.9;cursor:pointer;user-select:none;padding:4px 9px;border-radius:6px;background:rgba(128,128,128,0.12);white-space:nowrap;}
+
   /* Bulk toolbar */
-  #bulkBar{display:none;position:sticky;top:53px;z-index:900;background:#1f6feb;color:white;padding:7px 16px;align-items:center;gap:8px;flex-wrap:wrap;}
+  #bulkBar{display:none;position:sticky;top:50px;z-index:900;background:#1f6feb;color:white;padding:6px 14px;align-items:center;gap:8px;flex-wrap:wrap;}
   #bulkBar.on{display:flex;}
 
-  /* Search bar */
-  #searchWrap{padding:10px 16px 0;}
-  #searchWrap input{width:100%;padding:8px 12px;border-radius:8px;border:1px solid var(--border);background:var(--card);color:var(--text);font-size:13px;}
+  /* Sort + Search bar */
+  #topControls{padding:8px 14px;display:flex;gap:8px;flex-wrap:wrap;align-items:center;background:var(--card);border-bottom:1px solid var(--border);}
+  #topControls input{flex:1;min-width:140px;padding:7px 11px;border-radius:7px;border:1px solid var(--border);background:var(--bg);color:var(--text);font-size:13px;}
+  #topControls select{padding:6px 9px;border-radius:7px;border:1px solid var(--border);background:var(--bg);color:var(--text);font-size:12px;cursor:pointer;}
 
-  /* Groups */
-  .group-header{display:flex;align-items:center;gap:8px;padding:10px 16px 4px;flex-wrap:wrap;}
-  .group-title{font-weight:bold;font-size:13px;flex:1;}
-  .group-body{padding:0 2px;}
+  /* Zone/Group */
+  .zone-header{display:flex;align-items:center;gap:8px;padding:9px 14px 3px;flex-wrap:wrap;}
+  .zone-title{font-weight:bold;font-size:13px;flex:1;}
+  .zone-body{padding:0 2px;}
 
   /* Flight card */
-  .fcard{background:var(--card);border-radius:11px;padding:12px 14px;margin:7px 14px;border:1px solid var(--border);border-left:6px solid #555;}
+  .fcard{background:var(--card);border-radius:11px;padding:11px 14px;margin:6px 14px;border:1px solid var(--border);border-left:6px solid #555;transition:box-shadow .15s;}
   .fcard.sel{box-shadow:0 0 0 2px #58a6ff;}
+  /* Manual sort handle */
+  .drag-handle{cursor:grab;padding:0 4px;color:#888;font-size:14px;user-select:none;flex-shrink:0;}
+  .drag-handle:active{cursor:grabbing;}
+  .fcard.dragging{opacity:.4;}
+  .fcard.drag-over{border-top:3px solid #58a6ff;}
 
   /* Status pills */
   .pill{display:inline-block;padding:2px 8px;border-radius:12px;font-size:11px;font-weight:bold;white-space:nowrap;}
@@ -44,23 +55,20 @@
   .s-pb{background:rgba(225,183,64,0.2);color:#e3b341;}
   .s-px{background:rgba(35,134,54,0.15);color:#3fb950;}
   .s-ns{background:rgba(128,128,128,0.15);color:#888;}
+  .s-ra{background:rgba(225,183,64,0.2);color:#e3b341;}
 
-  /* Task status chips on card */
-  .task-row{display:flex;flex-wrap:wrap;gap:3px;margin-top:7px;}
+  /* Task chips */
+  .task-row{display:flex;flex-wrap:wrap;gap:3px;margin-top:6px;}
   .tc{font-size:10px;padding:2px 7px;border-radius:10px;font-weight:600;}
 
-  /* Unread alert */
   .msg-alert{background:rgba(88,166,255,0.1);border-left:4px solid var(--primary);padding:7px 10px;border-radius:4px;margin:7px 0;font-size:13px;}
-
-  /* Log scrollbox */
-  .log-scroll{max-height:120px;overflow-y:auto;background:rgba(0,0,0,0.15);padding:6px;font-size:11px;border-radius:5px;margin-top:4px;}
-
+  .log-scroll{max-height:115px;overflow-y:auto;background:rgba(0,0,0,0.15);padding:6px;font-size:11px;border-radius:5px;margin-top:4px;}
   .check{width:15px;height:15px;cursor:pointer;accent-color:#58a6ff;flex-shrink:0;}
   .reply-row{display:flex;gap:6px;margin-top:9px;}
   .reply-row input{flex:1;padding:7px 9px;border-radius:6px;border:1px solid var(--border);background:var(--bg);color:var(--text);font-size:13px;}
 
-  /* Corner settings */
-  #settingsPanel{display:none;position:fixed;bottom:18px;right:18px;background:var(--card);border:1px solid var(--border);border-radius:13px;padding:13px 15px;width:200px;z-index:3000;box-shadow:0 8px 30px rgba(0,0,0,0.45);}
+  /* Settings panel — top RIGHT */
+  #settingsPanel{display:none;position:fixed;top:52px;right:14px;background:var(--card);border:1px solid var(--border);border-radius:13px;padding:13px 15px;width:205px;z-index:3000;box-shadow:0 8px 30px rgba(0,0,0,0.5);}
   #settingsPanel.open{display:block;}
   #settingsPanel h4{margin:0 0 9px;font-size:12px;color:var(--primary);}
   .sp-btn{display:block;width:100%;margin-bottom:6px;text-align:left;padding:7px 10px;border-radius:7px;border:none;background:rgba(128,128,128,0.12);color:var(--text);font-size:12px;cursor:pointer;font-weight:600;}
@@ -70,8 +78,6 @@
   .big-ov{display:none;position:fixed;inset:0;background:rgba(0,0,0,0.85);z-index:4000;padding:20px;overflow-y:auto;}
   .mbox{background:var(--card);max-width:640px;margin:36px auto;padding:20px;border-radius:13px;border:1px solid var(--border);}
   .ri{display:flex;justify-content:space-between;align-items:center;padding:9px 4px;border-bottom:1px solid var(--border);gap:8px;}
-
-  /* Group management modal items */
   .gitem{display:flex;align-items:center;gap:8px;padding:8px 6px;border-bottom:1px solid var(--border);}
   .gitem input[type=text]{flex:1;padding:6px 9px;border-radius:6px;border:1px solid var(--border);background:var(--bg);color:var(--text);font-size:13px;}
 </style>
@@ -81,15 +87,17 @@
 <!-- HEADER -->
 <div class="hdr">
   <div style="display:flex;align-items:center;gap:10px">
-    <h2 style="margin:0;font-size:16px">✈ Admin Console</h2>
+    <h2 style="margin:0;font-size:15px">✈ Admin</h2>
     <label style="font-size:12px;cursor:pointer;display:flex;align-items:center;gap:4px;user-select:none">
       <input type="checkbox" id="selAllChk" class="check" onchange="toggleSelAll(this.checked)"> All
     </label>
   </div>
+  <!-- Center clock -->
+  <span id="liveClock" onclick="toggleTZ()" title="Click to switch UTC/Local">--</span>
+  <!-- Right controls -->
   <div style="display:flex;align-items:center;gap:6px;flex-wrap:wrap">
-    <button id="tzBtn" onclick="toggleTZ()" class="btn btn-primary">UTC</button>
-    <button onclick="toggleAllLogs()" class="btn btn-ghost" id="logsBtn">📂 Logs</button>
-    <button onclick="openRecycleBin()" class="btn btn-warning">🗑️ Bin</button>
+    <button onclick="toggleAllLogs()" class="btn btn-ghost" id="logsBtn">📂</button>
+    <button onclick="openRecycleBin()" class="btn btn-warning">🗑️</button>
     <button onclick="toggleSettings()" class="btn btn-ghost" id="settingsBtn">⚙️</button>
   </div>
 </div>
@@ -101,36 +109,46 @@
   <button onclick="clearSel()" class="btn" style="background:rgba(255,255,255,0.2);color:white;margin-left:auto">✕ Cancel</button>
 </div>
 
-<!-- SEARCH -->
-<div id="searchWrap">
-  <input id="searchIn" placeholder="🔍  Search flight, apron, status..." oninput="renderAll()">
+<!-- SEARCH + SORT CONTROLS -->
+<div id="topControls">
+  <input id="searchIn" placeholder="🔍 Search flight, apron, status..." oninput="renderAll()">
+  <select id="sortField" onchange="renderAll()">
+    <option value="manual">Manual Order</option>
+    <option value="name">Flight Name</option>
+    <option value="apron">Apron</option>
+    <option value="etd">ETD</option>
+    <option value="status">Overall Status</option>
+  </select>
+  <select id="sortDir" onchange="renderAll()">
+    <option value="asc">▲ Asc</option>
+    <option value="desc">▼ Desc</option>
+  </select>
 </div>
 
 <!-- MAIN LIST -->
 <div id="mainList" style="margin-top:4px"></div>
 
-<!-- CORNER SETTINGS -->
+<!-- SETTINGS PANEL (top-right) -->
 <div id="settingsPanel">
   <h4>⚙️ Settings</h4>
   <button class="sp-btn" onclick="toggleTheme()">🌓 Toggle Theme</button>
-  <button class="sp-btn" onclick="openGroupMgmt()">📁 Manage Groups</button>
+  <button class="sp-btn" onclick="openZoneMgmt()">🗺️ Manage Zones</button>
   <button class="sp-btn" onclick="openUserMgmt()">👥 User Management</button>
   <hr style="border-color:var(--border);margin:7px 0">
   <button class="sp-btn" onclick="toggleSettings()" style="color:#da3633">✕ Close</button>
 </div>
 
-<!-- RECYCLE BIN OVERLAY -->
+<!-- RECYCLE BIN -->
 <div id="recycleOv" class="big-ov">
   <div class="mbox">
     <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:14px">
       <h3 style="margin:0">🗑️ Recycle Bin</h3>
       <button onclick="document.getElementById('recycleOv').style.display='none'" class="btn btn-danger">Close</button>
     </div>
-    <!-- Recycle bin bulk actions -->
-    <div id="recycleBulkBar" style="display:none;background:#1f6feb;color:white;padding:7px 10px;border-radius:8px;margin-bottom:10px;display:flex;align-items:center;gap:8px;flex-wrap:wrap">
+    <div id="recycleBulkBar" style="display:none;background:#1f6feb;color:white;padding:7px 10px;border-radius:8px;margin-bottom:10px;flex-wrap:wrap;align-items:center;gap:8px">
       <span id="recycleSelCount" style="font-weight:bold;font-size:13px">0 selected</span>
-      <button onclick="bulkRestoreRecycle()" class="btn btn-success" style="font-size:12px;padding:4px 10px">↩ Restore Selected</button>
-      <button onclick="bulkPermDelete()" class="btn btn-danger" style="font-size:12px;padding:4px 10px">✕ Delete Selected</button>
+      <button onclick="bulkRestoreRecycle()" class="btn btn-success" style="font-size:12px;padding:4px 10px">↩ Restore</button>
+      <button onclick="bulkPermDelete()" class="btn btn-danger" style="font-size:12px;padding:4px 10px">✕ Delete</button>
       <button onclick="clearRecycleSel()" class="btn" style="background:rgba(255,255,255,0.2);color:white;margin-left:auto;font-size:12px;padding:4px 8px">✕ Cancel</button>
     </div>
     <label style="font-size:12px;cursor:pointer;display:flex;align-items:center;gap:5px;margin-bottom:8px;user-select:none">
@@ -140,23 +158,23 @@
   </div>
 </div>
 
-<!-- GROUP MANAGEMENT OVERLAY -->
-<div id="groupOv" class="big-ov">
-  <div class="mbox" style="max-width:500px">
+<!-- ZONE MANAGEMENT -->
+<div id="zoneOv" class="big-ov">
+  <div class="mbox" style="max-width:540px">
     <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:14px">
-      <h3 style="margin:0">📁 Manage Groups</h3>
-      <button onclick="document.getElementById('groupOv').style.display='none'" class="btn btn-danger">Close</button>
+      <h3 style="margin:0">🗺️ Manage Zones</h3>
+      <button onclick="document.getElementById('zoneOv').style.display='none'" class="btn btn-danger">Close</button>
     </div>
-    <p style="font-size:12px;color:#888;margin-top:0">Drag to reorder. Flights not assigned to any group appear under "Unassigned".</p>
-    <div id="groupList"></div>
+    <p style="font-size:12px;color:#888;margin-top:0">Flights not in any zone appear under "Unassigned". Use ▲▼ to reorder zones.</p>
+    <div id="zoneList"></div>
     <div style="display:flex;gap:8px;margin-top:12px">
-      <input id="newGroupName" placeholder="New group name..." style="flex:1;padding:8px;border-radius:7px;border:1px solid var(--border);background:var(--bg);color:var(--text)">
-      <button onclick="addGroup()" class="btn btn-success">+ Add</button>
+      <input id="newZoneName" placeholder="New zone name (e.g. Approaching)..." style="flex:1;padding:8px;border-radius:7px;border:1px solid var(--border);background:var(--bg);color:var(--text)">
+      <button onclick="addZone()" class="btn btn-success">+ Add</button>
     </div>
   </div>
 </div>
 
-<!-- USER MANAGEMENT OVERLAY -->
+<!-- USER MANAGEMENT -->
 <div id="userOv" class="big-ov">
   <div class="mbox" style="max-width:660px">
     <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px">
@@ -202,10 +220,19 @@ const firebaseConfig={
 firebase.initializeApp(firebaseConfig);
 const db=firebase.database();
 
-const ALL_TASKS=["Flight Plan Approval","Engineering","Tow Truck Pushback","PAX Boarding (F)","PAX Boarding (B)","Catering","Baggage Load","Fueling","Water","Lavatory"];
-let allF={}, useUTC=true, allOpen=false, selFlights=new Set(), flightsRef=null;
-// groups: [{id, name, flights:[flightKey,...]}]
-let groups=[], groupsRef=null;
+// Updated task list matching index.html
+const CATS={
+  "Admin":  {emoji:"🛫", tasks:["Cockpit","Flight Plan","NOTAM/ATIS"]},
+  "Cabin":  {emoji:"🧹", tasks:["Cleaning (F/B)","Cleaning (E)","Catering (F/B)","Catering (E)"]},
+  "Ground": {emoji:"🚛", tasks:["Baggage (F)","Baggage (R)","Cargo (F)","Cargo (R)","Galley","Fuel","Water","Lavatory"]}
+};
+const ALL_TASKS=Object.values(CATS).flatMap(c=>c.tasks);
+const STATUS_ORDER={'Arriving':0,'On Chocked':1,'Delayed':2,'PB Attached':3,'Push Backed':4};
+
+let allF={}, useUTC=true, allOpen=false, selFlights=new Set();
+let flightsRef=null, zonesRef=null, zones=[], clockInterval=null;
+// manualOrder: {zoneId: [flightKey,...]} – persisted in Firebase groups/zones
+// We'll store per-zone manual ordering separately
 
 // ── Helpers ──────────────────────────────────────────────────────
 function pad(n){return String(n).padStart(2,'0');}
@@ -228,27 +255,57 @@ function overallBorder(s){
 }
 function tcStyle(s){
   if(s==='Completed') return 'background:rgba(35,134,54,0.2);color:#3fb950';
-  if(s==='Delayed'||s==='Required Assistance') return 'background:rgba(218,54,51,0.2);color:#f85149';
+  if(s==='Delayed') return 'background:rgba(218,54,51,0.2);color:#f85149';
+  if(s==='Required Assistance') return 'background:rgba(225,183,64,0.25);color:#e3b341';
   if(s==='In Progress') return 'background:rgba(31,111,235,0.2);color:#58a6ff';
   return 'background:rgba(128,128,128,0.1);color:#777';
 }
 
-// ── Firebase listeners (single attach) ──────────────────────────
-function startListeners(){
-  if(!flightsRef){
-    flightsRef=db.ref('flights');
-    flightsRef.on('value',s=>{allF=s.val()||{};renderAll();});
+// ── Live clock ───────────────────────────────────────────────────
+function updateClock(){
+  const el=document.getElementById('liveClock'); if(!el) return;
+  const now=new Date();
+  let str;
+  if(useUTC){
+    str=[now.getUTCFullYear(),pad(now.getUTCMonth()+1),pad(now.getUTCDate())].join('-')+' '+
+        [pad(now.getUTCHours()),pad(now.getUTCMinutes()),pad(now.getUTCSeconds())].join(':')+'  UTC';
+  } else {
+    str=now.getFullYear()+'-'+pad(now.getMonth()+1)+'-'+pad(now.getDate())+' '+
+        pad(now.getHours())+':'+pad(now.getMinutes())+':'+pad(now.getSeconds())+'  Local';
   }
-  if(!groupsRef){
-    groupsRef=db.ref('groups');
-    groupsRef.on('value',s=>{
+  el.innerText=str;
+}
+function startClock(){updateClock();if(clockInterval)clearInterval(clockInterval);clockInterval=setInterval(updateClock,1000);}
+
+// ── Firebase listeners ───────────────────────────────────────────
+function startListeners(){
+  if(!flightsRef){flightsRef=db.ref('flights');flightsRef.on('value',s=>{allF=s.val()||{};renderAll();});}
+  if(!zonesRef){
+    zonesRef=db.ref('zones');
+    zonesRef.on('value',s=>{
       const raw=s.val();
-      groups=raw?Object.entries(raw).map(([id,g])=>({id,...g})):[];
-      // sort by order field
-      groups.sort((a,b)=>(a.order||0)-(b.order||0));
+      zones=raw?Object.entries(raw).map(([id,g])=>({id,...g})):[];
+      zones.sort((a,b)=>(a.order||0)-(b.order||0));
       renderAll();
     });
   }
+}
+
+// ── Sort helper ──────────────────────────────────────────────────
+function sortFlights(entries){
+  const field=document.getElementById('sortField').value;
+  const dir=document.getElementById('sortDir').value==='asc'?1:-1;
+  if(field==='manual') return entries; // preserve original/manual order
+  return [...entries].sort((a,b)=>{
+    const [fa,da]=a, [fb,db]=b;
+    let va,vb;
+    if(field==='name'){va=fa;vb=fb;}
+    else if(field==='apron'){va=(da.apron||'');vb=(db.apron||'');}
+    else if(field==='etd'){va=(da.etd||'');vb=(db.etd||'');}
+    else if(field==='status'){va=STATUS_ORDER[da['Overall Status']]??99;vb=STATUS_ORDER[db['Overall Status']]??99;}
+    if(typeof va==='number') return (va-vb)*dir;
+    return va.localeCompare(vb)*dir;
+  });
 }
 
 // ── Main renderer ────────────────────────────────────────────────
@@ -257,84 +314,120 @@ function renderAll(){
   const container=document.getElementById('mainList'); container.innerHTML='';
 
   const active=Object.entries(allF).filter(([,d])=>!d._deleted);
-  // search filter
   const filtered=active.filter(([f,d])=>{
     if(!q) return true;
-    return f.toLowerCase().includes(q)||
-      (d.apron||'').toLowerCase().includes(q)||
-      (d['Overall Status']||'').toLowerCase().includes(q);
+    return f.toLowerCase().includes(q)||(d.apron||'').toLowerCase().includes(q)||(d['Overall Status']||'').toLowerCase().includes(q);
   });
 
-  if(!filtered.length){
-    container.innerHTML='<p style="text-align:center;color:#888;padding:40px">No flights found.</p>';
-    updateBulkBar(); return;
-  }
+  if(!filtered.length){container.innerHTML='<p style="text-align:center;color:#888;padding:40px">No flights found.</p>';updateBulkBar();return;}
 
-  // Build group buckets
+  // Zone buckets
   const assigned=new Set();
-  const groupBuckets=groups.map(g=>{
-    const gFlights=(g.flights||[]).filter(f=>filtered.find(([k])=>k===f));
-    gFlights.forEach(f=>assigned.add(f));
-    return {g, flights:gFlights};
+  const zoneBuckets=zones.map(z=>{
+    // Use zone's stored flight order for manual sort, but respect sort setting
+    let zFlights=(z.flights||[]).filter(f=>filtered.find(([k])=>k===f));
+    zFlights.forEach(f=>assigned.add(f));
+    const entries=zFlights.map(f=>{const found=filtered.find(([k])=>k===f);return found||null;}).filter(Boolean);
+    return {z, entries: sortFlights(entries)};
   });
-  const unassigned=filtered.filter(([f])=>!assigned.has(f));
+  const unassignedEntries=sortFlights(filtered.filter(([f])=>!assigned.has(f)));
 
-  // Render each group
-  groupBuckets.forEach(({g,flights})=>{
-    if(!flights.length) return;
+  // Render zones
+  zoneBuckets.forEach(({z,entries})=>{
+    if(!entries.length) return;
     const sec=document.createElement('div');
-    sec.innerHTML=`<div class="group-header">
-      <span class="group-title">📁 ${g.name} <span style="color:#888;font-weight:normal;font-size:12px">(${flights.length})</span></span>
-    </div><div class="group-body" id="gb-${g.id}"></div>`;
+    const zid='zb-'+z.id;
+    sec.innerHTML=`<div class="zone-header">
+      <span class="zone-title">📍 ${z.name} <span style="color:#888;font-weight:normal;font-size:12px">(${entries.length})</span></span>
+    </div><div class="zone-body" id="${zid}"></div>`;
     container.appendChild(sec);
-    const body=sec.querySelector('#gb-'+g.id);
-    flights.forEach(fKey=>{
-      const entry=filtered.find(([k])=>k===fKey);
-      if(entry) body.appendChild(makeCard(entry[0],entry[1]));
-    });
+    const body=sec.querySelector('#'+zid);
+    entries.forEach(([f,d])=>body.appendChild(makeCard(f,d,z.id)));
+    // Enable drag-drop within zone if manual sort
+    if(document.getElementById('sortField').value==='manual') enableDragDrop(body, z.id);
   });
 
-  // Unassigned group
-  if(unassigned.length){
+  // Unassigned zone
+  if(unassignedEntries.length){
     const sec=document.createElement('div');
-    sec.innerHTML=`<div class="group-header">
-      <span class="group-title" style="color:#888">📋 Unassigned <span style="font-weight:normal;font-size:12px">(${unassigned.length})</span></span>
-    </div><div class="group-body" id="gb-unassigned"></div>`;
+    sec.innerHTML=`<div class="zone-header">
+      <span class="zone-title" style="color:#888">📋 Unassigned <span style="font-weight:normal;font-size:12px">(${unassignedEntries.length})</span></span>
+    </div><div class="zone-body" id="zb-unassigned"></div>`;
     container.appendChild(sec);
-    const body=sec.querySelector('#gb-unassigned');
-    unassigned.forEach(([f,d])=>body.appendChild(makeCard(f,d)));
+    const body=sec.querySelector('#zb-unassigned');
+    unassignedEntries.forEach(([f,d])=>body.appendChild(makeCard(f,d,'unassigned')));
+    if(document.getElementById('sortField').value==='manual') enableDragDrop(body,'unassigned');
   }
-
   updateBulkBar();
 }
 
-function makeCard(f,d){
+// ── Drag-drop for manual reorder within zone ─────────────────────
+let dragSrc=null;
+function enableDragDrop(container, zoneId){
+  container.querySelectorAll('.fcard').forEach(card=>{
+    card.setAttribute('draggable','true');
+    card.addEventListener('dragstart',e=>{dragSrc=card;card.classList.add('dragging');e.dataTransfer.effectAllowed='move';});
+    card.addEventListener('dragend',()=>{dragSrc=null;card.classList.remove('dragging');container.querySelectorAll('.fcard').forEach(c=>c.classList.remove('drag-over'));});
+    card.addEventListener('dragover',e=>{e.preventDefault();if(dragSrc&&dragSrc!==card){card.classList.add('drag-over');}});
+    card.addEventListener('dragleave',()=>card.classList.remove('drag-over'));
+    card.addEventListener('drop',e=>{
+      e.preventDefault();
+      if(!dragSrc||dragSrc===card) return;
+      card.classList.remove('drag-over');
+      // Reorder in DOM
+      const cards=[...container.querySelectorAll('.fcard')];
+      const fromIdx=cards.indexOf(dragSrc), toIdx=cards.indexOf(card);
+      if(fromIdx<toIdx) container.insertBefore(dragSrc,card.nextSibling);
+      else container.insertBefore(dragSrc,card);
+      // Persist new order
+      const newOrder=[...container.querySelectorAll('.fcard')].map(c=>c.dataset.flight);
+      if(zoneId!=='unassigned'){
+        db.ref('zones/'+zoneId+'/flights').set(newOrder);
+      }
+    });
+  });
+}
+
+// ── Card builder ─────────────────────────────────────────────────
+function makeCard(f,d,zoneId){
   const msgs=d.msgs||[], logs=d.logs||[];
   const unreadMsg=msgs.slice().reverse().find(m=>m.user!=='Admin'&&!m.read);
   const isSel=selFlights.has(f);
   const totalEntries=msgs.length+logs.length;
+  const isManual=document.getElementById('sortField').value==='manual';
 
-  // All tasks chip row
-  const taskHtml=ALL_TASKS.map(t=>{
+  // All tasks chip row — show ALL tasks with colour coding
+  const catChips=Object.keys(CATS).map(ck=>{
+    const s=d['cat_'+ck]||'Not Started';
+    return `<span class="tc" style="${tcStyle(s)}">${CATS[ck].emoji}${ck}: ${s}</span>`;
+  }).join('');
+  const taskChips=ALL_TASKS.map(t=>{
     const s=d[t]||'Not Started';
-    return `<span class="tc" style="${tcStyle(s)}">${t.replace(' (F)','(F)').replace(' (B)','(B)')}</span>`;
+    const short=t.replace(' (F/B)','(FB)').replace(' (F)','(F)').replace(' (R)','(R)').replace(' (E)','(E)');
+    return `<span class="tc" style="${tcStyle(s)}">${short}</span>`;
   }).join('');
 
   const card=document.createElement('div');
   card.className='fcard'+(isSel?' sel':'');
   card.id='card-'+f;
+  card.dataset.flight=f;
   card.style.borderLeftColor=overallBorder(d['Overall Status']);
+
   card.innerHTML=`
-    <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap">
+    <div style="display:flex;align-items:center;gap:7px;flex-wrap:wrap">
+      ${isManual?`<span class="drag-handle" title="Drag to reorder">⠿</span>`:''}
       <input type="checkbox" class="check" ${isSel?'checked':''} onchange="toggleSel('${f}',this.checked)" onclick="event.stopPropagation()">
       <div style="flex:1;min-width:0">
         <b style="font-size:14px">${f}</b>
-        <span style="color:#888;font-size:12px;margin-left:7px">Apron ${d.apron}</span>
-        ${d.etd?`<span style="color:#888;font-size:11px;margin-left:7px">ETD ${d.etd.substring(11,16)}</span>`:''}
+        <span style="color:#888;font-size:12px;margin-left:6px">Apron ${d.apron}</span>
+        ${d.etd?`<span style="color:#888;font-size:11px;margin-left:6px">ETD ${d.etd.substring(11,16)}</span>`:''}
       </div>
       ${overallPill(d['Overall Status'])}
     </div>
-    <div class="task-row">${taskHtml}</div>
+    <!-- Cat section status row -->
+    <div class="task-row" style="margin-top:5px">${catChips}</div>
+    <!-- All task sub-status row -->
+    <div class="task-row">${taskChips}</div>
     ${unreadMsg?`<div class="msg-alert">
       <button onclick="markRead('${f}',${msgs.indexOf(unreadMsg)});event.stopPropagation()" class="btn btn-primary" style="float:right;font-size:10px;padding:2px 5px">Mark Read</button>
       <b>STAFF:</b> ${unreadMsg.status} <small>(${fmtDate(unreadMsg.time)})</small>
@@ -370,22 +463,10 @@ function toggleLogs(f){
 }
 
 // ── Multi-select ─────────────────────────────────────────────────
-function toggleSel(f,checked){
-  if(checked) selFlights.add(f); else selFlights.delete(f);
-  document.getElementById('card-'+f)?.classList.toggle('sel',checked);
-  updateBulkBar();
-}
-function toggleSelAll(checked){
-  selFlights.clear();
-  if(checked) Object.entries(allF).filter(([,d])=>!d._deleted).forEach(([f])=>selFlights.add(f));
-  renderAll();
-}
+function toggleSel(f,checked){if(checked)selFlights.add(f);else selFlights.delete(f);document.getElementById('card-'+f)?.classList.toggle('sel',checked);updateBulkBar();}
+function toggleSelAll(checked){selFlights.clear();if(checked)Object.entries(allF).filter(([,d])=>!d._deleted).forEach(([f])=>selFlights.add(f));renderAll();}
 function clearSel(){selFlights.clear();document.getElementById('selAllChk').checked=false;renderAll();}
-function updateBulkBar(){
-  const n=selFlights.size;
-  document.getElementById('bulkBar').classList.toggle('on',n>0);
-  document.getElementById('selCount').innerText=n+' selected';
-}
+function updateBulkBar(){const n=selFlights.size;document.getElementById('bulkBar').classList.toggle('on',n>0);document.getElementById('selCount').innerText=n+' selected';}
 function bulkRecycle(){
   if(!confirm('Move '+selFlights.size+' flight(s) to Recycle Bin?')) return;
   const now=new Date().toISOString(),u={};
@@ -397,137 +478,87 @@ function bulkRecycle(){
 let recycleSel=new Set();
 function openRecycleBin(){document.getElementById('recycleOv').style.display='block';loadRecycleBin();}
 function loadRecycleBin(){
-  const c=document.getElementById('recycleList'); c.innerHTML='<i>Loading...</i>';
-  recycleSel.clear(); updateRecycleBulkBar();
-  document.getElementById('recycleSelAll').checked=false;
+  const c=document.getElementById('recycleList');c.innerHTML='<i>Loading...</i>';
+  recycleSel.clear();updateRecycleBulkBar();document.getElementById('recycleSelAll').checked=false;
   db.ref('flights').once('value',s=>{
     const del=Object.entries(s.val()||{}).filter(([,v])=>v._deleted);
     if(!del.length){c.innerHTML="<p style='color:#888'>Recycle bin is empty.</p>";return;}
-    c.innerHTML=del.map(([f,d])=>`
-      <div class="ri" id="ri-${f}">
-        <div style="display:flex;align-items:center;gap:8px">
-          <input type="checkbox" class="check recycle-chk" data-f="${f}" onchange="toggleRecycleSel('${f}',this.checked)">
-          <div><b>${f}</b> — Apron: ${d.apron}<br><small style="color:#888">Deleted: ${fmtDate(d._deletedAt)}</small></div>
-        </div>
-        <div style="display:flex;gap:5px">
-          <button onclick="restoreFlight('${f}')" class="btn btn-success" style="font-size:11px;padding:3px 9px">↩</button>
-          <button onclick="permDelete('${f}')" class="btn btn-danger" style="font-size:11px;padding:3px 9px">✕</button>
-        </div>
-      </div>`).join('');
+    c.innerHTML=del.map(([f,d])=>`<div class="ri" id="ri-${f}">
+      <div style="display:flex;align-items:center;gap:8px">
+        <input type="checkbox" class="check recycle-chk" data-f="${f}" onchange="toggleRecycleSel('${f}',this.checked)">
+        <div><b>${f}</b> — Apron: ${d.apron}<br><small style="color:#888">Deleted: ${fmtDate(d._deletedAt)}</small></div>
+      </div>
+      <div style="display:flex;gap:5px">
+        <button onclick="restoreFlight('${f}')" class="btn btn-success" style="font-size:11px;padding:3px 9px">↩</button>
+        <button onclick="permDelete('${f}')" class="btn btn-danger" style="font-size:11px;padding:3px 9px">✕</button>
+      </div></div>`).join('');
   });
 }
-function toggleRecycleSel(f,checked){
-  if(checked) recycleSel.add(f); else recycleSel.delete(f);
-  updateRecycleBulkBar();
-}
-function toggleRecycleSelAll(checked){
-  recycleSel.clear();
-  document.querySelectorAll('.recycle-chk').forEach(chk=>{chk.checked=checked;if(checked) recycleSel.add(chk.dataset.f);});
-  updateRecycleBulkBar();
-}
-function clearRecycleSel(){
-  recycleSel.clear();
-  document.querySelectorAll('.recycle-chk').forEach(c=>c.checked=false);
-  document.getElementById('recycleSelAll').checked=false;
-  updateRecycleBulkBar();
-}
-function updateRecycleBulkBar(){
-  const bar=document.getElementById('recycleBulkBar');
-  bar.style.display=recycleSel.size>0?'flex':'none';
-  document.getElementById('recycleSelCount').innerText=recycleSel.size+' selected';
-}
-function bulkRestoreRecycle(){
-  if(!recycleSel.size) return;
-  const u={};
-  recycleSel.forEach(f=>{u['flights/'+f+'/_deleted']=null;u['flights/'+f+'/_deletedAt']=null;});
-  db.ref().update(u).then(()=>loadRecycleBin());
-}
-function bulkPermDelete(){
-  if(!confirm('Permanently delete '+recycleSel.size+' flight(s)? Cannot be undone.')) return;
-  const promises=[...recycleSel].map(f=>db.ref('flights/'+f).remove());
-  Promise.all(promises).then(()=>loadRecycleBin());
-}
+function toggleRecycleSel(f,checked){if(checked)recycleSel.add(f);else recycleSel.delete(f);updateRecycleBulkBar();}
+function toggleRecycleSelAll(checked){recycleSel.clear();document.querySelectorAll('.recycle-chk').forEach(chk=>{chk.checked=checked;if(checked)recycleSel.add(chk.dataset.f);});updateRecycleBulkBar();}
+function clearRecycleSel(){recycleSel.clear();document.querySelectorAll('.recycle-chk').forEach(c=>c.checked=false);document.getElementById('recycleSelAll').checked=false;updateRecycleBulkBar();}
+function updateRecycleBulkBar(){const bar=document.getElementById('recycleBulkBar');bar.style.display=recycleSel.size>0?'flex':'none';document.getElementById('recycleSelCount').innerText=recycleSel.size+' selected';}
+function bulkRestoreRecycle(){if(!recycleSel.size)return;const u={};recycleSel.forEach(f=>{u['flights/'+f+'/_deleted']=null;u['flights/'+f+'/_deletedAt']=null;});db.ref().update(u).then(()=>loadRecycleBin());}
+function bulkPermDelete(){if(!confirm('Permanently delete '+recycleSel.size+' flight(s)?'))return;Promise.all([...recycleSel].map(f=>db.ref('flights/'+f).remove())).then(()=>loadRecycleBin());}
 function restoreFlight(f){db.ref('flights/'+f+'/_deleted').remove();db.ref('flights/'+f+'/_deletedAt').remove();loadRecycleBin();}
 function permDelete(f){if(!confirm('Permanently delete '+f+'?'))return;db.ref('flights/'+f).remove().then(loadRecycleBin);}
 
-// ── Groups ───────────────────────────────────────────────────────
-function openGroupMgmt(){
-  document.getElementById('settingsPanel').classList.remove('open');
-  document.getElementById('groupOv').style.display='block';
-  renderGroupMgmt();
-}
-function renderGroupMgmt(){
-  const container=document.getElementById('groupList'); container.innerHTML='';
-  if(!groups.length){container.innerHTML='<p style="color:#888;font-size:13px">No groups yet. Add one below.</p>';return;}
-  groups.forEach((g,idx)=>{
+// ── Zones ─────────────────────────────────────────────────────────
+function openZoneMgmt(){document.getElementById('settingsPanel').classList.remove('open');document.getElementById('zoneOv').style.display='block';renderZoneMgmt();}
+function renderZoneMgmt(){
+  const container=document.getElementById('zoneList'); container.innerHTML='';
+  if(!zones.length){container.innerHTML='<p style="color:#888;font-size:13px">No zones yet.</p>';return;}
+  const activeKeys=Object.keys(allF).filter(f=>!allF[f]._deleted);
+  zones.forEach((z,idx)=>{
     const div=document.createElement('div'); div.className='gitem';
-    // Flights assigned to this group as a multi-select
-    const activeFlightKeys=Object.keys(allF).filter(f=>!allF[f]._deleted);
-    const assignedStr=(g.flights||[]).filter(f=>activeFlightKeys.includes(f)).join(', ')||'None';
     div.innerHTML=`
-      <div style="display:flex;flex-direction:column;gap:5px;flex:1">
-        <input type="text" value="${g.name}" id="gname-${g.id}" style="font-weight:bold">
-        <div style="font-size:11px;color:#888">Flights: 
-          <select multiple id="gfl-${g.id}" style="font-size:11px;padding:2px;border-radius:5px;border:1px solid var(--border);background:var(--bg);color:var(--text);min-width:180px;max-height:70px">
-            ${activeFlightKeys.map(f=>`<option value="${f}" ${(g.flights||[]).includes(f)?'selected':''}>${f}</option>`).join('')}
-          </select>
-        </div>
+      <div style="display:flex;flex-direction:column;gap:5px;flex:1;min-width:0">
+        <input type="text" value="${z.name}" id="zname-${z.id}">
+        <label style="font-size:11px;color:#888">Assign flights (Ctrl/Cmd+click for multi):</label>
+        <select multiple id="zfl-${z.id}" style="font-size:11px;padding:3px;border-radius:5px;border:1px solid var(--border);background:var(--bg);color:var(--text);min-width:160px;max-height:75px">
+          ${activeKeys.map(f=>`<option value="${f}" ${(z.flights||[]).includes(f)?'selected':''}>${f}</option>`).join('')}
+        </select>
       </div>
-      <div style="display:flex;flex-direction:column;gap:4px">
-        <button onclick="saveGroup('${g.id}')" class="btn btn-success" style="font-size:11px;padding:3px 8px">💾</button>
-        <button onclick="moveGroup('${g.id}',-1)" class="btn btn-ghost" style="font-size:11px;padding:3px 8px" ${idx===0?'disabled':''}>▲</button>
-        <button onclick="moveGroup('${g.id}',1)" class="btn btn-ghost" style="font-size:11px;padding:3px 8px" ${idx===groups.length-1?'disabled':''}>▼</button>
-        <button onclick="deleteGroup('${g.id}')" class="btn btn-danger" style="font-size:11px;padding:3px 8px">🗑️</button>
+      <div style="display:flex;flex-direction:column;gap:4px;flex-shrink:0">
+        <button onclick="saveZone('${z.id}')" class="btn btn-success" style="font-size:11px;padding:3px 8px">💾</button>
+        <button onclick="moveZone('${z.id}',-1)" class="btn btn-ghost" style="font-size:11px;padding:3px 8px" ${idx===0?'disabled':''}>▲</button>
+        <button onclick="moveZone('${z.id}',1)" class="btn btn-ghost" style="font-size:11px;padding:3px 8px" ${idx===zones.length-1?'disabled':''}>▼</button>
+        <button onclick="deleteZone('${z.id}')" class="btn btn-danger" style="font-size:11px;padding:3px 8px">🗑️</button>
       </div>`;
     container.appendChild(div);
   });
 }
-function saveGroup(id){
-  const name=document.getElementById('gname-'+id).value.trim(); if(!name) return;
-  const sel=document.getElementById('gfl-'+id);
+function saveZone(id){
+  const name=document.getElementById('zname-'+id).value.trim(); if(!name) return;
+  const sel=document.getElementById('zfl-'+id);
   const flights=[...sel.options].filter(o=>o.selected).map(o=>o.value);
-  db.ref('groups/'+id).update({name,flights}).then(()=>renderGroupMgmt());
+  db.ref('zones/'+id).update({name,flights}).then(()=>renderZoneMgmt());
 }
-function addGroup(){
-  const name=document.getElementById('newGroupName').value.trim(); if(!name) return;
-  const newId='g'+Date.now();
-  const order=groups.length?Math.max(...groups.map(g=>g.order||0))+1:0;
-  db.ref('groups/'+newId).set({name,flights:[],order}).then(()=>{
-    document.getElementById('newGroupName').value='';
-  });
+function addZone(){
+  const name=document.getElementById('newZoneName').value.trim(); if(!name) return;
+  const newId='z'+Date.now();
+  const order=zones.length?Math.max(...zones.map(g=>g.order||0))+1:0;
+  db.ref('zones/'+newId).set({name,flights:[],order}).then(()=>document.getElementById('newZoneName').value='');
 }
-function deleteGroup(id){
-  if(!confirm('Delete this group? Flights will be moved to Unassigned.')) return;
-  db.ref('groups/'+id).remove();
-}
-function moveGroup(id,dir){
-  const idx=groups.findIndex(g=>g.id===id);
-  const swapIdx=idx+dir;
-  if(swapIdx<0||swapIdx>=groups.length) return;
-  const u={};
-  u['groups/'+groups[idx].id+'/order']=swapIdx;
-  u['groups/'+groups[swapIdx].id+'/order']=idx;
+function deleteZone(id){if(!confirm('Delete this zone?'))return;db.ref('zones/'+id).remove();}
+function moveZone(id,dir){
+  const idx=zones.findIndex(g=>g.id===id), swapIdx=idx+dir;
+  if(swapIdx<0||swapIdx>=zones.length) return;
+  const u={};u['zones/'+zones[idx].id+'/order']=swapIdx;u['zones/'+zones[swapIdx].id+'/order']=idx;
   db.ref().update(u);
 }
 
 // ── Misc ─────────────────────────────────────────────────────────
 function sendReply(f){
-  const inp=document.getElementById('reply-'+f),val=inp.value.trim(); if(!val) return;
+  const inp=document.getElementById('reply-'+f),val=inp.value.trim();if(!val)return;
   let msgs=allF[f].msgs||[];
   msgs.push({time:new Date().toISOString(),user:'Admin',status:val,read:false});
   db.ref('flights/'+f+'/msgs').set(msgs).then(()=>inp.value='');
 }
 function markRead(f,idx){db.ref('flights/'+f+'/msgs/'+idx+'/read').set(true);}
-function toggleAllLogs(){
-  allOpen=!allOpen;
-  document.getElementById('logsBtn').innerText=allOpen?'📂 Collapse':'📂 Logs';
-  renderAll();
-}
-function toggleTZ(){useUTC=!useUTC;document.getElementById('tzBtn').innerText=useUTC?'UTC':'Local';renderAll();}
-function toggleTheme(){
-  const t=document.body.getAttribute('data-theme')==='dark'?'light':'dark';
-  document.body.setAttribute('data-theme',t);localStorage.setItem('theme',t);
-}
+function toggleAllLogs(){allOpen=!allOpen;document.getElementById('logsBtn').innerText=allOpen?'📂✕':'📂';renderAll();}
+function toggleTZ(){useUTC=!useUTC;updateClock();renderAll();}
+function toggleTheme(){const t=document.body.getAttribute('data-theme')==='dark'?'light':'dark';document.body.setAttribute('data-theme',t);localStorage.setItem('theme',t);}
 function toggleSettings(){document.getElementById('settingsPanel').classList.toggle('open');}
 document.addEventListener('click',e=>{
   const p=document.getElementById('settingsPanel'),b=document.getElementById('settingsBtn');
@@ -540,44 +571,22 @@ function openUserMgmt(){document.getElementById('settingsPanel').classList.remov
 function loadUsers(){document.getElementById('uList').innerHTML="<i style='color:#888'>Loading...</i>";db.ref('users').once('value',s=>{allUsers=s.val()||{};renderUsers();});}
 function renderUsers(filter){
   const c=document.getElementById('uList');
-  const keys=Object.keys(allUsers).filter(k=>{
-    if(!filter) return true;
-    const u=allUsers[k]; return k.toLowerCase().includes(filter)||(u.name||'').toLowerCase().includes(filter)||(u.pos||'').toLowerCase().includes(filter);
-  });
+  const keys=Object.keys(allUsers).filter(k=>{if(!filter)return true;const u=allUsers[k];return k.toLowerCase().includes(filter)||(u.name||'').toLowerCase().includes(filter)||(u.pos||'').toLowerCase().includes(filter);});
   if(!keys.length){c.innerHTML="<p style='color:#888;text-align:center;padding:16px'>No users found.</p>";return;}
   c.innerHTML=keys.map(k=>{const u=allUsers[k];return `<div style="display:flex;justify-content:space-between;align-items:center;padding:9px 4px;border-bottom:1px solid var(--border);gap:7px">
     <div style="flex:1;min-width:0"><b>${u.name||'-'}</b> <span style="background:rgba(88,166,255,0.15);color:var(--primary);font-size:10px;padding:1px 6px;border-radius:9px;margin-left:4px">${u.id||k}</span><br><small style="color:#888">${u.pos||'—'}</small></div>
     <div style="display:flex;gap:5px"><button onclick="editUser('${k}')" class="btn btn-primary" style="font-size:11px;padding:3px 8px">✏️</button><button onclick="delUser('${k}')" class="btn btn-danger" style="font-size:11px;padding:3px 8px">🗑️</button></div></div>`;}).join('');
 }
 function filterUsers(){renderUsers(document.getElementById('uSearch').value.toLowerCase().trim()||null);}
-function editUser(id){
-  editingUid=id; const u=allUsers[id];
-  document.getElementById('uId').value=u.id||id; document.getElementById('uId').disabled=true;
-  document.getElementById('uName').value=u.name||''; document.getElementById('uPos').value=u.pos||''; document.getElementById('uPass').value='';
-  document.getElementById('uPassLbl').innerHTML='New Password <span style="color:#888;font-weight:normal">(blank=keep)</span>';
-  document.getElementById('uFormTitle').innerText='✏️ Edit: '+(u.name||id);
-  document.getElementById('uCancelBtn').style.display='inline-block'; showUMsg('');
-  document.getElementById('uName').focus();
-}
-function cancelUserEdit(){
-  editingUid=null; ['uId','uName','uPos','uPass'].forEach(id=>document.getElementById(id).value='');
-  document.getElementById('uId').disabled=false; document.getElementById('uPassLbl').innerHTML='Password *';
-  document.getElementById('uFormTitle').innerText='➕ Add New User';
-  document.getElementById('uCancelBtn').style.display='none'; showUMsg('');
-}
-function saveUser(){
-  const id=editingUid||document.getElementById('uId').value.trim();
-  const name=document.getElementById('uName').value.trim(),pos=document.getElementById('uPos').value.trim(),pass=document.getElementById('uPass').value.trim();
-  if(!id){showUMsg('⚠️ Staff ID required.',true);return;} if(!name){showUMsg('⚠️ Name required.',true);return;}
-  if(!pos){showUMsg('⚠️ Position required.',true);return;} if(!editingUid&&!pass){showUMsg('⚠️ Password required.',true);return;}
-  const data={id,name,pos,pass:pass||(editingUid?allUsers[editingUid].pass:'')};
-  db.ref('users/'+id).update(data).then(()=>{showUMsg(editingUid?'✅ Updated!':'✅ Created!');cancelUserEdit();loadUsers();}).catch(e=>showUMsg('❌ '+e.message,true));
-}
-function delUser(id){if(!confirm('Delete "'+( allUsers[id]?.name||id)+'"?'))return;db.ref('users/'+id).remove().then(loadUsers);}
+function editUser(id){editingUid=id;const u=allUsers[id];document.getElementById('uId').value=u.id||id;document.getElementById('uId').disabled=true;document.getElementById('uName').value=u.name||'';document.getElementById('uPos').value=u.pos||'';document.getElementById('uPass').value='';document.getElementById('uPassLbl').innerHTML='New Password <span style="color:#888;font-weight:normal">(blank=keep)</span>';document.getElementById('uFormTitle').innerText='✏️ Edit: '+(u.name||id);document.getElementById('uCancelBtn').style.display='inline-block';showUMsg('');document.getElementById('uName').focus();}
+function cancelUserEdit(){editingUid=null;['uId','uName','uPos','uPass'].forEach(id=>document.getElementById(id).value='');document.getElementById('uId').disabled=false;document.getElementById('uPassLbl').innerHTML='Password *';document.getElementById('uFormTitle').innerText='➕ Add New User';document.getElementById('uCancelBtn').style.display='none';showUMsg('');}
+function saveUser(){const id=editingUid||document.getElementById('uId').value.trim();const name=document.getElementById('uName').value.trim(),pos=document.getElementById('uPos').value.trim(),pass=document.getElementById('uPass').value.trim();if(!id){showUMsg('⚠️ Staff ID required.',true);return;}if(!name){showUMsg('⚠️ Name required.',true);return;}if(!pos){showUMsg('⚠️ Position required.',true);return;}if(!editingUid&&!pass){showUMsg('⚠️ Password required.',true);return;}const data={id,name,pos,pass:pass||(editingUid?allUsers[editingUid].pass:'')};db.ref('users/'+id).update(data).then(()=>{showUMsg(editingUid?'✅ Updated!':'✅ Created!');cancelUserEdit();loadUsers();}).catch(e=>showUMsg('❌ '+e.message,true));}
+function delUser(id){if(!confirm('Delete "'+(allUsers[id]?.name||id)+'"?'))return;db.ref('users/'+id).remove().then(loadUsers);}
 function showUMsg(m,e){const el=document.getElementById('uMsg');el.style.display=m?'block':'none';el.style.color=e?'#da3633':'#3fb950';el.innerText=m;}
 
 window.onload=()=>{
   document.body.setAttribute('data-theme',localStorage.getItem('theme')||'dark');
+  startClock();
   startListeners();
 };
 </script>

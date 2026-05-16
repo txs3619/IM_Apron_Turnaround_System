@@ -174,20 +174,20 @@
 
 <!-- STATUS LEGEND FOOTER -->
 <div id="legendBar">
-  <b style="font-size:11px;color:#888;margin-right:4px">Overall Status:</b>
-  <div class="leg"><div class="leg-bar" style="background:#888"></div>Arriving</div>
-  <div class="leg"><div class="leg-bar" style="background:#222;border:1px solid #555"></div>On Chocked</div>
-  <div class="leg"><div class="leg-bar" style="background:#da3633"></div>Delayed</div>
-  <div class="leg"><div class="leg-bar" style="background:#1f6feb"></div>PB Attached</div>
-  <div class="leg"><div class="leg-bar" style="background:#238636"></div>Push Backed</div>
-  <div class="leg"><div class="leg-bar" style="background:#e3b341"></div>Need Assistant</div>
-  <span style="color:#888;margin:0 6px">|</span>
-  <b style="font-size:11px;color:#888;margin-right:4px">Task Status:</b>
-  <div class="leg"><div class="leg-dot" style="background:rgba(128,128,128,0.4);border:1px solid #666"></div>Not Started</div>
-  <div class="leg"><div class="leg-dot" style="background:#333;border:1px solid #555"></div>In Progress</div>
-  <div class="leg"><div class="leg-dot" style="background:rgba(35,134,54,0.5);border:1px solid #238636"></div>Completed</div>
-  <div class="leg"><div class="leg-dot" style="background:rgba(218,54,51,0.5);border:1px solid #da3633"></div>Delayed</div>
-  <div class="leg"><div class="leg-dot" style="background:rgba(225,183,64,0.5);border:1px solid #e3b341"></div>Need Assistant</div>
+  <b style="font-size:11px;color:#888;margin-right:2px">Overall:</b>
+  <div class="leg"><div class="leg-bar" style="background:#888"></div><span>Arriving</span></div>
+  <div class="leg"><div class="leg-bar" style="background:#333;border:1px solid #666"></div><span>On Chocked</span></div>
+  <div class="leg"><div class="leg-bar" style="background:#da3633"></div><span>Delayed</span></div>
+  <div class="leg"><div class="leg-bar" style="background:#1f6feb"></div><span>PB Attached</span></div>
+  <div class="leg"><div class="leg-bar" style="background:#238636"></div><span>Push Backed</span></div>
+  <div class="leg"><div class="leg-bar" style="background:#e3b341"></div><span>Need Assistant</span></div>
+  <span style="color:var(--border);margin:0 4px">|</span>
+  <b style="font-size:11px;color:#888;margin-right:2px">Tasks:</b>
+  <div class="leg"><div class="leg-dot" style="background:rgba(128,128,128,0.35);border:1px solid #666"></div><span>Not Started</span></div>
+  <div class="leg"><div class="leg-dot" style="background:#333;border:1px solid #666"></div><span>In Progress</span></div>
+  <div class="leg"><div class="leg-dot" style="background:#238636"></div><span>Completed</span></div>
+  <div class="leg"><div class="leg-dot" style="background:#da3633"></div><span>Delayed</span></div>
+  <div class="leg"><div class="leg-dot" style="background:#e3b341"></div><span>Need Assistant</span></div>
 </div>
 
 <script>
@@ -234,11 +234,11 @@ function calcCatStatus(d,ck){
 
 // ── Task cell background colour ────────────────────────────────
 function tcBg(s){
-  if(s==='Completed')      return 'background:rgba(35,134,54,0.3);color:#3fb950;border-color:rgba(35,134,54,0.5)';
-  if(s==='Delayed')        return 'background:rgba(218,54,51,0.3);color:#f85149;border-color:rgba(218,54,51,0.5)';
-  if(s==='Need Assistant') return 'background:rgba(225,183,64,0.35);color:#e3b341;border-color:rgba(225,183,64,0.6)';
-  if(s==='In Progress')    return 'background:rgba(30,30,30,0.5);color:#c9d1d9;border-color:#444';
-  return 'background:rgba(128,128,128,0.12);color:#777;border-color:rgba(128,128,128,0.25)'; // Not Started
+  if(s==='Completed')      return 'background:#238636;color:#fff;border-color:#1a6429';
+  if(s==='Delayed')        return 'background:#da3633;color:#fff;border-color:#b52d2a';
+  if(s==='Need Assistant') return 'background:#e3b341;color:#000;border-color:#c49a30';
+  if(s==='In Progress')    return 'background:#222;color:#c9d1d9;border-color:#444';
+  return 'background:rgba(128,128,128,0.18);color:#888;border-color:rgba(128,128,128,0.3)'; // Not Started
 }
 function catBg(ck,s){
   const isDark=document.body.getAttribute('data-theme')==='dark';

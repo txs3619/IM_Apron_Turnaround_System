@@ -399,19 +399,17 @@ function renderFlights(){
     card.style.borderLeftColor=overallBorderColor(d['Overall Status']);
     card.onclick=()=>openEditor(f);
 
-    // Time info row: show ETA if no AT, show ETD+countdown+AT if AT exists
+    // Time info row — plain text only; live countdown injected via span id
     let timeRow='';
     if(d.at){
-      // Has AT: show ETD | countdown | AT
-      const refVal=d.etd||'';
+      // Has AT: ETD | live-countdown | AT
       timeRow=`<span>ETD: ${d.etd?d.etd.substring(11,16):'-'}</span>`;
-      if(refVal)timeRow+=` <span id="cd-card-${f}" class="${countdownPlain(refVal).cls}">${countdownPlain(refVal).text}</span>`;
-      timeRow+=` <span>AT: ${d.at.substring(11,16)}</span>`;
+      if(d.etd) timeRow+=` <span id="cd-card-${f}">…</span>`;
+      timeRow+=` <span style="color:#888">AT: ${d.at.length>=16?d.at.substring(11,16):d.at.substring(11,16)}</span>`;
     } else if(d.etd){
-      // Has ETD but no AT: show ETD + countdown
-      timeRow=`<span>ETD: ${d.etd.substring(11,16)}</span> <span id="cd-card-${f}" class="${countdownPlain(d.etd).cls}">${countdownPlain(d.etd).text}</span>`;
+      // Has ETD but no AT
+      timeRow=`<span>ETD: ${d.etd.substring(11,16)}</span> <span id="cd-card-${f}">…</span>`;
     } else if(d.eta){
-      // Only ETA
       timeRow=`<span>ETA: ${d.eta.substring(11,16)}</span>`;
     }
 
@@ -437,13 +435,24 @@ function renderFlights(){
       ${strip?`<div class="task-strip">${strip}</div>`:''}`;
     list.appendChild(card);
   });
-  // Live countdown refresh
+  // Initialise countdowns immediately (so first render shows value, not "…")
+  Object.keys(allFlights).forEach(f=>{
+    const d=allFlights[f]; const refVal=d.etd||'';
+    const el=document.getElementById('cd-card-'+f);
+    if(el&&refVal){const r=countdownPlain(refVal);el.innerText=r.text;el.className=r.cls;}
+  });
+  // Live countdown refresh on cards - update text and colour class directly
+  clearInterval(window._cardCdInterval);
   window._cardCdInterval=setInterval(()=>{
     Object.keys(allFlights).forEach(f=>{
       const d=allFlights[f];
       const refVal=d.etd||'';
       const el=document.getElementById('cd-card-'+f);
-      if(el&&refVal){const r=countdownPlain(refVal);el.innerText=r.text;el.className=r.cls;}
+      if(el&&refVal){
+        const r=countdownPlain(refVal);
+        el.innerText=r.text;
+        el.className=r.cls;
+      }
     });
   },1000);
 }

@@ -214,7 +214,7 @@ const CATS={
 const ALL_TASKS=Object.values(CATS).flatMap(c=>c.tasks);
 // Cat priority: Need Assistant > Delayed > Not Started > In Progress > Completed
 const CAT_PRIORITY=["Need Assistant","Delayed","Not Started","In Progress","Completed"];
-const STATUS_ORDER={'Arriving':0,'On Chocked':1,'Need Assistant':2,'Delayed':3,'PB Attached':4,'Push Backed':5};
+const STATUS_ORDER={'Arriving':0,'On Chocked':1,'Delayed':2,'Need Assistant':3,'PB Attached':4,'Push Backed':5};
 const RECOVERED_ZONE_NAME='Recovered';
 
 let allF={}, useUTC=true, allOpen=false, selFlights=new Set();
@@ -307,6 +307,13 @@ function sortEntries(entries){
     if(typeof va==='number')return(va-vb)*dir;
     return va.localeCompare(vb)*dir;
   });
+}
+
+function shortTime(iso){
+  if(!iso)return '-';
+  const d=new Date(iso);if(isNaN(d.getTime()))return '-';
+  if(useUTC)return pad(d.getUTCHours())+':'+pad(d.getUTCMinutes());
+  return pad(d.getHours())+':'+pad(d.getMinutes());
 }
 
 // ── Main render ───────────────────────────────────────────────────
@@ -406,13 +413,13 @@ function makeCard(f,d,zoneId){
   // We'll build a placeholder div for time; update via startCardCountdown
   let timeHtml='';
   if(d.at){
-    timeHtml='ETD: '+(d.etd?d.etd.substring(11,16):'-');
+    timeHtml='ETD: '+(d.etd?shortTime(d.etd):'-');
     if(d.etd)timeHtml+='&nbsp;&nbsp;<span id="cd-'+f+'" class="sw-disp cd-ok">--:--:--</span>';
-    timeHtml+='&nbsp;&nbsp;<span style="color:#aaa">AT: '+d.at.substring(11,16)+'</span>';
+    timeHtml+='&nbsp;&nbsp;<span style="color:#aaa">AT: '+shortTime(d.at)+'</span>';
   } else if(d.etd){
-    timeHtml='ETD: '+d.etd.substring(11,16)+'&nbsp;&nbsp;<span id="cd-'+f+'" class="sw-disp cd-ok">--:--:--</span>';
+    timeHtml='ETD: '+shortTime(d.etd)+'&nbsp;&nbsp;<span id="cd-'+f+'" class="sw-disp cd-ok">--:--:--</span>';
   } else if(d.eta){
-    timeHtml='ETA: '+d.eta.substring(11,16);
+    timeHtml='ETA: '+shortTime(d.eta);
   }
 
   const card=document.createElement('div');

@@ -10,7 +10,7 @@
   :root{--bg:#f0f2f5;--card:#fff;--text:#333;--border:#ddd;--primary:#1a237e;--accent:#007bff;}
   [data-theme='dark']{--bg:#0b1117;--card:#161b22;--text:#c9d1d9;--border:#30363d;--primary:#58a6ff;--accent:#1f6feb;}
   *{box-sizing:border-box;}
-  body{font-family:'Segoe UI',sans-serif;background:var(--bg);color:var(--text);margin:0;padding-bottom:60px;}
+  body{font-family:'Segoe UI',sans-serif;background:var(--bg);color:var(--text);margin:0;padding-bottom:72px;}
   .hdr{background:var(--primary);color:white;padding:9px 16px;display:flex;justify-content:space-between;align-items:center;position:sticky;top:0;z-index:1000;gap:8px;}
   .btn{padding:6px 12px;border-radius:7px;border:none;font-weight:bold;cursor:pointer;font-size:13px;transition:opacity .15s;}
   .btn:hover{opacity:.85;}
@@ -18,9 +18,10 @@
   .btn-danger{background:#da3633;color:white;}
   .btn-gray{background:#555;color:white;}
   .btn-ghost{background:rgba(255,255,255,0.15);color:white;}
-  .fcard{background:var(--card);padding:11px 13px 11px 17px;margin:8px auto;border-radius:12px;border:1px solid var(--border);border-left:8px solid #888;cursor:pointer;max-width:860px;}
+  .fcard{background:var(--card);padding:11px 13px 11px 17px;margin:8px auto;border-radius:12px;border:1px solid var(--border);border-left:8px solid #888;cursor:pointer;max-width:860px;transition:box-shadow .15s;}
+  .fcard:hover{box-shadow:0 2px 12px rgba(0,0,0,0.12);}
   .badge{background:#ffc107;color:#000;padding:3px 8px;border-radius:4px;font-size:11px;font-weight:bold;display:inline-block;margin-bottom:5px;}
-  .pill{display:inline-block;padding:2px 9px;border-radius:12px;font-size:11px;font-weight:bold;}
+  .pill{display:inline-block;padding:3px 10px;border-radius:12px;font-size:12px;font-weight:bold;}
   .overlay{display:none;position:fixed;inset:0;background:var(--bg);z-index:1500;overflow-y:auto;padding:18px;}
   .fw{max-width:860px;margin:auto;}
   .iw{margin-bottom:10px;}
@@ -35,7 +36,6 @@
   .mbox{padding:9px;border-radius:7px;margin-bottom:7px;font-size:13px;border-left:4px solid transparent;}
   .munread{border-left-color:#ffc107;background:rgba(255,193,7,0.1);}
   .mread{opacity:.7;background:rgba(128,128,128,0.05);}
-  .task-strip{display:flex;flex-wrap:wrap;gap:3px;margin-top:6px;}
   .ts-chip{font-size:10px;padding:2px 7px;border-radius:10px;font-weight:600;}
   #profilePanel{display:none;position:fixed;top:52px;left:12px;background:var(--card);border:1px solid var(--border);border-radius:12px;padding:15px;width:270px;z-index:2000;box-shadow:0 8px 28px rgba(0,0,0,0.4);}
   #profilePanel.open{display:block;}
@@ -44,24 +44,65 @@
   .pp-row input{padding:8px;border-radius:7px;border:1px solid var(--border);background:var(--bg);color:var(--text);width:100%;}
   #liveClock{font-size:11px;font-weight:bold;letter-spacing:.5px;white-space:nowrap;cursor:pointer;user-select:none;padding:4px 9px;border-radius:6px;background:rgba(255,255,255,0.13);}
   #banner{display:none;position:fixed;top:58px;left:50%;transform:translateX(-50%);background:#da3633;color:white;padding:10px 22px;border-radius:9px;font-weight:bold;font-size:13px;z-index:9999;max-width:92%;text-align:center;}
-  /* Watermark bottom-center */
-  #wmBottom{position:fixed;bottom:8px;left:50%;transform:translateX(-50%);font-size:18px;font-weight:bold;color:rgba(128,128,128,0.12);pointer-events:none;z-index:1;letter-spacing:5px;white-space:nowrap;}
+  /* Full-page diagonal watermark */
+  #wmOverlay{
+    position:fixed;inset:0;pointer-events:none;z-index:0;
+    display:none;align-items:center;justify-content:center;overflow:hidden;
+  }
+  #wmText{
+    font-size:clamp(28px,7vw,64px);font-weight:900;
+    color:rgba(100,100,100,0.13);
+    letter-spacing:10px;white-space:nowrap;
+    transform:rotate(-28deg);user-select:none;
+  }
+  [data-theme='dark'] #wmText{color:rgba(200,200,200,0.08);}
   .timer-box{background:rgba(128,128,128,0.08);border-radius:9px;padding:9px 13px;margin-bottom:13px;display:flex;align-items:center;gap:16px;flex-wrap:wrap;}
   .timer-val{font-size:22px;font-weight:bold;font-family:monospace;color:var(--primary);}
-  .cd-ok{color:#3fb950;font-weight:bold;}
-  .cd-warn{color:#e3b341;font-weight:bold;}
-  .cd-late{color:#f85149;font-weight:bold;}
+  .cd-ok{color:#3fb950;}
+  .cd-warn{color:#e3b341;}
+  .cd-late{color:#f85149;}
   .cd-box{font-size:12px;font-family:monospace;padding:3px 9px;border-radius:6px;background:rgba(128,128,128,0.1);}
-  /* Card time row chips */
   .cd-chip{font-size:11px;font-family:monospace;font-weight:bold;}
   .cd-chip.cd-ok{color:#3fb950;}
   .cd-chip.cd-warn{color:#e3b341;}
   .cd-chip.cd-late{color:#f85149;}
+  /* Bottom legend */
+  #statusLegend{
+    position:fixed;bottom:0;left:0;right:0;
+    background:var(--card);border-top:1px solid var(--border);
+    padding:5px 14px;display:none;gap:6px;flex-wrap:wrap;
+    align-items:center;z-index:800;font-size:11px;
+  }
+  .leg-chip{display:inline-flex;align-items:center;padding:2px 8px;border-radius:10px;font-size:11px;font-weight:bold;}
+  /* TZ label badge on field labels */
+  .tz-lbl{font-size:9px;padding:1px 5px;border-radius:4px;background:rgba(128,128,128,0.18);color:#888;font-weight:bold;vertical-align:middle;margin-left:3px;}
 </style>
 </head>
 <body>
 <div id="banner"></div>
-<div id="wmBottom"></div>
+
+<!-- Full-page watermark (shown after login) -->
+<div id="wmOverlay">
+  <div id="wmText"></div>
+</div>
+
+<!-- Status legend bar (shown after login) -->
+<div id="statusLegend">
+  <b style="margin-right:3px;white-space:nowrap">Status:</b>
+  <span class="leg-chip" style="background:rgba(128,128,128,0.18);color:#aaa">Arriving</span>
+  <span class="leg-chip" style="background:rgba(30,30,30,0.7);color:#ccc;border:1px solid #555">On Chocked</span>
+  <span class="leg-chip" style="background:rgba(225,183,64,0.2);color:#e3b341">Need Assistant</span>
+  <span class="leg-chip" style="background:rgba(218,54,51,0.2);color:#f85149">Delayed</span>
+  <span class="leg-chip" style="background:rgba(31,111,235,0.2);color:#58a6ff">PB Attached</span>
+  <span class="leg-chip" style="background:rgba(35,134,54,0.2);color:#3fb950">Push Backed</span>
+  <span style="color:#555;margin:0 2px">|</span>
+  <b style="color:#888;margin-right:2px;white-space:nowrap">Tasks:</b>
+  <span class="leg-chip" style="background:rgba(128,128,128,0.18);color:#777">Not Started</span>
+  <span class="leg-chip" style="background:rgba(40,40,40,0.7);color:#c9d1d9;border:1px solid #444">In Progress</span>
+  <span class="leg-chip" style="background:rgba(35,134,54,0.25);color:#3fb950">Completed</span>
+  <span class="leg-chip" style="background:rgba(218,54,51,0.25);color:#f85149">Delayed</span>
+  <span class="leg-chip" style="background:rgba(225,183,64,0.3);color:#e3b341">Need Assist</span>
+</div>
 
 <!-- LOGIN -->
 <div id="loginScreen" style="position:fixed;inset:0;background:#1a237e;z-index:5000;display:flex;align-items:center;justify-content:center;">
@@ -97,7 +138,7 @@
     <button onclick="toggleProfile()" class="btn btn-gray" style="width:100%;font-size:12px">Close</button>
   </div>
 
-  <div style="max-width:860px;margin:14px auto;padding:0 13px">
+  <div style="max-width:860px;margin:14px auto;padding:0 13px;position:relative;z-index:1;">
     <div style="display:flex;gap:7px;margin-bottom:10px;flex-wrap:wrap">
       <input id="search" placeholder="Search Flight / Apron..." onkeyup="renderFlights()" style="flex:1;min-width:130px">
       <select id="sortField" onchange="renderFlights()" style="width:auto;padding:8px 9px">
@@ -118,14 +159,14 @@
 </div>
 
 <!-- EDITOR OVERLAY -->
-<div id="editorOverlay" class="overlay">
+<div id="editorOverlay" class="overlay" style="z-index:1500">
   <div class="fw">
     <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:14px">
       <h2 id="editTitle" style="margin:0;font-size:17px">Update</h2>
       <button onclick="closeEditor()" class="btn btn-gray">✕ Close</button>
     </div>
 
-    <!-- Auto ground timer + ETD countdown -->
+    <!-- Ground timer + ETD countdown -->
     <div class="timer-box" id="timerBox" style="display:none">
       <div>
         <div style="font-size:10px;color:#888;margin-bottom:2px">⏱ Ground Time</div>
@@ -139,12 +180,13 @@
 
     <!-- Overall Status + Apron -->
     <div style="display:grid;grid-template-columns:1fr 1fr;gap:9px;margin-bottom:9px">
-      <div class="iw"><label>Overall Status</label>
-        <select id="t-Overall_Status">
+      <div class="iw">
+        <label>Overall Status</label>
+        <select id="t-Overall_Status" onchange="onStatusChange()">
           <option>Arriving</option>
           <option>On Chocked</option>
-          <option>Need Assistant</option>
           <option>Delayed</option>
+          <option>Need Assistant</option>
           <option>PB Attached</option>
           <option>Push Backed</option>
         </select>
@@ -152,17 +194,23 @@
       <div class="iw"><label>Apron</label><input id="t-Apron"></div>
     </div>
 
-    <!-- ETA (left) | AT read-only (right) -->
+    <!-- ETA left | AT right (always disabled) -->
     <div style="display:grid;grid-template-columns:1fr 1fr;gap:9px;margin-bottom:9px">
-      <div class="iw"><label>ETA (UTC)</label><input type="datetime-local" id="etaTime"></div>
       <div class="iw">
-        <label>AT (UTC) <span style="font-size:10px;font-weight:normal;color:#888">— auto on sync</span></label>
+        <label>ETA <span id="etaLbl" class="tz-lbl">UTC</span></label>
+        <input type="datetime-local" id="etaTime" oninput="onEtaChange()">
+      </div>
+      <div class="iw">
+        <label>AT <span id="atLbl" class="tz-lbl">UTC</span> <span style="font-size:10px;font-weight:normal;color:#888">— auto on sync</span></label>
         <input type="datetime-local" id="atTime" disabled>
       </div>
     </div>
-    <!-- ETD below, half width -->
+    <!-- ETD half-width below -->
     <div style="display:grid;grid-template-columns:1fr 1fr;gap:9px;margin-bottom:12px">
-      <div class="iw"><label>ETD (UTC)</label><input type="datetime-local" id="depTime" oninput="onEtdChange()"></div>
+      <div class="iw">
+        <label>ETD <span id="etdLbl" class="tz-lbl">UTC</span></label>
+        <input type="datetime-local" id="depTime" oninput="onEtdChange()">
+      </div>
     </div>
 
     <div id="taskContainer"></div>
@@ -182,7 +230,7 @@
 </div>
 
 <!-- ADD FLIGHT MODAL -->
-<div id="addModal" class="overlay">
+<div id="addModal" class="overlay" style="z-index:2000">
   <div style="max-width:480px;margin:60px auto;background:var(--card);padding:22px;border-radius:13px;border:1px solid var(--border)">
     <h2 style="margin:0 0 14px">Add New Flight</h2>
     <div class="iw"><label>Flight No *</label><input id="newF" placeholder="e.g. MH123" oninput="this.value=this.value.toUpperCase()"></div>
@@ -209,31 +257,71 @@ firebase.initializeApp(firebaseConfig);
 const db=firebase.database();
 
 const CATS={
-  "Admin":  {emoji:"🛫", tasks:["Cockpit","Flight Plan","NOTAM/ATIS"]},
-  "Cabin":  {emoji:"🧹", tasks:["Cleaning (F/B)","Cleaning (E)","Catering (F/B)","Catering (E)"]},
-  "Ground": {emoji:"🚛", tasks:["Baggage (F)","Baggage (R)","Cargo (F)","Cargo (R)","Galley","Fuel","Water","Lavatory"]}
+  "Admin":  {emoji:"🛫",tasks:["Cockpit","Flight Plan","NOTAM/ATIS"]},
+  "Cabin":  {emoji:"🧹",tasks:["Cleaning (F/B)","Cleaning (E)","Catering (F/B)","Catering (E)"]},
+  "Ground": {emoji:"🚛",tasks:["Baggage (F)","Baggage (R)","Cargo (F)","Cargo (R)","Galley","Fuel","Water","Lavatory"]}
 };
 const ALL_TASKS=Object.values(CATS).flatMap(c=>c.tasks);
 const TASK_STATUSES=["Not Started","In Progress","Completed","Delayed","Need Assistant"];
-// Priority: Need Assistant > Delayed > Not Started > In Progress > Completed
 const CAT_PRIORITY=["Need Assistant","Delayed","Not Started","In Progress","Completed"];
-// Statuses where AT should be cleared if reverted to
 const RESET_STATUSES=["Arriving","Delayed"];
-// Statuses that trigger AT
 const ACTIVE_STATUSES=["On Chocked","Need Assistant","PB Attached","Push Backed"];
+const ST_ORD={'Arriving':0,'On Chocked':1,'Delayed':2,'Need Assistant':3,'PB Attached':4,'Push Backed':5};
 
-const ST_ORD={'Arriving':0,'On Chocked':1,'Need Assistant':2,'Delayed':3,'PB Attached':4,'Push Backed':5};
-
-let currentF=null, allFlights={}, useUTC=true, listenerOn=false, currentUser=null;
-let clockInterval=null, timerInterval=null, cdInterval=null, etdManuallyChanged=false;
+let currentF=null,allFlights={},useUTC=true,listenerOn=false,currentUser=null;
+let clockInterval=null,timerInterval=null,cdInterval=null;
+let etdManuallyChanged=false,syncInProgress=false;
 
 function pad(n){return String(n).padStart(2,'0');}
 
-// ── Theme ─────────────────────────────────────────────────────────
-function applyTheme(t){document.body.setAttribute('data-theme',t);localStorage.setItem('theme',t);}
-function toggleTheme(){applyTheme(document.body.getAttribute('data-theme')==='dark'?'light':'dark');}
+// ═══════════════════════════════════════════════════════════════════
+// DATETIME HELPERS
+// All times stored in Firebase as UTC ISO strings.
+// datetime-local inputs always work in LOCAL browser time internally.
+// We must convert between them when displaying and reading.
+// ═══════════════════════════════════════════════════════════════════
 
-// ── Format ────────────────────────────────────────────────────────
+// Convert UTC ISO string → value for datetime-local input
+// When useUTC: we "trick" the input by subtracting the local offset
+//              so the input SHOWS UTC digits (e.g. 08:00 UTC shows as 08:00)
+// When !useUTC: let Date parse to local; use local H:M
+function isoToInput(iso){
+  if(!iso)return '';
+  const d=new Date(iso);
+  if(isNaN(d.getTime()))return '';
+  let y,mo,day,h,mi;
+  if(useUTC){
+    y=d.getUTCFullYear();mo=d.getUTCMonth()+1;day=d.getUTCDate();
+    h=d.getUTCHours();mi=d.getUTCMinutes();
+  } else {
+    y=d.getFullYear();mo=d.getMonth()+1;day=d.getDate();
+    h=d.getHours();mi=d.getMinutes();
+  }
+  return y+'-'+pad(mo)+'-'+pad(day)+'T'+pad(h)+':'+pad(mi);
+}
+
+// Convert datetime-local input value → UTC ISO string for Firebase
+// When useUTC: digits shown are UTC; append 'Z' directly
+// When !useUTC: digits shown are local; new Date() parses as local → UTC
+function inputToISO(val){
+  if(!val)return '';
+  if(useUTC){
+    return val+':00.000Z';
+  } else {
+    return new Date(val).toISOString();
+  }
+}
+
+// Short HH:MM display from ISO, respecting current TZ
+function shortTime(iso){
+  if(!iso)return '-';
+  const d=new Date(iso);
+  if(isNaN(d.getTime()))return '-';
+  if(useUTC)return pad(d.getUTCHours())+':'+pad(d.getUTCMinutes());
+  return pad(d.getHours())+':'+pad(d.getMinutes());
+}
+
+// Full datetime for log display
 function formatDate(iso){
   if(!iso)return '-';
   const d=new Date(iso);
@@ -241,10 +329,29 @@ function formatDate(iso){
   return d.toLocaleString();
 }
 
-// ── Colours ───────────────────────────────────────────────────────
+// ═══════════════════════════════════════════════════════════════════
+// THEME
+// ═══════════════════════════════════════════════════════════════════
+function applyTheme(t){document.body.setAttribute('data-theme',t);localStorage.setItem('theme',t);}
+function toggleTheme(){applyTheme(document.body.getAttribute('data-theme')==='dark'?'light':'dark');}
+
+// ═══════════════════════════════════════════════════════════════════
+// COLOURS
+// ═══════════════════════════════════════════════════════════════════
 function overallBorderColor(s){
-  const m={'Arriving':'#888','On Chocked':'#222','Delayed':'#da3633','Need Assistant':'#e3b341','PB Attached':'#1f6feb','Push Backed':'#238636'};
+  const m={'Arriving':'#888','On Chocked':'#333','Delayed':'#da3633','Need Assistant':'#e3b341','PB Attached':'#1f6feb','Push Backed':'#238636'};
   return m[s]||'#888';
+}
+function overallPillStyle(s){
+  const m={
+    'Arriving':'background:rgba(128,128,128,0.2);color:#aaa',
+    'On Chocked':'background:rgba(30,30,30,0.7);color:#ccc',
+    'Delayed':'background:rgba(218,54,51,0.2);color:#f85149',
+    'Need Assistant':'background:rgba(225,183,64,0.25);color:#e3b341',
+    'PB Attached':'background:rgba(31,111,235,0.2);color:#58a6ff',
+    'Push Backed':'background:rgba(35,134,54,0.2);color:#3fb950'
+  };
+  return m[s]||'background:rgba(128,128,128,0.12);color:#888';
 }
 function chipStyle(s){
   if(s==='Completed')      return 'background:rgba(35,134,54,0.2);color:#3fb950';
@@ -254,21 +361,34 @@ function chipStyle(s){
   return 'background:rgba(128,128,128,0.12);color:#888';
 }
 function catBgStyle(s){
-  if(s==='Completed')      return 'rgba(35,134,54,0.1)';
-  if(s==='Delayed')        return 'rgba(218,54,51,0.08)';
   if(s==='Need Assistant') return 'rgba(225,183,64,0.12)';
+  if(s==='Delayed')        return 'rgba(218,54,51,0.08)';
   if(s==='In Progress')    return 'rgba(31,111,235,0.08)';
+  if(s==='Completed')      return 'rgba(35,134,54,0.1)';
   return 'rgba(128,128,128,0.04)';
 }
 
-// ── Cat auto-status ───────────────────────────────────────────────
+// ═══════════════════════════════════════════════════════════════════
+// CAT STATUS CALC
+// ═══════════════════════════════════════════════════════════════════
 function calcCatStatus(d,ck){
   const statuses=CATS[ck].tasks.map(t=>d[t]||'Not Started');
   for(const s of CAT_PRIORITY){if(statuses.includes(s))return s;}
   return 'Not Started';
 }
+// Read live editor selects for a category
+function calcCatStatusLive(ck){
+  const vals={};
+  CATS[ck].tasks.forEach(t=>{
+    const el=document.getElementById('t-'+t.replace(/[\s()/]/g,'_'));
+    vals[t]=el?el.value:'Not Started';
+  });
+  return calcCatStatus(vals,ck);
+}
 
-// ── Clock ─────────────────────────────────────────────────────────
+// ═══════════════════════════════════════════════════════════════════
+// CLOCK
+// ═══════════════════════════════════════════════════════════════════
 function updateClock(){
   const el=document.getElementById('liveClock');if(!el)return;
   const now=new Date();
@@ -277,7 +397,15 @@ function updateClock(){
 }
 function startClock(){updateClock();if(clockInterval)clearInterval(clockInterval);clockInterval=setInterval(updateClock,1000);}
 
-// ── Ground timer (auto from timerStart) ───────────────────────────
+// Update TZ label badges on editor inputs
+function refreshTZLabels(){
+  const lbl=useUTC?'UTC':'Local';
+  ['etaLbl','atLbl','etdLbl'].forEach(id=>{const el=document.getElementById(id);if(el)el.innerText=lbl;});
+}
+
+// ═══════════════════════════════════════════════════════════════════
+// GROUND TIMER
+// ═══════════════════════════════════════════════════════════════════
 function startGroundTimer(startISO){
   clearInterval(timerInterval);
   if(!startISO){document.getElementById('timerBox').style.display='none';return;}
@@ -290,14 +418,16 @@ function startGroundTimer(startISO){
   tick();timerInterval=setInterval(tick,1000);
 }
 
-// ── ETD countdown in editor ───────────────────────────────────────
-function startEditorCountdown(etdVal){
+// ═══════════════════════════════════════════════════════════════════
+// EDITOR COUNTDOWN (ETD)
+// ═══════════════════════════════════════════════════════════════════
+function startEditorCountdown(etdISO){
   clearInterval(cdInterval);
   const wrap=document.getElementById('cdBoxWrap');
-  if(!etdVal){wrap.style.display='none';return;}
+  if(!etdISO){wrap.style.display='none';return;}
   wrap.style.display='block';
   function tick(){
-    const diff=new Date(etdVal)-new Date(),el=document.getElementById('cdBox');
+    const diff=new Date(etdISO)-new Date(),el=document.getElementById('cdBox');
     const abs=Math.abs(diff),s=Math.floor(abs/1000)%60,m=Math.floor(abs/60000)%60,h=Math.floor(abs/3600000);
     const str=(h?pad(h)+':':'')+pad(m)+':'+pad(s);
     if(diff<0){el.innerText='-'+str+' OVERDUE';el.className='cd-box cd-late';}
@@ -306,9 +436,57 @@ function startEditorCountdown(etdVal){
   }
   tick();cdInterval=setInterval(tick,1000);
 }
-function onEtdChange(){etdManuallyChanged=true;startEditorCountdown(document.getElementById('depTime').value);}
 
-// ── Login ─────────────────────────────────────────────────────────
+// ═══════════════════════════════════════════════════════════════════
+// EDITOR LIVE CHANGE HANDLERS
+// ═══════════════════════════════════════════════════════════════════
+function onEtdChange(){
+  etdManuallyChanged=true;
+  startEditorCountdown(inputToISO(document.getElementById('depTime').value));
+}
+
+function onEtaChange(){
+  // Auto-fill ETD = ETA+90 if user hasn't manually set ETD and no ETD exists yet
+  if(!etdManuallyChanged){
+    const etaISO=inputToISO(document.getElementById('etaTime').value);
+    if(etaISO){
+      const etdISO=new Date(new Date(etaISO).getTime()+90*60000).toISOString();
+      document.getElementById('depTime').value=isoToInput(etdISO);
+      startEditorCountdown(etdISO);
+    }
+  }
+}
+
+// Called when Overall Status dropdown changes — lock/unlock tasks, refresh cat headers live
+function onStatusChange(){
+  const sel=document.getElementById('t-Overall_Status');
+  if(!sel)return;
+  const isArriving=sel.value==='Arriving';
+  ALL_TASKS.forEach(t=>{
+    const el=document.getElementById('t-'+t.replace(/[\s()/]/g,'_'));
+    if(el){el.disabled=isArriving;}
+  });
+  refreshCatHeaders();
+}
+
+// Refresh cat section headers from live editor select values (no sync needed)
+function refreshCatHeaders(){
+  const statusEl=document.getElementById('t-Overall_Status');
+  const isArriving=statusEl&&statusEl.value==='Arriving';
+  for(const ck in CATS){
+    const catStatus=calcCatStatusLive(ck);
+    const hdr=document.getElementById('cat-hdr-'+ck);
+    const badge=document.getElementById('cat-badge-'+ck);
+    const lock=document.getElementById('cat-lock-'+ck);
+    if(hdr)hdr.style.background=catBgStyle(catStatus);
+    if(badge){badge.setAttribute('style',chipStyle(catStatus)+';font-size:12px;padding:3px 10px');badge.innerText=catStatus;}
+    if(lock)lock.style.display=isArriving?'inline':'none';
+  }
+}
+
+// ═══════════════════════════════════════════════════════════════════
+// LOGIN
+// ═══════════════════════════════════════════════════════════════════
 function checkLogin(){
   const id=document.getElementById('loginId').value.trim(),pass=document.getElementById('loginPass').value;
   if(!id||!pass){showLoginErr('Please enter ID and password.');return;}
@@ -321,14 +499,20 @@ function checkLogin(){
 function showLoginErr(m){const e=document.getElementById('loginErr');e.innerText=m;e.style.display='block';}
 document.addEventListener('keydown',e=>{if(e.key==='Enter'&&document.getElementById('loginScreen').style.display!=='none')checkLogin();});
 
-// ── Init ──────────────────────────────────────────────────────────
+// ═══════════════════════════════════════════════════════════════════
+// INIT
+// ═══════════════════════════════════════════════════════════════════
 function init(){
   currentUser=JSON.parse(sessionStorage.getItem('user'));
   if(!currentUser)return;
   document.getElementById('loginScreen').style.display='none';
   document.getElementById('mainContent').style.display='block';
   document.getElementById('userDisplay').innerText='👤 '+currentUser.name;
-  document.getElementById('wmBottom').innerText=currentUser.id;
+  // Watermark
+  document.getElementById('wmText').innerText=currentUser.id;
+  document.getElementById('wmOverlay').style.display='flex';
+  // Legend
+  document.getElementById('statusLegend').style.display='flex';
   startClock();
   if(!listenerOn){
     listenerOn=true;
@@ -343,7 +527,9 @@ function init(){
   }
 }
 
-// ── Profile ───────────────────────────────────────────────────────
+// ═══════════════════════════════════════════════════════════════════
+// PROFILE
+// ═══════════════════════════════════════════════════════════════════
 function toggleProfile(){
   const p=document.getElementById('profilePanel');
   if(p.classList.contains('open')){p.classList.remove('open');return;}
@@ -373,7 +559,9 @@ function saveProfile(){
 }
 function showPpMsg(m,err){const el=document.getElementById('ppMsg');el.style.display='block';el.style.color=err?'#da3633':'#3fb950';el.innerText=m;}
 
-// ── Sort ──────────────────────────────────────────────────────────
+// ═══════════════════════════════════════════════════════════════════
+// SORT
+// ═══════════════════════════════════════════════════════════════════
 function sortedKeys(){
   const field=document.getElementById('sortField')?.value||'default';
   const dir=document.getElementById('sortDir')?.value==='desc'?-1:1;
@@ -391,9 +579,11 @@ function sortedKeys(){
   });
 }
 
-// ── Countdown for card (plain text, no HTML tags) ─────────────────
-function countdownText(refVal){
-  const diff=new Date(refVal)-new Date();
+// ═══════════════════════════════════════════════════════════════════
+// COUNTDOWN TEXT (safe — no HTML in output)
+// ═══════════════════════════════════════════════════════════════════
+function countdownText(iso){
+  const diff=new Date(iso)-new Date();
   const abs=Math.abs(diff),s=Math.floor(abs/1000)%60,m=Math.floor(abs/60000)%60,h=Math.floor(abs/3600000);
   const str=pad(h)+':'+pad(m)+':'+pad(s);
   if(diff<0)return{text:'-'+str+' OVERDUE',cls:'cd-chip cd-late'};
@@ -401,7 +591,9 @@ function countdownText(refVal){
   return{text:'▶ '+str,cls:'cd-chip cd-ok'};
 }
 
-// ── Flight list render ────────────────────────────────────────────
+// ═══════════════════════════════════════════════════════════════════
+// FLIGHT LIST RENDER (cards show only overall status pill, no task strips)
+// ═══════════════════════════════════════════════════════════════════
 function renderFlights(){
   const q=(document.getElementById('search').value||'').toUpperCase();
   const list=document.getElementById('list');list.innerHTML='';
@@ -413,81 +605,69 @@ function renderFlights(){
     const d=allFlights[f];
     if(q&&!f.includes(q)&&!(d.apron||'').includes(q))return;
     const unread=(d.msgs||[]).some(m=>m.user==='Admin'&&!m.read);
+
     const card=document.createElement('div');
     card.className='fcard';
     card.style.borderLeftColor=overallBorderColor(d['Overall Status']);
     card.onclick=()=>openEditor(f);
 
-    // ── Time row: plain DOM elements, no innerHTML for countdown ──
-    // No AT → show ETA only
-    // Has AT → show: ETD [countdown] AT
-    // Has ETD but no AT → show: ETD [countdown]
+    // Badge
+    if(unread){
+      const b=document.createElement('div');
+      b.className='badge';b.textContent='💬 NEW MSG FROM ADMIN';
+      card.appendChild(b);
+    }
+
+    // Top row: name + apron + status pill
+    const topRow=document.createElement('div');
+    topRow.style.cssText='display:flex;justify-content:space-between;align-items:center;gap:8px';
+    const left=document.createElement('div');
+    const nameB=document.createElement('b');nameB.style.fontSize='15px';nameB.textContent=f;
+    const apronS=document.createElement('span');apronS.style.cssText='color:#888;font-size:12px;margin-left:6px';apronS.textContent='Apron '+d.apron;
+    left.appendChild(nameB);left.appendChild(apronS);
+    const pill=document.createElement('span');
+    pill.className='pill';
+    pill.setAttribute('style',overallPillStyle(d['Overall Status']));
+    pill.textContent=d['Overall Status']||'—';
+    topRow.appendChild(left);topRow.appendChild(pill);
+    card.appendChild(topRow);
+
+    // Time row (all plain DOM — no innerHTML for live parts)
     const timeRow=document.createElement('div');
-    timeRow.style.cssText='font-size:12px;color:#888;margin-top:3px;display:flex;align-items:center;gap:6px;flex-wrap:wrap';
+    timeRow.style.cssText='font-size:12px;color:#888;margin-top:5px;display:flex;align-items:center;gap:6px;flex-wrap:wrap';
 
     if(d.at){
-      // ETD value
-      const etdSpan=document.createElement('span');
-      etdSpan.textContent='ETD: '+(d.etd?d.etd.substring(11,16):'-');
-      timeRow.appendChild(etdSpan);
-      // countdown span (live updated)
+      // ETD · countdown · AT
+      const etdS=document.createElement('span');
+      etdS.textContent='ETD: '+(d.etd?shortTime(d.etd):'-');
+      timeRow.appendChild(etdS);
       if(d.etd){
         const cd=document.createElement('span');
-        cd.id='cd-card-'+f;
-        cd.className='cd-chip';
+        cd.id='cd-card-'+f;cd.className='cd-chip';
         timeRow.appendChild(cd);
       }
-      // AT value
-      const atSpan=document.createElement('span');
-      atSpan.style.color='#aaa';
-      atSpan.textContent='AT: '+d.at.substring(11,16);
-      timeRow.appendChild(atSpan);
+      const dot=document.createElement('span');dot.style.color='#555';dot.textContent='·';timeRow.appendChild(dot);
+      const atS=document.createElement('span');
+      atS.textContent='AT: '+shortTime(d.at);
+      timeRow.appendChild(atS);
     } else if(d.etd){
-      const etdSpan=document.createElement('span');
-      etdSpan.textContent='ETD: '+d.etd.substring(11,16);
-      timeRow.appendChild(etdSpan);
+      const etdS=document.createElement('span');
+      etdS.textContent='ETD: '+shortTime(d.etd);
+      timeRow.appendChild(etdS);
       const cd=document.createElement('span');
-      cd.id='cd-card-'+f;
-      cd.className='cd-chip';
+      cd.id='cd-card-'+f;cd.className='cd-chip';
       timeRow.appendChild(cd);
     } else if(d.eta){
-      const etaSpan=document.createElement('span');
-      etaSpan.textContent='ETA: '+d.eta.substring(11,16);
-      timeRow.appendChild(etaSpan);
+      const etaS=document.createElement('span');
+      etaS.textContent='ETA: '+shortTime(d.eta);
+      timeRow.appendChild(etaS);
     }
 
-    const catChips=Object.keys(CATS).map(ck=>{
-      const s=calcCatStatus(d,ck);if(s==='Not Started')return'';
-      return`<span class="ts-chip" style="${chipStyle(s)}">${CATS[ck].emoji}${ck}: ${s}</span>`;
-    }).filter(Boolean).join('');
-    const taskChips=ALL_TASKS.map(t=>{
-      const sv=d[t]||'Not Started';if(sv==='Not Started')return'';
-      const short=t.replace(' (F/B)','(FB)').replace(' (F)','(F)').replace(' (R)','(R)').replace(' (E)','(E)');
-      return`<span class="ts-chip" style="${chipStyle(sv)}">${short}</span>`;
-    }).filter(Boolean).join('');
-    const strip=[catChips,taskChips].filter(Boolean).join('');
-
-    // Build card content via innerHTML for static parts only
-    card.innerHTML=
-      (unread?`<div class="badge">💬 NEW MSG FROM ADMIN</div>`:'')+
-      `<div style="display:flex;justify-content:space-between;align-items:flex-start">
-        <div><b style="font-size:15px">${f}</b> <span style="color:#888;font-size:12px">Apron ${d.apron}</span></div>
-        <span class="pill" style="${chipStyle(d['Overall Status']||'')}">${d['Overall Status']||'—'}</span>
-      </div>`+
-      (strip?`<div class="task-strip">${strip}</div>`:'');
-
-    // Append the safe DOM-built time row
-    if(timeRow.children.length>0){
-      // Insert after the first div (flight name row)
-      const firstDiv=card.querySelector('div');
-      if(firstDiv&&firstDiv.nextSibling)card.insertBefore(timeRow,firstDiv.nextSibling);
-      else card.appendChild(timeRow);
-    }
-
+    if(timeRow.children.length>0)card.appendChild(timeRow);
     list.appendChild(card);
   });
 
-  // ── Live countdown update using textContent only ───────────────
+  // Live countdown ticker — textContent only, never innerHTML
   function refreshCardCd(){
     Object.keys(allFlights).forEach(f=>{
       const d=allFlights[f];
@@ -503,15 +683,19 @@ function renderFlights(){
   window._cardCdInterval=setInterval(refreshCardCd,1000);
 }
 
-// ── Editor open ───────────────────────────────────────────────────
+// ═══════════════════════════════════════════════════════════════════
+// EDITOR OPEN — all ISO → display conversion happens here
+// ═══════════════════════════════════════════════════════════════════
 function openEditor(f){
-  currentF=f;const d=allFlights[f];
+  currentF=f;
+  const d=allFlights[f];
   document.getElementById('editTitle').innerText='✈ '+f+' — Apron '+d.apron;
   document.getElementById('t-Overall_Status').value=d['Overall Status']||'Arriving';
   document.getElementById('t-Apron').value=d.apron||'';
-  document.getElementById('etaTime').value=d.eta||'';
-  document.getElementById('depTime').value=d.etd||'';
-  document.getElementById('atTime').value=d.at?d.at.substring(0,16):'';
+  document.getElementById('etaTime').value=isoToInput(d.eta||'');
+  document.getElementById('depTime').value=isoToInput(d.etd||'');
+  document.getElementById('atTime').value=isoToInput(d.at||'');
+  refreshTZLabels();
   etdManuallyChanged=false;
   startGroundTimer(d.timerStart||null);
   startEditorCountdown(d.etd||'');
@@ -520,17 +704,22 @@ function openEditor(f){
   let h='';
   for(const ck in CATS){
     const cat=CATS[ck],catStatus=calcCatStatus(d,ck);
-    h+=`<div class="cat-sec"><div class="cat-hdr" style="background:${catBgStyle(catStatus)}">
-      <b>${cat.emoji} ${ck}</b>
-      <span class="ts-chip" style="${chipStyle(catStatus)};font-size:12px;padding:3px 10px">${catStatus}</span>
-      ${isArriving?`<span style="font-size:10px;color:#e3b341;font-weight:bold;margin-left:4px">🔒 Locked — Status: Arriving</span>`:''}
-    </div><div class="cat-body">`;
+    h+=`<div class="cat-sec">
+      <div class="cat-hdr" id="cat-hdr-${ck}" style="background:${catBgStyle(catStatus)}">
+        <b>${cat.emoji} ${ck}</b>
+        <span id="cat-badge-${ck}" class="ts-chip" style="${chipStyle(catStatus)};font-size:12px;padding:3px 10px">${catStatus}</span>
+        <span id="cat-lock-${ck}" style="font-size:10px;color:#e3b341;font-weight:bold;margin-left:4px;display:${isArriving?'inline':'none'}">🔒 Locked</span>
+      </div>
+      <div class="cat-body">`;
     cat.tasks.forEach(t=>{
-      const val=d[t]||'Not Started',tid='t-'+t.replace(/[\s()/]/g,'_');
-      h+=`<div class="iw" style="margin-bottom:6px"><label style="font-size:11px;color:#888">${t}</label>
-        <select id="${tid}" style="font-size:12px;padding:6px 8px" ${isArriving?'disabled':''}>
+      const val=d[t]||'Not Started';
+      const tid='t-'+t.replace(/[\s()/]/g,'_');
+      h+=`<div class="iw" style="margin-bottom:6px">
+        <label style="font-size:11px;color:#888">${t}</label>
+        <select id="${tid}" style="font-size:12px;padding:6px 8px" ${isArriving?'disabled':''} onchange="refreshCatHeaders()">
           ${TASK_STATUSES.map(s=>`<option${val===s?' selected':''}>${s}</option>`).join('')}
-        </select></div>`;
+        </select>
+      </div>`;
     });
     h+=`</div></div>`;
   }
@@ -539,108 +728,155 @@ function openEditor(f){
   document.getElementById('editorOverlay').style.display='block';
 }
 
-// ── Sync to cloud ─────────────────────────────────────────────────
+// ═══════════════════════════════════════════════════════════════════
+// SYNC TO CLOUD
+// ═══════════════════════════════════════════════════════════════════
 function confirmUpdate(){
+  if(syncInProgress){alert('Sync in progress, please wait.');return;}
+  if(!currentF||!allFlights[currentF]){alert('No flight selected.');return;}
   const u=currentUser,now=new Date().toISOString(),d=allFlights[currentF];
-  let updates={},newLogs=[],msgs=d.msgs||[],changed=false,summary=[];
+  let updates={},newLogs=[],msgs=[...(d.msgs||[])],changed=false,summary=[];
 
   const newStatus=document.getElementById('t-Overall_Status').value;
   const oldStatus=d['Overall Status']||'Arriving';
 
-  // Log helper — always log everything including first time (except Not Started)
-  const check=(elId,key,label,skip)=>{
-    if(skip)return;
-    const el=document.getElementById(elId);if(!el||el.disabled)return;
+  // For dropdown/text: compare raw values
+  function checkSelect(elId,key,label){
+    const el=document.getElementById(elId);if(!el)return;
     const v=el.value,old=d[key]||'';
-    if(old===v||v==='Not Started')return;
+    if(v===old)return;
     newLogs.push({time:now,task:label,status:(old||'—')+' → '+v,user:u.name});
     updates[key]=v;summary.push(label+': '+(old||'—')+' → '+v);changed=true;
-  };
+  }
+  function checkText(elId,key,label){
+    const el=document.getElementById(elId);if(!el||el.disabled)return;
+    const v=el.value.trim(),old=(d[key]||'').trim();
+    if(v===old)return;
+    newLogs.push({time:now,task:label,status:(old||'—')+' → '+v,user:u.name});
+    updates[key]=v;summary.push(label+': '+(old||'—')+' → '+v);changed=true;
+  }
+  // For datetime-local: convert to ISO then compare at minute precision
+  function checkTime(elId,key,label){
+    const el=document.getElementById(elId);if(!el||el.disabled)return;
+    const newISO=inputToISO(el.value);
+    const oldISO=d[key]||'';
+    const n16=newISO.substring(0,16),o16=oldISO.substring(0,16);
+    if(n16===o16)return;
+    newLogs.push({time:now,task:label,status:(o16||'—')+' → '+n16+' UTC',user:u.name});
+    updates[key]=newISO;summary.push(label+': '+(o16||'—')+' → '+n16);changed=true;
+  }
 
-  check('t-Overall_Status','Overall Status','Overall Status');
-  check('t-Apron','apron','Apron');
-  check('etaTime','eta','ETA');
-  check('depTime','etd','ETD');
+  checkSelect('t-Overall_Status','Overall Status','Overall Status');
+  checkText('t-Apron','apron','Apron');
+  checkTime('etaTime','eta','ETA');
+  checkTime('depTime','etd','ETD');
+
   const isArriving=newStatus==='Arriving';
-  ALL_TASKS.forEach(t=>check('t-'+t.replace(/[\s()/]/g,'_'),t,t,isArriving));
+  ALL_TASKS.forEach(t=>{if(!isArriving)checkSelect('t-'+t.replace(/[\s()/]/g,'_'),t,t);});
 
   const msg=document.getElementById('msgInput').value.trim();
   if(msg){msgs.push({time:now,user:u.name,status:msg,read:false});updates.msgs=msgs;summary.push('Message sent');changed=true;}
 
   if(!changed){alert('No changes detected.');return;}
 
-  // ── AT logic ─────────────────────────────────────────────────────
+  // ── AT logic ──────────────────────────────────────────────────────
   const goingActive=ACTIVE_STATUSES.includes(newStatus)&&RESET_STATUSES.includes(oldStatus);
-  const wasActive=d.at&&!RESET_STATUSES.includes(oldStatus);
+  const wasActive=!!d.at&&!RESET_STATUSES.includes(oldStatus);
 
   if(goingActive&&!wasActive){
-    // First time leaving Arriving/Delayed → set AT and timer
+    // First activation
     updates.at=now;updates.timerStart=now;
     newLogs.push({time:now,task:'AT',status:'Auto-set → '+now.substring(11,16)+' UTC',user:'System'});
     summary.push('AT auto-set');
-    // ETD default = AT + 90 min if not manually changed and no existing ETD
-    if(!etdManuallyChanged&&!d.etd){
-      const etdAuto=new Date(new Date(now).getTime()+90*60000);
-      const etdStr=etdAuto.getUTCFullYear()+'-'+pad(etdAuto.getUTCMonth()+1)+'-'+pad(etdAuto.getUTCDate())+'T'+pad(etdAuto.getUTCHours())+':'+pad(etdAuto.getUTCMinutes());
-      updates.etd=etdStr;
-      newLogs.push({time:now,task:'ETD',status:'Auto-set (AT+90min) → '+etdStr,user:'System'});
-      summary.push('ETD auto-set AT+90min');
+    if(!etdManuallyChanged&&!(updates.etd||d.etd)){
+      // ETD = ETA+90 if ETA exists, else AT+90
+      const base=updates.eta||d.eta||now;
+      const etdISO=new Date(new Date(base).getTime()+90*60000).toISOString();
+      updates.etd=etdISO;
+      newLogs.push({time:now,task:'ETD',status:'Auto-set (+90min from '+(d.eta?'ETA':'AT')+') → '+etdISO.substring(11,16)+' UTC',user:'System'});
+      summary.push('ETD auto-set');
     }
   } else if(RESET_STATUSES.includes(newStatus)&&d.at){
-    // Reverted to Arriving/Delayed: clear AT so next change re-triggers
     updates.at='';updates.timerStart='';
-    newLogs.push({time:now,task:'AT',status:'Cleared — status reverted to '+newStatus,user:'System'});
+    newLogs.push({time:now,task:'AT',status:'Cleared — reverted to '+newStatus,user:'System'});
     summary.push('AT cleared');
   } else if(goingActive&&wasActive){
-    // Left reset status again after returning → refresh AT
+    // Re-activation after revert
     updates.at=now;updates.timerStart=now;
     newLogs.push({time:now,task:'AT',status:'Refreshed → '+now.substring(11,16)+' UTC',user:'System'});
     summary.push('AT refreshed');
-    if(!etdManuallyChanged&&!d.etd){
-      const etdAuto=new Date(new Date(now).getTime()+90*60000);
-      const etdStr=etdAuto.getUTCFullYear()+'-'+pad(etdAuto.getUTCMonth()+1)+'-'+pad(etdAuto.getUTCDate())+'T'+pad(etdAuto.getUTCHours())+':'+pad(etdAuto.getUTCMinutes());
-      updates.etd=etdStr;
-      newLogs.push({time:now,task:'ETD',status:'Auto-refreshed (AT+90min) → '+etdStr,user:'System'});
+    if(!etdManuallyChanged&&!(updates.etd||d.etd)){
+      const base=updates.eta||d.eta||now;
+      const etdISO=new Date(new Date(base).getTime()+90*60000).toISOString();
+      updates.etd=etdISO;
+      newLogs.push({time:now,task:'ETD',status:'Auto-refreshed (+90min) → '+etdISO.substring(11,16)+' UTC',user:'System'});
     }
   }
 
-  // Cat status auto-recalc
+  // Cat status auto-recalc after all task updates
   const merged={...d,...updates};
   for(const ck in CATS){
-    const auto=calcCatStatus(merged,ck);
-    if((d['cat_'+ck]||'Not Started')!==auto){
-      updates['cat_'+ck]=auto;
-      newLogs.push({time:now,task:ck+' (auto)',status:auto,user:'System'});
+    const autoStatus=calcCatStatus(merged,ck);
+    const prevStatus=d['cat_'+ck]||'Not Started';
+    if(prevStatus!==autoStatus){
+      updates['cat_'+ck]=autoStatus;
+      newLogs.push({time:now,task:ck+' (auto)',status:prevStatus+' → '+autoStatus,user:'System'});
     }
   }
 
-  if(!confirm('Confirm sync?\n'+summary.join('\n')))return;
+  if(!confirm('Confirm sync?\n\n'+summary.join('\n')))return;
+
+  syncInProgress=true;
   updates.logs=[...(d.logs||[]),...newLogs];
-  db.ref('flights/'+currentF).update(updates).then(()=>{
-    document.getElementById('msgInput').value='';
-    etdManuallyChanged=false;
-    if(updates.timerStart)startGroundTimer(updates.timerStart);
-    if(updates.at)document.getElementById('atTime').value=updates.at.substring(0,16);
-    if(updates.etd){document.getElementById('depTime').value=updates.etd;startEditorCountdown(updates.etd);}
-  });
+
+  db.ref('flights/'+currentF).update(updates)
+    .then(()=>{
+      syncInProgress=false;
+      document.getElementById('msgInput').value='';
+      etdManuallyChanged=false;
+      // Update AT display
+      if(updates.at!==undefined){
+        document.getElementById('atTime').value=isoToInput(updates.at||'');
+      }
+      // Update ETD display + countdown
+      if(updates.etd){
+        document.getElementById('depTime').value=isoToInput(updates.etd);
+        startEditorCountdown(updates.etd);
+      }
+      // Update ground timer
+      if(updates.timerStart)startGroundTimer(updates.timerStart);
+      if(updates.timerStart===''||updates.at==='')startGroundTimer('');
+      refreshTZLabels();
+    })
+    .catch(err=>{syncInProgress=false;alert('Sync failed: '+err.message);});
 }
 
+// ═══════════════════════════════════════════════════════════════════
+// LOGS
+// ═══════════════════════════════════════════════════════════════════
 function renderLogs(d){
   if(!d)return;
   const msgs=(d.msgs||[]).slice().reverse(),logs=(d.logs||[]).slice().reverse();
   document.getElementById('msgLogArea').innerHTML=msgs.map((m,i)=>{
-    const oi=d.msgs.length-1-i;
+    const oi=(d.msgs||[]).length-1-i;
     const btn=(m.user==='Admin'&&!m.read)?`<button onclick="markReadStaff(${oi})" style="float:right;font-size:10px;padding:2px 6px;background:#1f6feb;color:white;border:none;border-radius:4px;cursor:pointer">Mark Read</button>`:'';
     return`<div class="mbox ${m.read?'mread':'munread'}">${btn}<b>${m.user}</b> <small style="color:#888">${formatDate(m.time)}</small><br>${m.status}</div>`;
   }).join('')||'<p style="color:#888;font-size:13px">No messages.</p>';
-  document.getElementById('actionLogArea').innerHTML=logs.map(l=>`<div style="margin-bottom:3px;font-size:12px">[${formatDate(l.time)}] <b>${l.task}</b> → ${l.status} <span style="color:#888">(${l.user})</span></div>`).join('')||'<p style="color:#888;font-size:13px">No activity.</p>';
+  document.getElementById('actionLogArea').innerHTML=logs.map(l=>
+    `<div style="margin-bottom:3px;font-size:12px">[${formatDate(l.time)}] <b>${l.task}</b> → ${l.status} <span style="color:#888">(${l.user})</span></div>`
+  ).join('')||'<p style="color:#888;font-size:13px">No activity.</p>';
 }
 function markReadStaff(idx){db.ref('flights/'+currentF+'/msgs/'+idx+'/read').set(true);}
+
 function closeEditor(){
-  currentF=null;clearInterval(timerInterval);clearInterval(cdInterval);
+  currentF=null;
+  clearInterval(timerInterval);clearInterval(cdInterval);
   document.getElementById('editorOverlay').style.display='none';
 }
 
+// ═══════════════════════════════════════════════════════════════════
+// ADD FLIGHT
+// ═══════════════════════════════════════════════════════════════════
 function openAddModal(){
   document.getElementById('addErr').style.display='none';
   ['newF','newA','newETA','newETD'].forEach(id=>document.getElementById(id).value='');
@@ -649,20 +885,48 @@ function openAddModal(){
 function saveNewFlight(){
   const f=document.getElementById('newF').value.trim().toUpperCase();
   const a=document.getElementById('newA').value.trim().toUpperCase();
-  const eta=document.getElementById('newETA').value,etd=document.getElementById('newETD').value;
+  const etaVal=document.getElementById('newETA').value;
+  const etdVal=document.getElementById('newETD').value;
   const errEl=document.getElementById('addErr');errEl.style.display='none';
   if(!f||!a){errEl.innerText='Flight No and Apron are required.';errEl.style.display='block';return;}
   if(allFlights[f]){errEl.innerText='Flight "'+f+'" already exists.';errEl.style.display='block';return;}
   const taken=Object.entries(allFlights).find(([,d])=>(d.apron||'').toUpperCase()===a);
   if(taken&&!confirm('⚠️ Apron "'+a+'" occupied by '+taken[0]+'. Proceed?'))return;
   const now=new Date().toISOString();
+  // Add modal: always treat input as UTC
+  const eta=etaVal?etaVal+':00.000Z':'';
+  const etd=etdVal?etdVal+':00.000Z':'';
   const data={apron:a,'Overall Status':'Arriving',logs:[{time:now,task:'Flight Created',status:'Created by '+currentUser.name,user:currentUser.name}],msgs:[]};
-  if(eta)data.eta=eta;if(etd)data.etd=etd;
+  if(eta)data.eta=eta;
+  if(etd)data.etd=etd;
   db.ref('flights/'+f).set(data).then(()=>document.getElementById('addModal').style.display='none');
 }
 
-function showBanner(msg){const b=document.getElementById('banner');b.innerText=msg;b.style.display='block';clearTimeout(b._t);b._t=setTimeout(()=>b.style.display='none',5500);}
-function toggleTZ(){useUTC=!useUTC;updateClock();renderFlights();if(currentF&&allFlights[currentF])renderLogs(allFlights[currentF]);}
+// ═══════════════════════════════════════════════════════════════════
+// MISC
+// ═══════════════════════════════════════════════════════════════════
+function showBanner(msg){
+  const b=document.getElementById('banner');b.innerText=msg;b.style.display='block';
+  clearTimeout(b._t);b._t=setTimeout(()=>b.style.display='none',5500);
+}
+
+function toggleTZ(){
+  useUTC=!useUTC;
+  updateClock();
+  renderFlights();
+  // Re-render editor time inputs if open
+  if(currentF&&allFlights[currentF]){
+    const d=allFlights[currentF];
+    document.getElementById('etaTime').value=isoToInput(d.eta||'');
+    document.getElementById('depTime').value=isoToInput(d.etd||'');
+    document.getElementById('atTime').value=isoToInput(d.at||'');
+    refreshTZLabels();
+    renderLogs(d);
+    // Restart editor countdown with correct reference
+    if(d.etd)startEditorCountdown(d.etd);
+  }
+}
+
 function logout(){sessionStorage.clear();location.reload();}
 
 window.onload=()=>{

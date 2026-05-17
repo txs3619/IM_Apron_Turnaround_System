@@ -9,7 +9,7 @@
   :root{--bg:#0b1117;--card:#161b22;--text:#c9d1d9;--border:#30363d;--primary:#58a6ff;}
   [data-theme='light']{--bg:#f0f2f5;--card:#fff;--text:#333;--border:#ddd;--primary:#1a237e;}
   *{box-sizing:border-box;}
-  body{font-family:'Segoe UI',sans-serif;background:var(--bg);color:var(--text);margin:0;padding-bottom:120px;transition:background .3s,color .3s;}
+  body{font-family:'Segoe UI',sans-serif;background:var(--bg);color:var(--text);margin:0;padding-bottom:100px;transition:background .3s,color .3s;}
   .hdr{display:flex;justify-content:space-between;align-items:center;padding:8px 14px;background:var(--card);border-bottom:1px solid var(--border);position:sticky;top:0;z-index:1000;gap:6px;flex-wrap:wrap;}
   .btn{padding:5px 10px;border-radius:6px;border:none;font-weight:bold;cursor:pointer;font-size:12px;transition:opacity .15s;}
   .btn:hover{opacity:.85;}
@@ -24,45 +24,47 @@
   #ctrlRow input{flex:1;min-width:120px;padding:6px 10px;border-radius:7px;border:1px solid var(--border);background:var(--bg);color:var(--text);font-size:13px;}
   #ctrlRow select{padding:5px 8px;border-radius:6px;border:1px solid var(--border);background:var(--bg);color:var(--text);font-size:12px;cursor:pointer;}
   /* Flight card */
-  .fcard{background:var(--card);border-radius:11px;padding:10px 13px 10px 17px;margin:6px 12px;border:1px solid var(--border);border-left:7px solid #888;transition:box-shadow .15s;}
+  .fcard{background:var(--card);border-radius:11px;padding:11px 13px 11px 17px;margin:6px 12px;border:1px solid var(--border);border-left:7px solid #888;}
   .fcard.sel{box-shadow:0 0 0 2px #58a6ff;}
   .drag-handle{cursor:grab;padding:0 3px;color:#888;font-size:14px;user-select:none;flex-shrink:0;}
   .fcard.dragging{opacity:.4;}
   .fcard.drag-over{border-top:3px solid #58a6ff;}
+  /* Overall status pills */
   .pill{display:inline-block;padding:2px 8px;border-radius:12px;font-size:11px;font-weight:bold;white-space:nowrap;}
-  /* Task section blocks — coloured by status */
-  .dash-cat{border-radius:8px;padding:6px 9px;margin-top:5px;}
-  .dash-cat-title{font-size:11px;font-weight:bold;margin-bottom:4px;}
+  /* Task/cat chips */
+  .tc{font-size:10px;padding:2px 7px;border-radius:8px;font-weight:600;}
+  /* Cat section block — unified, no colour differentiation */
+  .dash-cat{border-radius:7px;padding:6px 8px;margin-top:5px;background:rgba(128,128,128,0.06);border:1px solid var(--border);}
+  .dash-cat-title{font-size:11px;font-weight:bold;margin-bottom:4px;color:var(--primary);}
   .task-row{display:flex;flex-wrap:wrap;gap:3px;}
-  .tc{font-size:10px;padding:2px 7px;border-radius:7px;font-weight:600;border:1px solid transparent;}
   .msg-alert{background:rgba(88,166,255,0.1);border-left:4px solid var(--primary);padding:7px 10px;border-radius:4px;margin:7px 0;font-size:13px;}
   .log-scroll{max-height:110px;overflow-y:auto;background:rgba(0,0,0,0.15);padding:6px;font-size:11px;border-radius:5px;margin-top:4px;}
   .check{width:15px;height:15px;cursor:pointer;accent-color:#58a6ff;flex-shrink:0;}
   .reply-row{display:flex;gap:6px;margin-top:8px;}
   .reply-row input{flex:1;padding:7px 9px;border-radius:6px;border:1px solid var(--border);background:var(--bg);color:var(--text);font-size:13px;}
-  #liveClock{font-size:11px;font-weight:bold;letter-spacing:.4px;cursor:pointer;user-select:none;padding:4px 9px;border-radius:6px;background:rgba(128,128,128,0.12);white-space:nowrap;}
+  #liveClock{font-size:11px;font-weight:bold;cursor:pointer;user-select:none;padding:4px 9px;border-radius:6px;background:rgba(128,128,128,0.12);white-space:nowrap;}
+  .zone-header{display:flex;align-items:center;gap:8px;padding:8px 14px 2px;flex-wrap:wrap;}
+  .zone-title{font-weight:bold;font-size:13px;flex:1;}
+  /* Timer display */
+  .sw-disp{font-size:12px;font-weight:bold;font-family:monospace;padding:3px 8px;border-radius:5px;background:rgba(128,128,128,0.12);}
+  .cd-ok{background:rgba(35,134,54,0.15);color:#3fb950;}
+  .cd-warn{background:rgba(225,183,64,0.2);color:#e3b341;}
+  .cd-late{background:rgba(218,54,51,0.2);color:#f85149;}
+  /* Overlays */
   .big-ov{display:none;position:fixed;inset:0;background:rgba(0,0,0,0.85);z-index:4000;padding:20px;overflow-y:auto;}
   .mbox{background:var(--card);max-width:640px;margin:36px auto;padding:20px;border-radius:13px;border:1px solid var(--border);}
   .ri{display:flex;justify-content:space-between;align-items:center;padding:9px 4px;border-bottom:1px solid var(--border);gap:8px;}
   .gitem{display:flex;align-items:center;gap:8px;padding:8px 6px;border-bottom:1px solid var(--border);}
   .gitem input[type=text]{flex:1;padding:6px 9px;border-radius:6px;border:1px solid var(--border);background:var(--bg);color:var(--text);font-size:13px;}
-  .zone-header{display:flex;align-items:center;gap:8px;padding:8px 14px 2px;flex-wrap:wrap;}
-  .zone-title{font-weight:bold;font-size:13px;flex:1;}
-  /* Countdown */
-  .cd-ok{color:#3fb950;font-weight:bold;font-family:monospace;font-size:11px;}
-  .cd-warn{color:#e3b341;font-weight:bold;font-family:monospace;font-size:11px;}
-  .cd-late{color:#f85149;font-weight:bold;font-family:monospace;font-size:11px;}
-  /* Timer */
-  .sw-display{font-size:12px;font-weight:bold;font-family:monospace;padding:3px 8px;border-radius:5px;background:rgba(128,128,128,0.12);}
-  /* Status legend footer */
-  #legendBar{position:fixed;bottom:0;left:0;right:0;background:var(--card);border-top:1px solid var(--border);padding:6px 14px;display:flex;flex-wrap:wrap;gap:6px;z-index:800;font-size:11px;}
-  .leg{display:flex;align-items:center;gap:4px;white-space:nowrap;}
-  .leg-dot{width:12px;height:12px;border-radius:3px;flex-shrink:0;}
-  .leg-bar{width:8px;height:18px;border-radius:2px;flex-shrink:0;}
+  /* Status legend at bottom */
+  #statusLegend{position:fixed;bottom:0;left:0;right:0;background:var(--card);border-top:1px solid var(--border);padding:6px 14px;display:flex;gap:8px;flex-wrap:wrap;align-items:center;z-index:800;font-size:11px;}
+  /* Reference chips for legend */
+  .leg-chip{display:inline-flex;align-items:center;gap:4px;padding:2px 8px;border-radius:10px;font-size:11px;font-weight:bold;}
 </style>
 </head>
 <body data-theme="dark">
 
+<!-- HEADER -->
 <div class="hdr">
   <div style="display:flex;align-items:center;gap:8px">
     <h2 style="margin:0;font-size:15px;white-space:nowrap">✈ Admin</h2>
@@ -72,23 +74,25 @@
   </div>
   <span id="liveClock" onclick="toggleTZ()" title="Tap to switch UTC/Local" style="flex:1;text-align:center">--</span>
   <div style="display:flex;align-items:center;gap:5px;flex-wrap:wrap">
-    <button onclick="toggleAllLogs()" class="btn btn-ghost" id="logsBtn" title="Expand/Collapse logs">📂</button>
-    <button onclick="openRecycleBin()" class="btn btn-warning" title="Recycle Bin">🗑️</button>
-    <button onclick="toggleTheme()" class="btn btn-ghost" title="Toggle Theme">🌓</button>
-    <button onclick="openUserMgmt()" class="btn btn-ghost" title="User Management">👥</button>
+    <button onclick="toggleAllLogs()" class="btn btn-ghost" id="logsBtn" title="Expand/Collapse all logs">📂</button>
+    <button onclick="openRecycleBin()" class="btn btn-warning">🗑️ Bin</button>
+    <button onclick="toggleTheme()" class="btn btn-ghost">🌓</button>
+    <button onclick="openUserMgmt()" class="btn btn-ghost">👥</button>
   </div>
 </div>
 
+<!-- BULK BAR -->
 <div id="bulkBar">
   <span id="selCount" style="font-weight:bold;font-size:13px">0 selected</span>
   <button onclick="bulkRecycle()" class="btn btn-danger">🗑️ Move to Bin</button>
   <button onclick="clearSel()" class="btn" style="background:rgba(255,255,255,0.2);color:white;margin-left:auto">✕ Cancel</button>
 </div>
 
+<!-- SEARCH + SORT + ZONES -->
 <div id="ctrlRow">
   <input id="searchIn" placeholder="🔍 Search flight, apron, status..." oninput="renderAll()">
   <select id="sortField" onchange="renderAll()">
-    <option value="manual">Manual Order</option>
+    <option value="manual">Manual</option>
     <option value="name">Flight Name</option>
     <option value="apron">Apron</option>
     <option value="etd">ETD</option>
@@ -102,6 +106,23 @@
 </div>
 
 <div id="mainList" style="margin-top:4px"></div>
+
+<!-- STATUS LEGEND (fixed bottom) — all items with coloured chips -->
+<div id="statusLegend">
+  <b style="margin-right:4px">Overall:</b>
+  <span class="leg-chip" style="background:rgba(128,128,128,0.18);color:#aaa">Arriving</span>
+  <span class="leg-chip" style="background:rgba(20,20,20,0.6);color:#bbb;border:1px solid #555">On Chocked</span>
+  <span class="leg-chip" style="background:rgba(225,183,64,0.2);color:#e3b341">Need Assistant</span>
+  <span class="leg-chip" style="background:rgba(218,54,51,0.2);color:#f85149">Delayed</span>
+  <span class="leg-chip" style="background:rgba(31,111,235,0.2);color:#58a6ff">PB Attached</span>
+  <span class="leg-chip" style="background:rgba(35,134,54,0.2);color:#3fb950">Push Backed</span>
+  <span style="margin-left:8px;color:#888;font-weight:bold">Tasks:</span>
+  <span class="leg-chip" style="background:rgba(128,128,128,0.18);color:#777">Not Started</span>
+  <span class="leg-chip" style="background:rgba(40,40,40,0.7);color:#c9d1d9">In Progress</span>
+  <span class="leg-chip" style="background:rgba(35,134,54,0.25);color:#3fb950">Completed</span>
+  <span class="leg-chip" style="background:rgba(218,54,51,0.25);color:#f85149">Delayed</span>
+  <span class="leg-chip" style="background:rgba(225,183,64,0.3);color:#e3b341">Need Assistant</span>
+</div>
 
 <!-- RECYCLE BIN -->
 <div id="recycleOv" class="big-ov">
@@ -130,7 +151,7 @@
       <h3 style="margin:0">🗺️ Manage Zones</h3>
       <button onclick="document.getElementById('zoneOv').style.display='none'" class="btn btn-danger">Close</button>
     </div>
-    <p style="font-size:12px;color:#888;margin-top:0">Flights not in any zone appear under "Unassigned". Restored flights go to "Recovered".</p>
+    <p style="font-size:12px;color:#888;margin-top:0">Flights not in any zone appear under "Unassigned". "Recovered" zone is auto-created for restored flights.</p>
     <div id="zoneList"></div>
     <div style="display:flex;gap:8px;margin-top:12px">
       <input id="newZoneName" placeholder="New zone name..." style="flex:1;padding:8px;border-radius:7px;border:1px solid var(--border);background:var(--bg);color:var(--text)">
@@ -172,24 +193,6 @@
   </div>
 </div>
 
-<!-- STATUS LEGEND FOOTER -->
-<div id="legendBar">
-  <b style="font-size:11px;color:#888;margin-right:2px">Overall:</b>
-  <div class="leg"><div class="leg-bar" style="background:#888"></div><span>Arriving</span></div>
-  <div class="leg"><div class="leg-bar" style="background:#333;border:1px solid #666"></div><span>On Chocked</span></div>
-  <div class="leg"><div class="leg-bar" style="background:#da3633"></div><span>Delayed</span></div>
-  <div class="leg"><div class="leg-bar" style="background:#1f6feb"></div><span>PB Attached</span></div>
-  <div class="leg"><div class="leg-bar" style="background:#238636"></div><span>Push Backed</span></div>
-  <div class="leg"><div class="leg-bar" style="background:#e3b341"></div><span>Need Assistant</span></div>
-  <span style="color:var(--border);margin:0 4px">|</span>
-  <b style="font-size:11px;color:#888;margin-right:2px">Tasks:</b>
-  <div class="leg"><div class="leg-dot" style="background:rgba(128,128,128,0.35);border:1px solid #666"></div><span>Not Started</span></div>
-  <div class="leg"><div class="leg-dot" style="background:#333;border:1px solid #666"></div><span>In Progress</span></div>
-  <div class="leg"><div class="leg-dot" style="background:#238636"></div><span>Completed</span></div>
-  <div class="leg"><div class="leg-dot" style="background:#da3633"></div><span>Delayed</span></div>
-  <div class="leg"><div class="leg-dot" style="background:#e3b341"></div><span>Need Assistant</span></div>
-</div>
-
 <script>
 const firebaseConfig={
   apiKey:"AIzaSyBNcUXtBufxeST6EzJEa2Me562cdkzBJMM",
@@ -204,12 +207,15 @@ firebase.initializeApp(firebaseConfig);
 const db=firebase.database();
 
 const CATS={
-  "Admin":  {emoji:"🛫",bgLight:"rgba(31,111,235,0.08)",bgDark:"rgba(31,111,235,0.14)",tasks:["Cockpit","Flight Plan","NOTAM/ATIS"]},
-  "Cabin":  {emoji:"🧹",bgLight:"rgba(156,39,176,0.08)",bgDark:"rgba(156,39,176,0.14)",tasks:["Cleaning (F/B)","Cleaning (E)","Catering (F/B)","Catering (E)"]},
-  "Ground": {emoji:"🚛",bgLight:"rgba(121,85,72,0.1)",bgDark:"rgba(121,85,72,0.18)",tasks:["Baggage (F)","Baggage (R)","Cargo (F)","Cargo (R)","Galley","Fuel","Water","Lavatory"]}
+  "Admin":  {emoji:"🛫", tasks:["Cockpit","Flight Plan","NOTAM/ATIS"]},
+  "Cabin":  {emoji:"🧹", tasks:["Cleaning (F/B)","Cleaning (E)","Catering (F/B)","Catering (E)"]},
+  "Ground": {emoji:"🚛", tasks:["Baggage (F)","Baggage (R)","Cargo (F)","Cargo (R)","Galley","Fuel","Water","Lavatory"]}
 };
 const ALL_TASKS=Object.values(CATS).flatMap(c=>c.tasks);
-const STATUS_ORDER={'Arriving':0,'On Chocked':1,'Delayed':2,'PB Attached':3,'Push Backed':4,'Need Assistant':5};
+// Cat priority: Need Assistant > Delayed > Not Started > In Progress > Completed
+const CAT_PRIORITY=["Need Assistant","Delayed","Not Started","In Progress","Completed"];
+const STATUS_ORDER={'Arriving':0,'On Chocked':1,'Need Assistant':2,'Delayed':3,'PB Attached':4,'Push Backed':5};
+const RECOVERED_ZONE_NAME='Recovered';
 
 let allF={}, useUTC=true, allOpen=false, selFlights=new Set();
 let flightsRef=null, zonesRef=null, zones=[], clockInterval=null;
@@ -217,76 +223,52 @@ const cdState={}, swState={};
 
 function pad(n){return String(n).padStart(2,'0');}
 function fmtDate(iso){
-  if(!iso)return'-';
+  if(!iso)return '-';
   const d=new Date(iso);
-  if(useUTC)return[d.getUTCFullYear(),pad(d.getUTCMonth()+1),pad(d.getUTCDate())].join('-')+' '+[pad(d.getUTCHours()),pad(d.getUTCMinutes()),pad(d.getUTCSeconds())].join(':');
+  if(useUTC)return [d.getUTCFullYear(),pad(d.getUTCMonth()+1),pad(d.getUTCDate())].join('-')+' '+[pad(d.getUTCHours()),pad(d.getUTCMinutes()),pad(d.getUTCSeconds())].join(':');
   return d.toLocaleString();
 }
 
-// ── Cat status (same priority logic as index) ──────────────────
-function calcCatStatus(d,ck){
-  const statuses=CATS[ck].tasks.map(t=>d[t]||'Not Started');
-  for(const s of['Need Assistant','Delayed','Not Started','In Progress','Completed']){
-    if(statuses.includes(s))return s;
-  }
-  return'Not Started';
-}
-
-// ── Task cell background colour ────────────────────────────────
-function tcBg(s){
-  if(s==='Completed')      return 'background:#238636;color:#fff;border-color:#1a6429';
-  if(s==='Delayed')        return 'background:#da3633;color:#fff;border-color:#b52d2a';
-  if(s==='Need Assistant') return 'background:#e3b341;color:#000;border-color:#c49a30';
-  if(s==='In Progress')    return 'background:#222;color:#c9d1d9;border-color:#444';
-  return 'background:rgba(128,128,128,0.18);color:#888;border-color:rgba(128,128,128,0.3)'; // Not Started
-}
-function catBg(ck,s){
-  const isDark=document.body.getAttribute('data-theme')==='dark';
-  // base cat colour
-  const base=isDark?CATS[ck].bgDark:CATS[ck].bgLight;
-  // overlay status tint
-  if(s==='Need Assistant')return'rgba(225,183,64,0.18)';
-  if(s==='Delayed')       return'rgba(218,54,51,0.15)';
-  if(s==='Completed')     return'rgba(35,134,54,0.15)';
-  if(s==='In Progress')   return base;
-  return base;
-}
+// ── Colours ───────────────────────────────────────────────────────
 function overallBorder(s){
-  const m={'Arriving':'#888','On Chocked':'#222','Delayed':'#da3633','PB Attached':'#1f6feb','Push Backed':'#238636','Need Assistant':'#e3b341'};
+  const m={'Arriving':'#888','On Chocked':'#222','Delayed':'#da3633','Need Assistant':'#e3b341','PB Attached':'#1f6feb','Push Backed':'#238636'};
   return m[s]||'#888';
 }
-function overallPill(s){
-  const styles={
-    'Arriving':      'background:rgba(128,128,128,0.2);color:#aaa',
-    'On Chocked':    'background:rgba(20,20,20,0.5);color:#ccc',
-    'Delayed':       'background:rgba(218,54,51,0.2);color:#f85149',
-    'PB Attached':   'background:rgba(31,111,235,0.2);color:#58a6ff',
-    'Push Backed':   'background:rgba(35,134,54,0.2);color:#3fb950',
-    'Need Assistant':'background:rgba(225,183,64,0.2);color:#e3b341'
+function overallPillStyle(s){
+  const m={
+    'Arriving':'background:rgba(128,128,128,0.2);color:#aaa',
+    'On Chocked':'background:rgba(20,20,20,0.5);color:#bbb',
+    'Delayed':'background:rgba(218,54,51,0.2);color:#f85149',
+    'Need Assistant':'background:rgba(225,183,64,0.2);color:#e3b341',
+    'PB Attached':'background:rgba(31,111,235,0.2);color:#58a6ff',
+    'Push Backed':'background:rgba(35,134,54,0.2);color:#3fb950'
   };
-  return`<span class="pill" style="${styles[s]||'background:rgba(128,128,128,0.15);color:#888'}">${s||'—'}</span>`;
+  return m[s]||'background:rgba(128,128,128,0.15);color:#888';
+}
+// Task/cat chip colour by STATUS
+function tcStyle(s){
+  if(s==='Completed')      return 'background:rgba(35,134,54,0.25);color:#3fb950';
+  if(s==='Delayed')        return 'background:rgba(218,54,51,0.25);color:#f85149';
+  if(s==='Need Assistant') return 'background:rgba(225,183,64,0.3);color:#e3b341';
+  if(s==='In Progress')    return 'background:rgba(40,40,40,0.7);color:#c9d1d9';
+  return 'background:rgba(128,128,128,0.18);color:#777'; // Not Started
+}
+function calcCatStatus(d,ck){
+  const statuses=CATS[ck].tasks.map(t=>d[t]||'Not Started');
+  for(const s of CAT_PRIORITY){if(statuses.includes(s))return s;}
+  return 'Not Started';
 }
 
-// ── Clock ────────────────────────────────────────────────────────
+// ── Clock ─────────────────────────────────────────────────────────
 function updateClock(){
   const el=document.getElementById('liveClock');if(!el)return;
   const now=new Date();
-  if(useUTC) el.innerText=[now.getUTCFullYear(),pad(now.getUTCMonth()+1),pad(now.getUTCDate())].join('-')+' '+[pad(now.getUTCHours()),pad(now.getUTCMinutes()),pad(now.getUTCSeconds())].join(':')+'  UTC';
+  if(useUTC)el.innerText=[now.getUTCFullYear(),pad(now.getUTCMonth()+1),pad(now.getUTCDate())].join('-')+' '+[pad(now.getUTCHours()),pad(now.getUTCMinutes()),pad(now.getUTCSeconds())].join(':')+'  UTC';
   else el.innerText=now.getFullYear()+'-'+pad(now.getMonth()+1)+'-'+pad(now.getDate())+' '+pad(now.getHours())+':'+pad(now.getMinutes())+':'+pad(now.getSeconds())+'  Local';
 }
 function startClock(){updateClock();if(clockInterval)clearInterval(clockInterval);clockInterval=setInterval(updateClock,1000);}
 
-// ── Countdown helper ──────────────────────────────────────────
-function cdStr(refVal){
-  const diff=new Date(refVal)-new Date();
-  const abs=Math.abs(diff),s=Math.floor(abs/1000)%60,m=Math.floor(abs/60000)%60,h=Math.floor(abs/3600000);
-  const str=(h?pad(h)+':':'')+pad(m)+':'+pad(s);
-  if(diff<0)return{t:'-'+str+' LATE',c:'cd-late'};
-  if(diff<1800000)return{t:'⚠ '+str,c:'cd-warn'};
-  return{t:'▶ '+str,c:'cd-ok'};
-}
-
-// ── Firebase ───────────────────────────────────────────────────
+// ── Firebase ──────────────────────────────────────────────────────
 function startListeners(){
   if(!flightsRef){flightsRef=db.ref('flights');flightsRef.on('value',s=>{allF=s.val()||{};renderAll();});}
   if(!zonesRef){
@@ -300,30 +282,37 @@ function startListeners(){
   }
 }
 
-// ── Sort ──────────────────────────────────────────────────────
+// ── Ensure "Recovered" zone exists, return its id ─────────────────
+async function ensureRecoveredZone(){
+  const existing=zones.find(z=>z.name===RECOVERED_ZONE_NAME);
+  if(existing)return existing.id;
+  const newId='z_recovered_'+Date.now();
+  const order=zones.length?Math.max(...zones.map(g=>g.order||0))+1:0;
+  await db.ref('zones/'+newId).set({name:RECOVERED_ZONE_NAME,flights:[],order});
+  return newId;
+}
+
+// ── Sort ──────────────────────────────────────────────────────────
 function sortEntries(entries){
   const field=document.getElementById('sortField').value;
   const dir=document.getElementById('sortDir').value==='asc'?1:-1;
   if(field==='manual')return entries;
-  return[...entries].sort((a,b)=>{
-    const[fa,da]= a,[fb,db]=b;
+  return [...entries].sort((a,b)=>{
+    const [fa,da]= a,[fb,db]=b;
     let va,vb;
     if(field==='name'){va=fa;vb=fb;}
     else if(field==='apron'){va=da.apron||'';vb=db.apron||'';}
     else if(field==='etd'){va=da.etd||'';vb=db.etd||'';}
-    else if(field==='status'){va=STATUS_ORDER[da['Overall Status']]??9;vb=STATUS_ORDER[db['Overall Status']]??9;}
+    else if(field==='status'){va=STATUS_ORDER[da['Overall Status']]??99;vb=STATUS_ORDER[db['Overall Status']]??99;}
     if(typeof va==='number')return(va-vb)*dir;
     return va.localeCompare(vb)*dir;
   });
 }
 
-// ── Main render ───────────────────────────────────────────────
+// ── Main render ───────────────────────────────────────────────────
 function renderAll(){
   const q=(document.getElementById('searchIn').value||'').toLowerCase();
   const container=document.getElementById('mainList');container.innerHTML='';
-  // Stop old countdowns
-  Object.keys(cdState).forEach(f=>{clearInterval(cdState[f]);delete cdState[f];});
-
   const active=Object.entries(allF).filter(([,d])=>!d._deleted);
   const filtered=active.filter(([f,d])=>{
     if(!q)return true;
@@ -333,10 +322,9 @@ function renderAll(){
 
   const assigned=new Set();
   const zoneBuckets=zones.map(z=>{
-    let zFlights=(z.flights||[]).filter(f=>filtered.find(([k])=>k===f));
+    const zFlights=(z.flights||[]).filter(f=>filtered.find(([k])=>k===f));
     zFlights.forEach(f=>assigned.add(f));
-    const entries=zFlights.map(f=>filtered.find(([k])=>k===f)).filter(Boolean);
-    return{z,entries:sortEntries(entries)};
+    return{z,entries:sortEntries(zFlights.map(f=>filtered.find(([k])=>k===f)).filter(Boolean))};
   });
   const unassigned=sortEntries(filtered.filter(([f])=>!assigned.has(f)));
 
@@ -359,33 +347,39 @@ function renderAll(){
     if(document.getElementById('sortField').value==='manual')enableDragDrop(body,'unassigned');
   }
   updateBulkBar();
-  // Start countdowns for cards with ETD
-  Object.entries(allF).filter(([,d])=>!d._deleted&&d.etd).forEach(([f,d])=>startCardCd(f,d.etd));
+  // Start countdowns and timers
+  Object.entries(allF).filter(([,d])=>!d._deleted&&d.etd).forEach(([f,d])=>startCardCountdown(f,d.etd));
+  Object.entries(allF).filter(([,d])=>!d._deleted&&d.timerStart).forEach(([f,d])=>startCardTimer(f,d.timerStart));
 }
 
-function startCardCd(f,etdVal){
+// ── Card countdown ────────────────────────────────────────────────
+function startCardCountdown(f,etdVal){
   if(cdState[f])clearInterval(cdState[f]);
   function tick(){
     const el=document.getElementById('cd-'+f);if(!el){clearInterval(cdState[f]);return;}
-    const r=cdStr(etdVal);el.innerText=r.t;el.className=r.c;
+    const diff=new Date(etdVal)-new Date(),abs=Math.abs(diff);
+    const s=Math.floor(abs/1000)%60,m=Math.floor(abs/60000)%60,h=Math.floor(abs/3600000);
+    const str=pad(h)+':'+pad(m)+':'+pad(s);
+    if(diff<0){el.textContent='-'+str+' LATE';el.className='sw-disp cd-late';}
+    else if(diff<1800000){el.textContent='⚠ '+str;el.className='sw-disp cd-warn';}
+    else{el.textContent='▶ '+str;el.className='sw-disp cd-ok';}
   }
   tick();cdState[f]=setInterval(tick,1000);
 }
 
-// Ground timer per card
+// ── Card ground timer ─────────────────────────────────────────────
 function startCardTimer(f,startISO){
-  if(swState[f])clearInterval(swState[f].iv);
-  swState[f]={iv:null};
+  if(swState[f])clearInterval(swState[f]);
   function tick(){
-    const el=document.getElementById('sw-'+f);if(!el){clearInterval(swState[f].iv);return;}
-    const elapsed=Date.now()-new Date(startISO).getTime();
-    const s=Math.floor(elapsed/1000)%60,m=Math.floor(elapsed/60000)%60,h=Math.floor(elapsed/3600000);
-    el.innerText=pad(h)+':'+pad(m)+':'+pad(s);
+    const el=document.getElementById('sw-'+f);if(!el){clearInterval(swState[f]);return;}
+    const e=Math.max(0,Date.now()-new Date(startISO).getTime());
+    const s=Math.floor(e/1000)%60,m=Math.floor(e/60000)%60,h=Math.floor(e/3600000);
+    el.textContent=pad(h)+':'+pad(m)+':'+pad(s);
   }
-  tick();swState[f].iv=setInterval(tick,1000);
+  tick();swState[f]=setInterval(tick,1000);
 }
 
-// ── Card builder ───────────────────────────────────────────────
+// ── Card builder ──────────────────────────────────────────────────
 function makeCard(f,d,zoneId){
   const msgs=d.msgs||[],logs=d.logs||[];
   const unreadMsg=msgs.slice().reverse().find(m=>m.user!=='Admin'&&!m.read);
@@ -393,33 +387,32 @@ function makeCard(f,d,zoneId){
   const totalEntries=msgs.length+logs.length;
   const isManual=document.getElementById('sortField').value==='manual';
 
-  // Cat sections with coloured task cells
+  // Category sections: unified background, no colour from cat status, chips coloured by task status
   const catSections=Object.keys(CATS).map(ck=>{
-    const cat=CATS[ck];
-    const catS=d['cat_'+ck]||calcCatStatus(d,ck);
-    const chips=cat.tasks.map(t=>{
+    const catS=calcCatStatus(d,ck);
+    const chips=CATS[ck].tasks.map(t=>{
       const s=d[t]||'Not Started';
       const short=t.replace(' (F/B)','(FB)').replace(' (F)','(F)').replace(' (R)','(R)').replace(' (E)','(E)');
-      return`<span class="tc" style="${tcBg(s)}">${short}</span>`;
+      return`<span class="tc" style="${tcStyle(s)}">${short}</span>`;
     }).join('');
-    return`<div class="dash-cat" style="background:${catBg(ck,catS)}">
-      <div class="dash-cat-title">${cat.emoji} ${ck} <span class="tc" style="${tcBg(catS)};font-size:10px">${catS}</span></div>
+    // Cat title chip uses status colour too
+    return`<div class="dash-cat">
+      <div class="dash-cat-title">${CATS[ck].emoji} ${ck} — <span class="tc" style="${tcStyle(catS)};font-size:10px">${catS}</span></div>
       <div class="task-row">${chips}</div>
     </div>`;
   }).join('');
 
-  // Time row
-  let timeRow='';
+  // Time display using safe DOM (to avoid innerHTML countdown corruption)
+  // We'll build a placeholder div for time; update via startCardCountdown
+  let timeHtml='';
   if(d.at){
-    const r=d.etd?cdStr(d.etd):null;
-    timeRow=`ETD: ${d.etd?d.etd.substring(11,16):'-'}`;
-    if(r)timeRow+=` <span id="cd-${f}" class="${r.c}">${r.t}</span>`;
-    timeRow+=` | AT: ${d.at.substring(11,16)}`;
+    timeHtml='ETD: '+(d.etd?d.etd.substring(11,16):'-');
+    if(d.etd)timeHtml+='&nbsp;&nbsp;<span id="cd-'+f+'" class="sw-disp cd-ok">--:--:--</span>';
+    timeHtml+='&nbsp;&nbsp;<span style="color:#aaa">AT: '+d.at.substring(11,16)+'</span>';
   } else if(d.etd){
-    const r=cdStr(d.etd);
-    timeRow=`ETD: ${d.etd.substring(11,16)} <span id="cd-${f}" class="${r.c}">${r.t}</span>`;
+    timeHtml='ETD: '+d.etd.substring(11,16)+'&nbsp;&nbsp;<span id="cd-'+f+'" class="sw-disp cd-ok">--:--:--</span>';
   } else if(d.eta){
-    timeRow=`ETA: ${d.eta.substring(11,16)}`;
+    timeHtml='ETA: '+d.eta.substring(11,16);
   }
 
   const card=document.createElement('div');
@@ -434,10 +427,12 @@ function makeCard(f,d,zoneId){
         <b style="font-size:14px">${f}</b>
         <span style="color:#888;font-size:12px;margin-left:6px">Apron ${d.apron}</span>
       </div>
-      ${overallPill(d['Overall Status'])}
+      <span class="pill" style="${overallPillStyle(d['Overall Status'])}">${d['Overall Status']||'—'}</span>
     </div>
-    ${timeRow?`<div style="font-size:12px;color:#888;margin-top:4px;display:flex;gap:8px;flex-wrap:wrap;align-items:center">${timeRow}</div>`:''}
-    ${d.timerStart?`<div style="font-size:11px;color:#888;margin-top:3px;display:flex;align-items:center;gap:5px">⏱ Ground: <span id="sw-${f}" class="sw-display">--:--:--</span></div>`:''}
+    ${timeHtml?`<div style="font-size:12px;color:#888;margin-top:5px;display:flex;align-items:center;gap:6px;flex-wrap:wrap">
+      ${timeHtml}
+      ${d.timerStart?`<span style="color:#888;font-size:10px">⏱ <span id="sw-${f}" style="font-family:monospace;font-weight:bold">--:--:--</span></span>`:''}
+    </div>`:''}
     ${catSections}
     ${unreadMsg?`<div class="msg-alert">
       <button onclick="markRead('${f}',${msgs.indexOf(unreadMsg)});event.stopPropagation()" class="btn btn-primary" style="float:right;font-size:10px;padding:2px 5px">Mark Read</button>
@@ -458,13 +453,10 @@ function makeCard(f,d,zoneId){
         </div>
         <div>
           <div style="font-size:11px;font-weight:bold;color:var(--primary);margin-bottom:3px">⚙️ Actions (${logs.length})</div>
-          <div class="log-scroll">${logs.slice().reverse().map(l=>`<div style="margin-bottom:2px">[${fmtDate(l.time)}] <b>${l.task}</b>→${l.status}</div>`).join('')||'<i style="color:#888">None</i>'}</div>
+          <div class="log-scroll">${logs.slice().reverse().map(l=>`<div style="margin-bottom:2px">[${fmtDate(l.time)}] <b>${l.task}</b> → ${l.status} <span style="color:#888">(${l.user})</span></div>`).join('')||'<i style="color:#888">None</i>'}</div>
         </div>
       </div>
     </div>`;
-
-  // Start timers after card is in DOM
-  if(d.timerStart) setTimeout(()=>startCardTimer(f,d.timerStart),50);
   return card;
 }
 
@@ -475,7 +467,7 @@ function toggleLogs(f){
   btn.innerHTML=`📋 ${show?'Hide':'Logs'}${total>0?` <span style="background:#1f6feb;color:white;border-radius:9px;padding:1px 5px;font-size:10px">${total}</span>`:''}`;
 }
 
-// ── Drag-drop ────────────────────────────────────────────────────
+// ── Drag-drop ─────────────────────────────────────────────────────
 let dragSrc=null;
 function enableDragDrop(container,zoneId){
   container.querySelectorAll('.fcard').forEach(card=>{
@@ -496,27 +488,26 @@ function enableDragDrop(container,zoneId){
   });
 }
 
-// ── Multi-select ────────────────────────────────────────────────
+// ── Multi-select ──────────────────────────────────────────────────
 function toggleSel(f,checked){if(checked)selFlights.add(f);else selFlights.delete(f);document.getElementById('card-'+f)?.classList.toggle('sel',checked);updateBulkBar();}
 function toggleSelAll(checked){selFlights.clear();if(checked)Object.entries(allF).filter(([,d])=>!d._deleted).forEach(([f])=>selFlights.add(f));renderAll();}
 function clearSel(){selFlights.clear();document.getElementById('selAllChk').checked=false;renderAll();}
 function updateBulkBar(){const n=selFlights.size;document.getElementById('bulkBar').classList.toggle('on',n>0);document.getElementById('selCount').innerText=n+' selected';}
 
-function bulkRecycle(){
+async function bulkRecycle(){
   if(!confirm('Move '+selFlights.size+' flight(s) to Recycle Bin?'))return;
   const now=new Date().toISOString(),u={};
-  selFlights.forEach(f=>{
+  for(const f of selFlights){
     u['flights/'+f+'/_deleted']=true;
     u['flights/'+f+'/_deletedAt']=now;
-    // Append log entry
-    const logs=(allF[f].logs||[]);
-    logs.push({time:now,task:'Flight',status:'Moved to Recycle Bin',user:'Admin'});
-    u['flights/'+f+'/logs']=logs;
-  });
-  db.ref().update(u).then(clearSel);
+    const existing=allF[f]?.logs||[];
+    u['flights/'+f+'/logs']=[...existing,{time:now,task:'Moved to Recycle Bin',status:'Deleted by Admin',user:'Admin'}];
+  }
+  await db.ref().update(u);
+  clearSel();
 }
 
-// ── Recycle Bin ─────────────────────────────────────────────────
+// ── Recycle Bin ───────────────────────────────────────────────────
 let recycleSel=new Set();
 function openRecycleBin(){document.getElementById('recycleOv').style.display='block';loadRecycleBin();}
 function loadRecycleBin(){
@@ -531,7 +522,7 @@ function loadRecycleBin(){
         <div><b>${f}</b> — Apron: ${d.apron}<br><small style="color:#888">Deleted: ${fmtDate(d._deletedAt)}</small></div>
       </div>
       <div style="display:flex;gap:5px">
-        <button onclick="restoreFlight('${f}')" class="btn btn-success" style="font-size:11px;padding:3px 9px">↩</button>
+        <button onclick="restoreFlight('${f}')" class="btn btn-success" style="font-size:11px;padding:3px 9px">↩ Restore</button>
         <button onclick="permDelete('${f}')" class="btn btn-danger" style="font-size:11px;padding:3px 9px">✕</button>
       </div></div>`).join('');
   });
@@ -541,44 +532,54 @@ function toggleRecycleSelAll(checked){recycleSel.clear();document.querySelectorA
 function clearRecycleSel(){recycleSel.clear();document.querySelectorAll('.recycle-chk').forEach(c=>c.checked=false);document.getElementById('recycleSelAll').checked=false;updateRecycleBulkBar();}
 function updateRecycleBulkBar(){const bar=document.getElementById('recycleBulkBar');bar.style.display=recycleSel.size>0?'flex':'none';document.getElementById('recycleSelCount').innerText=recycleSel.size+' selected';}
 
-// Restore: remove _deleted flags, add to "Recovered" zone, log it
-async function restoreFlight(f){
-  const now=new Date().toISOString();
-  // Get or create "Recovered" zone
-  let recoveredZone=zones.find(z=>z.name.toLowerCase()==='recovered');
-  if(!recoveredZone){
-    const newId='z_recovered_'+Date.now();
-    const order=zones.length?Math.max(...zones.map(g=>g.order||0))+1:0;
-    await db.ref('zones/'+newId).set({name:'Recovered',flights:[],order});
-    recoveredZone={id:newId,flights:[]};
-  }
-  // Add flight to recovered zone
-  const zFlights=[...new Set([...(recoveredZone.flights||[]),f])];
-  await db.ref('zones/'+recoveredZone.id+'/flights').set(zFlights);
-  // Log and restore
-  const logs=(allF[f]?.logs||[]);
-  logs.push({time:now,task:'Flight',status:'Restored from Recycle Bin',user:'Admin'});
-  const u={};
-  u['flights/'+f+'/_deleted']=null;
-  u['flights/'+f+'/_deletedAt']=null;
-  u['flights/'+f+'/logs']=logs;
-  await db.ref().update(u);
-  loadRecycleBin();
-}
 async function bulkRestoreRecycle(){
   if(!recycleSel.size)return;
-  for(const f of recycleSel) await restoreFlight(f);
-}
-function permDelete(f){
-  if(!confirm('Permanently delete '+f+'? This cannot be undone.'))return;
-  db.ref('flights/'+f).remove().then(loadRecycleBin);
-}
-function bulkPermDelete(){
-  if(!confirm('Permanently delete '+recycleSel.size+' flight(s)?'))return;
-  Promise.all([...recycleSel].map(f=>db.ref('flights/'+f).remove())).then(loadRecycleBin);
+  const now=new Date().toISOString();
+  const recoveredId=await ensureRecoveredZone();
+  const zoneSnap=await db.ref('zones/'+recoveredId+'/flights').once('value');
+  const existingFlights=zoneSnap.val()||[];
+  const toRestore=[...recycleSel];
+  const newFlightList=[...new Set([...existingFlights,...toRestore])];
+  const u={};
+  for(const f of toRestore){
+    u['flights/'+f+'/_deleted']=null;
+    u['flights/'+f+'/_deletedAt']=null;
+    const existing=allF[f]?.logs||[];
+    u['flights/'+f+'/logs']=[...existing,{time:now,task:'Restored from Recycle Bin',status:'Restored by Admin → Recovered zone',user:'Admin'}];
+  }
+  u['zones/'+recoveredId+'/flights']=newFlightList;
+  await db.ref().update(u);
+  clearRecycleSel();
+  loadRecycleBin();
 }
 
-// ── Zones ───────────────────────────────────────────────────────
+async function bulkPermDelete(){
+  if(!confirm('Permanently delete '+recycleSel.size+' flight(s)? Cannot be undone.'))return;
+  await Promise.all([...recycleSel].map(f=>db.ref('flights/'+f).remove()));
+  clearRecycleSel();loadRecycleBin();
+}
+
+async function restoreFlight(f){
+  const now=new Date().toISOString();
+  const recoveredId=await ensureRecoveredZone();
+  const zoneSnap=await db.ref('zones/'+recoveredId+'/flights').once('value');
+  const existing=zoneSnap.val()||[];
+  if(!existing.includes(f))await db.ref('zones/'+recoveredId+'/flights').set([...existing,f]);
+  const flightLogs=allF[f]?.logs||[];
+  await db.ref('flights/'+f).update({
+    _deleted:null,_deletedAt:null,
+    logs:[...flightLogs,{time:now,task:'Restored from Recycle Bin',status:'Restored by Admin → Recovered zone',user:'Admin'}]
+  });
+  loadRecycleBin();
+}
+
+async function permDelete(f){
+  if(!confirm('Permanently delete '+f+'?'))return;
+  await db.ref('flights/'+f).remove();
+  loadRecycleBin();
+}
+
+// ── Zones ─────────────────────────────────────────────────────────
 function openZoneMgmt(){document.getElementById('zoneOv').style.display='block';renderZoneMgmt();}
 function renderZoneMgmt(){
   const container=document.getElementById('zoneList');container.innerHTML='';
@@ -588,7 +589,7 @@ function renderZoneMgmt(){
     const div=document.createElement('div');div.className='gitem';
     div.innerHTML=`<div style="display:flex;flex-direction:column;gap:5px;flex:1;min-width:0">
       <input type="text" value="${z.name}" id="zname-${z.id}">
-      <label style="font-size:11px;color:#888">Assign flights:</label>
+      <label style="font-size:11px;color:#888">Assign flights (Ctrl+click multi):</label>
       <select multiple id="zfl-${z.id}" style="font-size:11px;padding:3px;border-radius:5px;border:1px solid var(--border);background:var(--bg);color:var(--text);min-width:160px;max-height:70px">
         ${activeKeys.map(f=>`<option value="${f}" ${(z.flights||[]).includes(f)?'selected':''}>${f}</option>`).join('')}
       </select></div>
@@ -620,25 +621,19 @@ function moveZone(id,dir){
   db.ref().update(u);
 }
 
-// ── Misc ───────────────────────────────────────────────────────
+// ── Misc ──────────────────────────────────────────────────────────
 function sendReply(f){
   const inp=document.getElementById('reply-'+f),val=inp.value.trim();if(!val)return;
-  const now=new Date().toISOString();
   let msgs=allF[f].msgs||[];
-  msgs.push({time:now,user:'Admin',status:val,read:false});
-  const logs=(allF[f].logs||[]);
-  logs.push({time:now,task:'Admin Reply',status:val,user:'Admin'});
-  db.ref('flights/'+f).update({msgs,logs}).then(()=>inp.value='');
+  msgs.push({time:new Date().toISOString(),user:'Admin',status:val,read:false});
+  db.ref('flights/'+f+'/msgs').set(msgs).then(()=>inp.value='');
 }
 function markRead(f,idx){db.ref('flights/'+f+'/msgs/'+idx+'/read').set(true);}
 function toggleAllLogs(){allOpen=!allOpen;document.getElementById('logsBtn').innerText=allOpen?'📂✕':'📂';renderAll();}
 function toggleTZ(){useUTC=!useUTC;updateClock();renderAll();}
-function toggleTheme(){
-  const t=document.body.getAttribute('data-theme')==='dark'?'light':'dark';
-  document.body.setAttribute('data-theme',t);localStorage.setItem('theme',t);
-}
+function toggleTheme(){const t=document.body.getAttribute('data-theme')==='dark'?'light':'dark';document.body.setAttribute('data-theme',t);localStorage.setItem('theme',t);}
 
-// ── User Management ────────────────────────────────────────────
+// ── User Management ───────────────────────────────────────────────
 let allUsers={},editingUid=null;
 function openUserMgmt(){document.getElementById('userOv').style.display='block';cancelUserEdit();loadUsers();}
 function loadUsers(){document.getElementById('uList').innerHTML="<i style='color:#888'>Loading...</i>";db.ref('users').once('value',s=>{allUsers=s.val()||{};renderUsers();});}
@@ -657,8 +652,7 @@ function showUMsg(m,e){const el=document.getElementById('uMsg');el.style.display
 
 window.onload=()=>{
   document.body.setAttribute('data-theme',localStorage.getItem('theme')||'dark');
-  startClock();
-  startListeners();
+  startClock();startListeners();
 };
 </script>
 </body>

@@ -56,7 +56,7 @@
   .cd-chip{font-size:11px;font-family:monospace;font-weight:bold;}
   .cd-chip.cd-ok{color:#3fb950;} .cd-chip.cd-warn{color:#e3b341;} .cd-chip.cd-late{color:#f85149;}
   /* Bottom fixed area: watermark + legend */
-  #bottomFixed{position:fixed;bottom:0;left:0;right:0;z-index:800;pointer-events:none;}
+  #bottomFixed{position:fixed;bottom:0;left:0;right:0;z-index:1700;pointer-events:none;}
   #wmBar{background:transparent;padding:3px 14px;text-align:center;pointer-events:none;}
   #wmText{font-size:13px;font-weight:900;color:rgba(128,128,128,0.22);letter-spacing:6px;user-select:none;white-space:nowrap;}
   [data-theme='dark'] #wmText{color:rgba(220,220,220,0.15);}
@@ -64,6 +64,14 @@
   .leg-row{display:flex;gap:5px;flex-wrap:wrap;align-items:center;font-size:11px;}
   .leg-label{font-weight:bold;color:#888;white-space:nowrap;min-width:70px;}
   .leg-chip{display:inline-flex;align-items:center;padding:2px 8px;border-radius:10px;font-size:11px;font-weight:bold;}
+  /* Task select color by status */
+  .ts-notstarted{background:rgba(128,128,128,0.1)!important;color:var(--text)!important;}
+  .ts-inprogress{background:rgba(31,111,235,0.18)!important;color:#58a6ff!important;}
+  .ts-completed{background:rgba(35,134,54,0.18)!important;color:#3fb950!important;}
+  .ts-assistant{background:rgba(225,183,64,0.22)!important;color:#e3b341!important;}
+  .ts-delayed{background:rgba(218,54,51,0.18)!important;color:#f85149!important;}
+  /* Editor overlay bottom padding for legend */
+  #editorOverlay .fw{padding-bottom:120px;}
 </style>
 </head>
 <body>
@@ -173,6 +181,7 @@
         <div style="font-size:10px;color:#888;margin-bottom:2px">⏳ AT+90min Countdown</div>
         <span id="cdBox" class="cd-box">--:--</span>
       </div>
+      <button id="timerResetBtn" onclick="resetGroundTimer()" class="btn btn-danger" style="font-size:11px;padding:5px 11px;margin-left:auto">↺ Reset</button>
     </div>
 
     <!-- Overall Status + Apron -->
@@ -196,7 +205,7 @@
       <div class="iw">
         <label id="etaLabel">ETA <span id="etaTZ" style="font-size:9px;background:rgba(128,128,128,0.18);color:#888;padding:1px 5px;border-radius:4px;font-weight:bold">UTC</span></label>
         <div class="time-row">
-          <input type="datetime-local" id="etaTime">
+          <input type="datetime-local" id="etaTime" oninput="onEtaChange()">
           <button class="btn-now" onclick="setNow('etaTime')">Now</button>
         </div>
       </div>
@@ -282,6 +291,16 @@ let etdManuallyChanged=false,syncInProgress=false;
 
 function pad(n){return String(n).padStart(2,'0');}
 
+// Firebase-safe key (replace / which Firebase treats as path separator)
+function fbKey(t){return t.replace(/\//g,'_');}
+
+// Color task select based on its current value
+function applyTaskSelectStyle(el){
+  el.classList.remove('ts-notstarted','ts-inprogress','ts-completed','ts-assistant','ts-delayed');
+  const map={'Not Started':'ts-notstarted','In Progress':'ts-inprogress','Completed':'ts-completed','Need Assistant':'ts-assistant','Delayed':'ts-delayed'};
+  const cls=map[el.value];if(cls)el.classList.add(cls);
+}
+
 // ── Time format: YYYY/MM/DD HH:MM:SS ─────────────────────────────
 function fmtFull(iso){
   if(!iso)return '-';
@@ -320,10 +339,9 @@ function nowInputVal(){
 }
 function setNow(id){document.getElementById(id).value=nowInputVal();}
 function set90(id){
-  // +90min from current value, or from now if empty
   const el=document.getElementById(id);
-  const base=el.value?inputToISO(el.value):new Date().toISOString();
-  el.value=isoToInput(new Date(new Date(base).getTime()+90*60000).toISOString());
+  // Always +90min from NOW (not from current field value)
+  el.value=isoToInput(new Date(Date.now()+90*60000).toISOString());
   if(id==='depTime')onEtdChange();
 }
 
@@ -362,13 +380,13 @@ function catBgStyle(s){
   return 'rgba(128,128,128,0.04)';
 }
 function calcCatStatus(d,ck){
-  const statuses=CATS[ck].tasks.map(t=>d[t]||'Not Started');
+  const statuses=CATS[ck].tasks.map(t=>d[fbKey(t)]||'Not Started');
   for(const s of CAT_PRIORITY){if(statuses.includes(s))return s;}
   return 'Not Started';
 }
 function calcCatStatusLive(ck){
   const vals={};
-  CATS[ck].tasks.forEach(t=>{const el=document.getElementById('t-'+t.replace(/[\s()/]/g,'_'));vals[t]=el?el.value:'Not Started';});
+  CATS[ck].tasks.forEach(t=>{const el=document.getElementById('t-'+t.replace(/[\s()/]/g,'_'));vals[fbKey(t)]=el?el.value:'Not Started';});
   return calcCatStatus(vals,ck);
 }
 
@@ -387,13 +405,14 @@ function refreshTZLabels(){
 }
 
 // ── Ground timer ──────────────────────────────────────────────────
-function startGroundTimer(startISO){
+function startGroundTimer(startISO, etdISO){
   clearInterval(timerInterval);
   if(!startISO){document.getElementById('timerBox').style.display='none';return;}
   document.getElementById('timerBox').style.display='flex';
-  // Countdown: AT+90min
+  // Countdown target = max(AT+90min, ETD)
   const atPlus90=new Date(new Date(startISO).getTime()+90*60000).toISOString();
-  startEditorCountdown(atPlus90);
+  const cdTarget=(etdISO&&new Date(etdISO)>new Date(atPlus90))?etdISO:atPlus90;
+  startEditorCountdown(cdTarget);
   function tick(){
     const e=Math.max(0,Date.now()-new Date(startISO).getTime());
     const s=Math.floor(e/1000)%60,m=Math.floor(e/60000)%60,h=Math.floor(e/3600000);
@@ -420,6 +439,36 @@ function startEditorCountdown(targetISO){
 }
 
 function onEtdChange(){etdManuallyChanged=true;}
+
+// Reset ground timer: confirm → update AT → log
+function resetGroundTimer(){
+  if(!currentF||!allFlights[currentF])return;
+  const d=allFlights[currentF];
+  if(!d.at){alert('No active ground timer to reset.');return;}
+  if(!confirm('Reset ground timer for '+currentF+'?\n\nThis will set AT to NOW and record a log entry.'))return;
+  const now=new Date().toISOString();
+  const logEntry={time:now,task:'Timer Reset',status:'Ground timer manually reset → new AT: '+fmtFull(now),user:currentUser.name};
+  const logs=[...(d.logs||[]),logEntry];
+  db.ref('flights/'+currentF).update({at:now,timerStart:now,logs})
+    .then(()=>{
+      document.getElementById('atTime').value=isoToInput(now);
+      const etdISO=document.getElementById('depTime').value?inputToISO(document.getElementById('depTime').value):null;
+      startGroundTimer(now,etdISO);
+      showBanner('⏱ Timer reset for '+currentF+'.');
+    })
+    .catch(err=>alert('Reset failed: '+err.message));
+}
+
+// Auto-set ETD = ETA + 90min when ETA changes
+function onEtaChange(){
+  const etaVal=document.getElementById('etaTime').value;
+  if(etaVal){
+    const newETD=new Date(inputToISO(etaVal)).getTime()+90*60000;
+    document.getElementById('depTime').value=isoToInput(new Date(newETD).toISOString());
+    // Don't mark as manual since it was auto-triggered by ETA
+    etdManuallyChanged=false;
+  }
+}
 
 // Status change → lock/unlock tasks + refresh cat headers
 function onStatusChange(){
@@ -571,7 +620,7 @@ function renderFlights(){
 
     if(d.at){
       const etdS=document.createElement('span');etdS.textContent='ETD: '+(d.etd?fmtShort(d.etd):'-');timeRow.appendChild(etdS);
-      // AT+90 countdown
+      // Countdown: max(AT+90, ETD)
       const cd=document.createElement('span');cd.id='cd-card-'+f;cd.className='cd-chip';timeRow.appendChild(cd);
       const dot=document.createElement('span');dot.style.color='#555';dot.textContent='·';timeRow.appendChild(dot);
       const atS=document.createElement('span');atS.textContent='AT: '+fmtShort(d.at);timeRow.appendChild(atS);
@@ -581,17 +630,31 @@ function renderFlights(){
       const etaS=document.createElement('span');etaS.textContent='ETA: '+fmtShort(d.eta);timeRow.appendChild(etaS);
     }
     if(timeRow.children.length>0)card.appendChild(timeRow);
+
+    // Category status row (Admin / Cabin / Ground)
+    const catRow=document.createElement('div');
+    catRow.style.cssText='display:flex;gap:5px;margin-top:6px;flex-wrap:wrap';
+    for(const ck in CATS){
+      const catStatus=d['cat_'+ck]||calcCatStatus(d,ck);
+      const chip=document.createElement('span');
+      chip.style.cssText=chipStyle(catStatus)+';font-size:11px;padding:2px 8px;border-radius:10px;font-weight:bold';
+      chip.textContent=CATS[ck].emoji+' '+ck+': '+catStatus;
+      catRow.appendChild(chip);
+    }
+    card.appendChild(catRow);
+
     list.appendChild(card);
   });
 
-  // AT+90 countdown ticker for cards
+  // AT+90 (or ETD if later) countdown ticker for cards
   function refreshCardCd(){
     Object.keys(allFlights).forEach(f=>{
       const d=allFlights[f];
       const el=document.getElementById('cd-card-'+f);
       if(!el||!d.at)return;
       const atPlus90=new Date(new Date(d.at).getTime()+90*60000).toISOString();
-      const r=countdownText(atPlus90);
+      const target=(d.etd&&new Date(d.etd)>new Date(atPlus90))?d.etd:atPlus90;
+      const r=countdownText(target);
       el.textContent=r.text;el.className=r.cls;
     });
   }
@@ -611,7 +674,7 @@ function openEditor(f){
   document.getElementById('atTime').value=isoToInput(d.at||'');
   refreshTZLabels();
   etdManuallyChanged=false;
-  startGroundTimer(d.at||null); // AT-based timer
+  startGroundTimer(d.at||null, d.etd||null); // AT-based timer, ETD-aware countdown
   const isArriving=(d['Overall Status']||'Arriving')==='Arriving';
   let h='';
   for(const ck in CATS){
@@ -623,10 +686,10 @@ function openEditor(f){
         <span id="cat-lock-${ck}" style="font-size:10px;color:#e3b341;font-weight:bold;margin-left:4px;display:${isArriving?'inline':'none'}">🔒 Locked</span>
       </div><div class="cat-body">`;
     cat.tasks.forEach(t=>{
-      const val=d[t]||'Not Started',tid='t-'+t.replace(/[\s()/]/g,'_');
+      const val=d[fbKey(t)]||'Not Started',tid='t-'+t.replace(/[\s()/]/g,'_');
       h+=`<div class="iw" style="margin-bottom:6px">
         <label style="font-size:11px;color:#888">${t}</label>
-        <select id="${tid}" style="font-size:12px;padding:6px 8px;width:100%" ${isArriving?'disabled':''} onchange="refreshCatHeaders()">
+        <select id="${tid}" style="font-size:12px;padding:6px 8px;width:100%" ${isArriving?'disabled':''} onchange="applyTaskSelectStyle(this);refreshCatHeaders()">
           ${TASK_STATUSES.map(s=>`<option${val===s?' selected':''}>${s}</option>`).join('')}
         </select>
       </div>`;
@@ -634,6 +697,8 @@ function openEditor(f){
     h+=`</div></div>`;
   }
   document.getElementById('taskContainer').innerHTML=h;
+  // Apply initial color to all task selects
+  document.querySelectorAll('#taskContainer select').forEach(applyTaskSelectStyle);
   renderLogs(d);
   document.getElementById('editorOverlay').style.display='block';
 }
@@ -680,9 +745,9 @@ function confirmUpdate(){
     ALL_TASKS.forEach(t=>{
       const el=document.getElementById('t-'+t.replace(/[\s()/]/g,'_'));
       if(!el||el.disabled)return;
-      const v=el.value,old=d[t]||'Not Started';
+      const v=el.value,old=d[fbKey(t)]||'Not Started';
       if(v===old)return;
-      updates[t]=v;changed=true;
+      updates[fbKey(t)]=v;changed=true;
       // NO log for individual task changes — only cat auto-status logged below
     });
   }
@@ -745,8 +810,9 @@ function confirmUpdate(){
       etdManuallyChanged=false;
       if(updates.at!==undefined)document.getElementById('atTime').value=isoToInput(updates.at||'');
       if(updates.etd)document.getElementById('depTime').value=isoToInput(updates.etd);
-      if(updates.timerStart)startGroundTimer(updates.timerStart);
-      if(updates.timerStart==='')startGroundTimer('');
+      const finalEtd=updates.etd||allFlights[currentF]?.etd||null;
+      if(updates.timerStart)startGroundTimer(updates.timerStart,finalEtd);
+      if(updates.timerStart==='')startGroundTimer('',null);
       refreshTZLabels();
     })
     .catch(err=>{syncInProgress=false;alert('Sync failed: '+err.message);});

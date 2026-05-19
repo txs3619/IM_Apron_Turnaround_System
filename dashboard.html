@@ -238,6 +238,9 @@ const cdState={},swState={};
 
 function pad(n){return String(n).padStart(2,'0');}
 
+// Firebase-safe key (replace / which Firebase treats as path separator)
+function fbKey(t){return t.replace(/\//g,'_');}
+
 function fmtFull(iso){
   if(!iso)return '-';const d=new Date(iso);
   if(useUTC)return d.getUTCFullYear()+'/'+pad(d.getUTCMonth()+1)+'/'+pad(d.getUTCDate())+' '+pad(d.getUTCHours())+':'+pad(d.getUTCMinutes())+':'+pad(d.getUTCSeconds());
@@ -266,8 +269,8 @@ function nowInputVal(){
 function setNow(id){document.getElementById(id).value=nowInputVal();}
 function set90(id){
   const el=document.getElementById(id);
-  const base=el.value?inputToISO(el.value):new Date().toISOString();
-  el.value=isoToInput(new Date(new Date(base).getTime()+90*60000).toISOString());
+  // Always +90min from NOW
+  el.value=isoToInput(new Date(Date.now()+90*60000).toISOString());
 }
 
 // ── Colours ───────────────────────────────────────────────────────
@@ -289,7 +292,7 @@ function tcStyle(s){
   return 'background:rgba(128,128,128,0.18);color:#777';
 }
 function calcCatStatus(d,ck){
-  const statuses=CATS[ck].tasks.map(t=>d[t]||'Not Started');
+  const statuses=CATS[ck].tasks.map(t=>d[fbKey(t)]||'Not Started');
   for(const s of CAT_PRIORITY){if(statuses.includes(s))return s;}
   return 'Not Started';
 }
@@ -401,14 +404,16 @@ function renderAll(){
   updateBulkBar();
 
   // Start AT+90 countdowns and ground timers
-  active.filter(([,d])=>d.at).forEach(([f,d])=>startCardCountdown(f,d.at));
+  active.filter(([,d])=>d.at).forEach(([f,d])=>startCardCountdown(f,d.at,d.etd||null));
   active.filter(([,d])=>d.timerStart).forEach(([f,d])=>startCardTimer(f,d.timerStart));
 }
 
 // ── AT+90 countdown on card ───────────────────────────────────────
-function startCardCountdown(f,atISO){
+function startCardCountdown(f,atISO,etdISO){
   if(cdState[f])clearInterval(cdState[f]);
-  const targetISO=new Date(new Date(atISO).getTime()+90*60000).toISOString();
+  const atPlus90=new Date(new Date(atISO).getTime()+90*60000).toISOString();
+  // Use ETD as target if it's later than AT+90
+  const targetISO=(etdISO&&new Date(etdISO)>new Date(atPlus90))?etdISO:atPlus90;
   function tick(){
     const el=document.getElementById('cd-'+f);if(!el){clearInterval(cdState[f]);return;}
     const diff=new Date(targetISO)-new Date(),abs=Math.abs(diff);

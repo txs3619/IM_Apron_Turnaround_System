@@ -448,7 +448,7 @@ function makeCard(f,d,zoneId){
   const catSections=Object.keys(CATS).map(ck=>{
     const catS=calcCatStatus(d,ck);
     const chips=CATS[ck].tasks.map(t=>{
-      const s=d[t]||'Not Started';
+      const s=d[fbKey(t)]||'Not Started';
       const short=t.replace(' (F/B)','(FB)').replace(' (F)','(F)').replace(' (R)','(R)').replace(' (E)','(E)');
       return`<span class="tc" style="${tcStyle(s)}">${short}</span>`;
     }).join('');

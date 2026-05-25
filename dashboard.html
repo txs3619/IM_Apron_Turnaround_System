@@ -27,6 +27,8 @@
   .fcard.sel{box-shadow:0 0 0 2px #58a6ff;}
   .drag-handle{cursor:grab;padding:0 3px;color:#888;font-size:14px;user-select:none;flex-shrink:0;}
   .fcard.dragging{opacity:.4;} .fcard.drag-over{border-top:3px solid #58a6ff;}
+  .zone-body{min-height:48px;border-radius:8px;transition:background .15s,border .15s;}
+  .zone-body.zone-drag-over{background:rgba(31,111,235,0.1);outline:2px dashed #1f6feb;}
   .pill{display:inline-block;padding:2px 8px;border-radius:12px;font-size:11px;font-weight:bold;white-space:nowrap;}
   .tc{font-size:10px;padding:2px 7px;border-radius:8px;font-weight:600;}
   .dash-cat{border-radius:7px;padding:6px 8px;margin-top:5px;background:rgba(128,128,128,0.06);border:1px solid var(--border);}
@@ -379,7 +381,7 @@ function renderAll(){
     sec.innerHTML=`<div class="zone-header">
       <span class="zone-title">📍 ${z.name} <span style="color:#888;font-weight:normal;font-size:12px">(${entries.length})</span></span>
     </div>
-    <div class="zone-body" id="${zid}" style="min-height:4px"></div>`;
+    <div class="zone-body" id="${zid}"></div>`;
     container.appendChild(sec);
     const body=sec.querySelector('#'+zid);
     entries.forEach(([f,d])=>body.appendChild(makeCard(f,d,z.id)));
@@ -393,7 +395,7 @@ function renderAll(){
     sec.innerHTML=`<div class="zone-header">
       <span class="zone-title" style="color:#888">📋 Unassigned <span style="font-weight:normal;font-size:12px">(${unassigned.length})</span></span>
     </div>
-    <div class="zone-body" id="zb-unassigned" style="min-height:4px"></div>`;
+    <div class="zone-body" id="zb-unassigned"></div>`;
     container.appendChild(sec);
     const body=sec.querySelector('#zb-unassigned');
     unassigned.forEach(([f,d])=>body.appendChild(makeCard(f,d,'unassigned')));
@@ -521,23 +523,98 @@ function toggleLogs(f){
 }
 
 // ── Drag-drop ─────────────────────────────────────────────────────
-let dragSrc=null;
+let dragSrc=null, dragSrcZoneId=null;
+
+// Save flight order/zone assignment to Firebase after a drop
+async function saveDrop(srcZoneId, dstZoneId, dstContainer){
+  const flightId=dragSrc.dataset.flight;
+  const newDstOrder=[...dstContainer.querySelectorAll('.fcard')].map(c=>c.dataset.flight);
+  const u={};
+  if(srcZoneId!==dstZoneId){
+    // Remove from source zone
+    if(srcZoneId!=='unassigned'){
+      const srcZone=zones.find(z=>z.id===srcZoneId);
+      u['zones/'+srcZoneId+'/flights']=(srcZone?.flights||[]).filter(f=>f!==flightId);
+    }
+    // Add to destination zone
+    if(dstZoneId!=='unassigned') u['zones/'+dstZoneId+'/flights']=newDstOrder;
+  } else {
+    // Same zone reorder
+    if(dstZoneId!=='unassigned') u['zones/'+dstZoneId+'/flights']=newDstOrder;
+  }
+  if(Object.keys(u).length) await db.ref().update(u);
+}
+
 function enableDragDrop(container,zoneId){
+  // Clear all highlights globally on dragend
+  function clearAllHighlights(){
+    document.querySelectorAll('.fcard').forEach(c=>c.classList.remove('drag-over'));
+    document.querySelectorAll('.zone-body').forEach(z=>z.classList.remove('zone-drag-over'));
+  }
+
+  // ── Card-level events ──────────────────────────────────────────
   container.querySelectorAll('.fcard').forEach(card=>{
     card.setAttribute('draggable','true');
-    card.addEventListener('dragstart',e=>{dragSrc=card;card.classList.add('dragging');e.dataTransfer.effectAllowed='move';});
-    card.addEventListener('dragend',()=>{dragSrc=null;card.classList.remove('dragging');container.querySelectorAll('.fcard').forEach(c=>c.classList.remove('drag-over'));});
-    card.addEventListener('dragover',e=>{e.preventDefault();if(dragSrc&&dragSrc!==card)card.classList.add('drag-over');});
-    card.addEventListener('dragleave',()=>card.classList.remove('drag-over'));
-    card.addEventListener('drop',e=>{
-      e.preventDefault();if(!dragSrc||dragSrc===card)return;
-      card.classList.remove('drag-over');
-      const cards=[...container.querySelectorAll('.fcard')];
-      if(cards.indexOf(dragSrc)<cards.indexOf(card))container.insertBefore(dragSrc,card.nextSibling);
-      else container.insertBefore(dragSrc,card);
-      const newOrder=[...container.querySelectorAll('.fcard')].map(c=>c.dataset.flight);
-      if(zoneId!=='unassigned')db.ref('zones/'+zoneId+'/flights').set(newOrder);
+
+    card.addEventListener('dragstart',e=>{
+      dragSrc=card; dragSrcZoneId=zoneId;
+      card.classList.add('dragging');
+      e.dataTransfer.effectAllowed='move';
+      e.dataTransfer.setData('text/plain',card.dataset.flight);
     });
+
+    card.addEventListener('dragend',()=>{
+      dragSrc=null; dragSrcZoneId=null;
+      clearAllHighlights();
+      document.querySelectorAll('.fcard.dragging').forEach(c=>c.classList.remove('dragging'));
+    });
+
+    card.addEventListener('dragover',e=>{
+      e.preventDefault(); e.stopPropagation();
+      if(dragSrc&&dragSrc!==card){ clearAllHighlights(); card.classList.add('drag-over'); }
+    });
+
+    card.addEventListener('dragleave',e=>{
+      if(!card.contains(e.relatedTarget)) card.classList.remove('drag-over');
+    });
+
+    card.addEventListener('drop',e=>{
+      e.preventDefault(); e.stopPropagation();
+      if(!dragSrc||dragSrc===card)return;
+      card.classList.remove('drag-over');
+      const dstContainer=card.parentElement;
+      const dstZoneId=dstContainer.dataset.zoneId;
+      // Insert relative to target card
+      const cards=[...dstContainer.querySelectorAll('.fcard')];
+      const srcIdx=cards.indexOf(dragSrc), dstIdx=cards.indexOf(card);
+      if(srcIdx===-1||srcIdx<dstIdx) dstContainer.insertBefore(dragSrc,card.nextSibling);
+      else dstContainer.insertBefore(dragSrc,card);
+      saveDrop(dragSrcZoneId,dstZoneId,dstContainer);
+    });
+  });
+
+  // ── Zone-body-level events (handles empty zones + drop below all cards) ──
+  container.dataset.zoneId=zoneId;
+
+  container.addEventListener('dragover',e=>{
+    e.preventDefault();
+    clearAllHighlights();
+    container.classList.add('zone-drag-over');
+  });
+
+  container.addEventListener('dragleave',e=>{
+    if(!container.contains(e.relatedTarget)) container.classList.remove('zone-drag-over');
+  });
+
+  container.addEventListener('drop',e=>{
+    // Only handle if dropped directly on zone body (not on a card, which stops propagation)
+    e.preventDefault();
+    container.classList.remove('zone-drag-over');
+    if(!dragSrc)return;
+    const srcId=dragSrcZoneId;
+    // Append to end of this zone
+    container.appendChild(dragSrc);
+    saveDrop(srcId,zoneId,container);
   });
 }
 

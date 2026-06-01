@@ -162,15 +162,13 @@
       <button onclick="document.getElementById('zoneOv').style.display='none'" class="btn btn-danger" style="padding:4px 10px">✕</button>
     </div>
 
-    <!-- Flight search + move -->
-    <input id="zcSearch" placeholder="🔍 Search flight number..." oninput="renderZoneMgmt()"
-      style="padding:8px 11px;border-radius:8px;border:1px solid var(--border);background:var(--bg);color:var(--text);font-size:13px;margin-bottom:9px;width:100%;box-sizing:border-box">
-    <div id="zcFlights" style="flex:1;overflow-y:auto;display:flex;flex-direction:column;gap:5px;min-height:60px;margin-bottom:12px"></div>
+    <!-- Zone sections with flights -->
+    <div id="zcZoneList" style="flex:1;overflow-y:auto;display:flex;flex-direction:column;gap:10px;margin-bottom:12px"></div>
 
     <!-- Zone CRUD -->
     <div style="border-top:1px solid var(--border);padding-top:10px">
       <div style="font-size:10px;font-weight:bold;color:#888;text-transform:uppercase;letter-spacing:.07em;margin-bottom:7px">Manage Zones</div>
-      <div id="zcZones" style="display:flex;flex-direction:column;gap:3px;margin-bottom:9px"></div>
+      <div id="zcCrudList" style="display:flex;flex-direction:column;gap:3px;margin-bottom:9px"></div>
       <div style="display:flex;gap:6px">
         <input id="newZoneName" placeholder="New zone name..."
           style="flex:1;padding:7px 9px;border-radius:7px;border:1px solid var(--border);background:var(--bg);color:var(--text);font-size:12px">
@@ -407,12 +405,33 @@ function renderAll(){
   if(!active.length)container.innerHTML='<p style="text-align:center;color:#888;padding:40px">No flights found.</p>';
   updateBulkBar();
 
-  // Start AT+90 countdowns and ground timers
-  active.filter(([,d])=>d.at).forEach(([f,d])=>startCardCountdown(f,d.at,d.etd||null));
-  active.filter(([,d])=>d.timerStart).forEach(([f,d])=>startCardTimer(f,d.timerStart));
+  // Start AT+90 countdowns and ground timers — skip/freeze Push Backed
+  active.filter(([,d])=>d.at).forEach(([f,d])=>{
+    if(d.timerStop&&d.timerStart) showFrozenCountdown(f,d.timerStart,d.timerStop);
+    else startCardCountdown(f,d.at,d.etd||null);
+  });
+  active.filter(([,d])=>d.timerStart).forEach(([f,d])=>{
+    if(d.timerStop) showFrozenStopwatch(f,d.timerStart,d.timerStop);
+    else startCardTimer(f,d.timerStart);
+  });
 }
 
 // ── AT+90 countdown on card ───────────────────────────────────────
+function showFrozenCountdown(f,startISO,stopISO){
+  if(cdState[f])clearInterval(cdState[f]);
+  const elapsed=new Date(stopISO)-new Date(startISO);
+  const eh=Math.floor(elapsed/3600000),em=Math.floor(elapsed%3600000/60000),es=Math.floor(elapsed%60000/1000);
+  const el=document.getElementById('cd-'+f);if(!el)return;
+  el.textContent='✅ '+pad(eh)+':'+pad(em)+':'+pad(es);
+  el.className='sw-disp';el.style.background='rgba(35,134,54,0.15)';el.style.color='#3fb950';
+}
+function showFrozenStopwatch(f,startISO,stopISO){
+  if(swState[f])clearInterval(swState[f]);
+  const elapsed=new Date(stopISO)-new Date(startISO);
+  const s=Math.floor(elapsed/1000)%60,m=Math.floor(elapsed%3600000/60000),h=Math.floor(elapsed/3600000);
+  const el=document.getElementById('sw-'+f);if(!el)return;
+  el.textContent=pad(h)+':'+pad(m)+':'+pad(s);el.style.color='#3fb950';
+}
 function startCardCountdown(f,atISO,etdISO){
   if(cdState[f])clearInterval(cdState[f]);
   const atPlus90=new Date(new Date(atISO).getTime()+90*60000).toISOString();
@@ -547,7 +566,48 @@ async function saveDrop(srcZoneId, dstZoneId, dstContainer){
   if(Object.keys(u).length) await db.ref().update(u);
 }
 
-function enableDragDrop(container,zoneId){
+// Move card up (dir=-1) or down (dir=1) via wheel, crossing zones if needed
+function wheelMoveCard(card,zoneId,dir){
+  const container=card.parentElement;
+  const cards=[...container.querySelectorAll('.fcard')];
+  const idx=cards.indexOf(card);
+  const f=card.dataset.flight;
+
+  if(dir===1&&idx<cards.length-1){
+    // Move down within zone
+    container.insertBefore(cards[idx+1],card);
+    if(zoneId!=='unassigned'){
+      const order=[...container.querySelectorAll('.fcard')].map(c=>c.dataset.flight);
+      db.ref('zones/'+zoneId+'/flights').set(order);
+    }
+  } else if(dir===-1&&idx>0){
+    // Move up within zone
+    container.insertBefore(card,cards[idx-1]);
+    if(zoneId!=='unassigned'){
+      const order=[...container.querySelectorAll('.fcard')].map(c=>c.dataset.flight);
+      db.ref('zones/'+zoneId+'/flights').set(order);
+    }
+  } else {
+    // At edge — cross into adjacent zone
+    const zoneIds=[...zones.map(z=>z.id),'unassigned'];
+    const curIdx=zoneIds.indexOf(zoneId);
+    const targetZoneId=zoneIds[curIdx+dir];
+    if(!targetZoneId)return;
+    const targetContainer=document.querySelector('[data-zone-id="'+targetZoneId+'"]');
+    if(!targetContainer)return;
+    const targetCards=[...targetContainer.querySelectorAll('.fcard')];
+    // Insert at end of prev zone (dir=-1) or start of next zone (dir=1)
+    if(dir===1) targetContainer.insertBefore(card,targetCards[0]||null);
+    else targetContainer.appendChild(card);
+    const u={};
+    if(zoneId!=='unassigned') u['zones/'+zoneId+'/flights']=[...container.querySelectorAll('.fcard')].map(c=>c.dataset.flight);
+    if(targetZoneId!=='unassigned'){
+      const newOrder=[...targetContainer.querySelectorAll('.fcard')].map(c=>c.dataset.flight);
+      u['zones/'+targetZoneId+'/flights']=newOrder;
+    }
+    if(Object.keys(u).length)db.ref().update(u);
+  }
+}
   // Clear all highlights globally on dragend
   function clearAllHighlights(){
     document.querySelectorAll('.fcard').forEach(c=>c.classList.remove('drag-over'));
@@ -595,7 +655,22 @@ function enableDragDrop(container,zoneId){
     });
   });
 
-  // ── Zone-body-level events (handles empty zones + drop below all cards) ──
+  // ── Wheel-while-mousedown moves card up/down ─────────────────────
+  container.querySelectorAll('.fcard').forEach(card=>{
+    let holding=false;
+    let wheelTimeout=null;
+    card.addEventListener('mousedown',()=>holding=true,{passive:true});
+    document.addEventListener('mouseup',()=>holding=false,{passive:true});
+    card.addEventListener('wheel',e=>{
+      if(!holding)return;
+      e.preventDefault();e.stopPropagation();
+      // Debounce: one move per 120ms
+      if(wheelTimeout)return;
+      wheelTimeout=setTimeout(()=>wheelTimeout=null,120);
+      const dir=e.deltaY>0?1:-1;
+      wheelMoveCard(card,zoneId,dir);
+    },{passive:false});
+  });
   container.dataset.zoneId=zoneId;
 
   container.addEventListener('dragover',e=>{
@@ -703,63 +778,83 @@ async function permDelete(f){
 // ── Zone Controller ────────────────────────────────────────────────
 function openZoneMgmt(){
   document.getElementById('zoneOv').style.display='block';
-  document.getElementById('zcSearch').value='';
   renderZoneMgmt();
 }
 function renderZoneMgmt(){
-  const q=(document.getElementById('zcSearch')?.value||'').toLowerCase().trim();
   const activeFlights=Object.entries(allF).filter(([,d])=>!d._deleted);
-  const filtered=q?activeFlights.filter(([f])=>f.toLowerCase().includes(q)):activeFlights;
+  // Map flight → current zone
+  const flightZoneMap={};
+  zones.forEach(z=>(z.flights||[]).forEach(f=>flightZoneMap[f]=z.id));
 
-  // Zone options HTML
-  const zoneOpts='<option value="unassigned">— unassigned —</option>'
-    +zones.map(z=>`<option value="${z.id}">${z.name}</option>`).join('');
-
-  // ── Flight rows ──
-  const fc=document.getElementById('zcFlights');if(!fc)return;
-  if(!filtered.length){
-    fc.innerHTML='<p style="color:#888;font-size:12px;text-align:center;padding:14px 0">No flights found.</p>';
-  } else {
-    fc.innerHTML=filtered.map(([f])=>{
-      const curZone=zones.find(z=>(z.flights||[]).includes(f));
-      const curLabel=curZone?curZone.name:'—';
-      const curClr=curZone?'#58a6ff':'#555';
-      return `<div style="display:flex;align-items:center;gap:7px;padding:6px 9px;background:var(--card);border:1px solid var(--border);border-radius:8px">
-        <span style="font-weight:bold;font-size:13px;min-width:72px;letter-spacing:.02em">${f}</span>
-        <span style="font-size:11px;color:${curClr};flex:1;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${curLabel}</span>
-        <select id="zc-sel-${f}" style="font-size:11px;padding:3px 5px;border-radius:6px;border:1px solid var(--border);background:var(--bg);color:var(--text);max-width:130px">
-          ${zoneOpts}
-        </select>
-        <button onclick="zcMove('${f}')" class="btn btn-primary" style="font-size:11px;padding:3px 9px;white-space:nowrap">→ Move</button>
-      </div>`;
-    }).join('');
-    // Pre-select current zone
-    filtered.forEach(([f])=>{
-      const curZone=zones.find(z=>(z.flights||[]).includes(f));
-      const sel=document.getElementById('zc-sel-'+f);
-      if(sel)sel.value=curZone?curZone.id:'unassigned';
-    });
+  // Zone options for move dropdown (all zones + unassigned)
+  function zoneOpts(skipId){
+    return '<option value="unassigned">— unassigned —</option>'
+      +zones.map(z=>`<option value="${z.id}"${z.id===skipId?' selected':''}>${z.name}</option>`).join('');
   }
 
-  // ── Zone CRUD rows ──
-  const zc=document.getElementById('zcZones');if(!zc)return;
-  if(!zones.length){zc.innerHTML='<p style="color:#888;font-size:12px">No zones yet.</p>';return;}
-  zc.innerHTML=zones.map((z,idx)=>`
-    <div style="display:flex;align-items:center;gap:5px;padding:4px 2px;border-bottom:1px solid rgba(128,128,128,.12)">
-      <span style="flex:1;font-size:12px;font-weight:bold;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${z.name}</span>
-      <span style="font-size:10px;color:#666;margin-right:2px">${(z.flights||[]).length}✈</span>
-      <button onclick="renameZonePrompt('${z.id}')" class="btn btn-ghost" style="font-size:10px;padding:2px 6px" title="Rename">✏️</button>
-      <button onclick="moveZone('${z.id}',-1)" class="btn btn-ghost" style="font-size:10px;padding:2px 5px" ${idx===0?'disabled':''}>▲</button>
-      <button onclick="moveZone('${z.id}',1)" class="btn btn-ghost" style="font-size:10px;padding:2px 5px" ${idx===zones.length-1?'disabled':''}>▼</button>
-      <button onclick="deleteZone('${z.id}')" class="btn btn-danger" style="font-size:10px;padding:2px 6px">🗑</button>
+  // ── Zone sections ──
+  const zl=document.getElementById('zcZoneList');if(!zl)return;
+
+  // Build sections: each zone + unassigned at end
+  const sections=[
+    ...zones.map(z=>({
+      id:z.id,
+      label:z.name,
+      flights:(z.flights||[]).filter(f=>allF[f]&&!allF[f]._deleted)
+    })),
+    {
+      id:'unassigned',
+      label:'— Unassigned',
+      flights:activeFlights.filter(([f])=>!flightZoneMap[f]).map(([f])=>f)
+    }
+  ].filter(s=>s.flights.length>0||s.id!=='unassigned');
+
+  zl.innerHTML=sections.map(sec=>`
+    <div style="border:1px solid var(--border);border-radius:9px;overflow:hidden">
+      <div style="padding:7px 10px;background:rgba(128,128,128,0.07);display:flex;align-items:center;gap:6px">
+        <span style="font-weight:bold;font-size:12px;flex:1">${sec.label}</span>
+        <span style="font-size:10px;color:#888">${sec.flights.length} flight${sec.flights.length!==1?'s':''}</span>
+      </div>
+      ${sec.flights.length===0
+        ? `<div style="padding:8px 10px;font-size:11px;color:#666;font-style:italic">No flights</div>`
+        : sec.flights.map(f=>`
+          <div style="display:flex;align-items:center;gap:6px;padding:6px 10px;border-top:1px solid rgba(128,128,128,.1)">
+            <span style="font-weight:bold;font-size:13px;min-width:75px;letter-spacing:.02em">${f}</span>
+            <span style="font-size:11px;color:#888;flex:1">${allF[f]?.['Overall Status']||'—'}</span>
+            <select id="zc-sel-${f}" style="font-size:11px;padding:3px 5px;border-radius:6px;border:1px solid var(--border);background:var(--bg);color:var(--text);max-width:120px">
+              ${zoneOpts(sec.id)}
+            </select>
+            <button onclick="zcMove('${f}')" class="btn btn-primary" style="font-size:11px;padding:3px 8px">→</button>
+          </div>`).join('')
+      }
     </div>`).join('');
+
+  // Set correct current zone in selects
+  sections.forEach(sec=>sec.flights.forEach(f=>{
+    const sel=document.getElementById('zc-sel-'+f);
+    if(sel)sel.value=sec.id;
+  }));
+
+  // ── Zone CRUD ──
+  const cl=document.getElementById('zcCrudList');if(!cl)return;
+  cl.innerHTML=zones.length
+    ? zones.map((z,idx)=>`
+        <div style="display:flex;align-items:center;gap:5px;padding:4px 2px;border-bottom:1px solid rgba(128,128,128,.12)">
+          <span style="flex:1;font-size:12px;font-weight:bold;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${z.name}</span>
+          <span style="font-size:10px;color:#666;margin-right:2px">${(z.flights||[]).filter(f=>allF[f]&&!allF[f]._deleted).length}✈</span>
+          <button onclick="renameZonePrompt('${z.id}')" class="btn btn-ghost" style="font-size:10px;padding:2px 6px">✏️</button>
+          <button onclick="moveZone('${z.id}',-1)" class="btn btn-ghost" style="font-size:10px;padding:2px 5px" ${idx===0?'disabled':''}>▲</button>
+          <button onclick="moveZone('${z.id}',1)" class="btn btn-ghost" style="font-size:10px;padding:2px 5px" ${idx===zones.length-1?'disabled':''}>▼</button>
+          <button onclick="deleteZone('${z.id}')" class="btn btn-danger" style="font-size:10px;padding:2px 6px">🗑</button>
+        </div>`).join('')
+    : '<p style="color:#888;font-size:12px">No zones yet.</p>';
 }
 
 async function zcMove(f){
   const sel=document.getElementById('zc-sel-'+f);if(!sel)return;
   const newZoneId=sel.value;
   const curZone=zones.find(z=>(z.flights||[]).includes(f));
-  if((curZone?.id||'unassigned')===newZoneId)return; // no change
+  if((curZone?.id||'unassigned')===newZoneId)return;
   const u={};
   if(curZone) u['zones/'+curZone.id+'/flights']=(curZone.flights||[]).filter(x=>x!==f);
   if(newZoneId!=='unassigned'){

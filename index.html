@@ -440,6 +440,20 @@ function startEditorCountdown(targetISO){
 
 function onEtdChange(){etdManuallyChanged=true;}
 
+// Show a frozen timer (Push Backed — timer stopped)
+function showStaticTimer(startISO, stopISO){
+  clearInterval(timerInterval);clearInterval(cdInterval);
+  const elapsed=new Date(stopISO)-new Date(startISO);
+  const s=Math.floor(elapsed/1000)%60,m=Math.floor(elapsed%3600000/60000),h=Math.floor(elapsed/3600000);
+  document.getElementById('timerBox').style.display='flex';
+  const disp=document.getElementById('timerDisplay');
+  disp.innerText=pad(h)+':'+pad(m)+':'+pad(s);
+  disp.style.color='#3fb950'; // green = completed
+  disp.title='Ground time locked — Push Backed';
+  document.getElementById('cdBoxWrap').style.display='none';
+  const rb=document.getElementById('timerResetBtn');if(rb)rb.disabled=true;
+}
+
 // Reset ground timer: confirm → update AT → log
 function resetGroundTimer(){
   if(!currentF||!allFlights[currentF])return;
@@ -652,6 +666,15 @@ function renderFlights(){
       const d=allFlights[f];
       const el=document.getElementById('cd-card-'+f);
       if(!el||!d.at)return;
+      // If Push Backed, show frozen elapsed time in green
+      if(d.timerStop && d.timerStart){
+        const elapsed=new Date(d.timerStop)-new Date(d.timerStart);
+        const eh=Math.floor(elapsed/3600000),em=Math.floor(elapsed%3600000/60000),es=Math.floor(elapsed%60000/1000);
+        el.textContent='✅ '+pad(eh)+':'+pad(em)+':'+pad(es);
+        el.className='cd-chip';el.style.color='#3fb950';el.style.background='rgba(35,134,54,0.15)';
+        return;
+      }
+      el.style.color='';el.style.background='';
       const atPlus90=new Date(new Date(d.at).getTime()+90*60000).toISOString();
       const target=(d.etd&&new Date(d.etd)>new Date(atPlus90))?d.etd:atPlus90;
       const r=countdownText(target);
@@ -674,7 +697,12 @@ function openEditor(f){
   document.getElementById('atTime').value=isoToInput(d.at||'');
   refreshTZLabels();
   etdManuallyChanged=false;
-  startGroundTimer(d.at||null, d.etd||null); // AT-based timer, ETD-aware countdown
+  // Timer: show static frozen time if Push Backed, else live count-up
+  if(d.timerStop && d.timerStart){
+    showStaticTimer(d.timerStart, d.timerStop);
+  } else {
+    startGroundTimer(d.at||null, d.etd||null);
+  }
   const isArriving=(d['Overall Status']||'Arriving')==='Arriving';
   let h='';
   for(const ck in CATS){
@@ -788,6 +816,24 @@ function confirmUpdate(){
     }
   }
 
+  // ── Push Backed: freeze timer + record elapsed ground time ────────
+  if(newStatus==='Push Backed' && oldStatus!=='Push Backed'){
+    const tStart=updates.timerStart||d.timerStart||d.at;
+    if(tStart && !d.timerStop){
+      const elapsed=new Date(now)-new Date(tStart);
+      const eh=Math.floor(elapsed/3600000),em=Math.floor(elapsed%3600000/60000),es=Math.floor(elapsed%60000/1000);
+      const elapsedStr=pad(eh)+':'+pad(em)+':'+pad(es);
+      updates.timerStop=now;
+      updates.timerElapsed=elapsed;
+      newLogs.push({time:now,task:'Push Back',status:'Ground time: '+elapsedStr+' (timer locked)',user:'System'});
+      summary.push('Ground time: '+elapsedStr);
+    }
+  }
+  // Reset timerStop if status rolls back from Push Backed
+  if(oldStatus==='Push Backed' && newStatus!=='Push Backed' && d.timerStop){
+    updates.timerStop=''; updates.timerElapsed='';
+  }
+
   // Cat status auto-recalc (logged)
   const merged={...d,...updates};
   for(const ck in CATS){
@@ -811,8 +857,12 @@ function confirmUpdate(){
       if(updates.at!==undefined)document.getElementById('atTime').value=isoToInput(updates.at||'');
       if(updates.etd)document.getElementById('depTime').value=isoToInput(updates.etd);
       const finalEtd=updates.etd||allFlights[currentF]?.etd||null;
-      if(updates.timerStart)startGroundTimer(updates.timerStart,finalEtd);
-      if(updates.timerStart==='')startGroundTimer('',null);
+      if(updates.timerStop){
+        // Push Backed — show frozen elapsed time
+        const tStart=updates.timerStart||allFlights[currentF]?.timerStart||allFlights[currentF]?.at;
+        showStaticTimer(tStart, updates.timerStop);
+      } else if(updates.timerStart)startGroundTimer(updates.timerStart,finalEtd);
+      else if(updates.timerStart==='')startGroundTimer('',null);
       refreshTZLabels();
     })
     .catch(err=>{syncInProgress=false;alert('Sync failed: '+err.message);});

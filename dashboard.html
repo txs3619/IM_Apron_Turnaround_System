@@ -131,14 +131,6 @@
       <span class="leg-chip" style="background:rgba(225,183,64,0.3);color:#e3b341">Need Assistant</span>
       <span class="leg-chip" style="background:rgba(218,54,51,0.25);color:#f85149">Delayed</span>
     </div>
-    <div class="leg-row">
-      <span class="leg-label">Category:</span>
-      <span class="leg-chip" style="background:rgba(128,128,128,0.1);color:#777;border:1px solid #333">Not Started</span>
-      <span class="leg-chip" style="background:rgba(31,111,235,0.1);color:#58a6ff">In Progress</span>
-      <span class="leg-chip" style="background:rgba(35,134,54,0.1);color:#3fb950">Completed</span>
-      <span class="leg-chip" style="background:rgba(225,183,64,0.12);color:#e3b341">Need Assistant</span>
-      <span class="leg-chip" style="background:rgba(218,54,51,0.08);color:#f85149">Delayed</span>
-    </div>
   </div>
 </div>
 
@@ -162,18 +154,28 @@
   </div>
 </div>
 
-<!-- ZONE MANAGEMENT -->
+<!-- ZONE CONTROLLER -->
 <div id="zoneOv" class="big-ov">
-  <div class="mbox" style="max-width:540px">
-    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:14px">
-      <h3 style="margin:0">🗺️ Manage Zones</h3>
-      <button onclick="document.getElementById('zoneOv').style.display='none'" class="btn btn-danger">Close</button>
+  <div class="mbox" style="max-width:460px;max-height:88vh;display:flex;flex-direction:column;gap:0">
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px">
+      <h3 style="margin:0;font-size:15px">🗺️ Zone Controller</h3>
+      <button onclick="document.getElementById('zoneOv').style.display='none'" class="btn btn-danger" style="padding:4px 10px">✕</button>
     </div>
-    <p style="font-size:12px;color:#888;margin-top:0">Zones without flights still show as drop targets. "Recovered" auto-created on restore.</p>
-    <div id="zoneList"></div>
-    <div style="display:flex;gap:8px;margin-top:12px">
-      <input id="newZoneName" placeholder="New zone name..." style="flex:1;padding:8px;border-radius:7px;border:1px solid var(--border);background:var(--bg);color:var(--text)">
-      <button onclick="addZone()" class="btn btn-success">+ Add</button>
+
+    <!-- Flight search + move -->
+    <input id="zcSearch" placeholder="🔍 Search flight number..." oninput="renderZoneMgmt()"
+      style="padding:8px 11px;border-radius:8px;border:1px solid var(--border);background:var(--bg);color:var(--text);font-size:13px;margin-bottom:9px;width:100%;box-sizing:border-box">
+    <div id="zcFlights" style="flex:1;overflow-y:auto;display:flex;flex-direction:column;gap:5px;min-height:60px;margin-bottom:12px"></div>
+
+    <!-- Zone CRUD -->
+    <div style="border-top:1px solid var(--border);padding-top:10px">
+      <div style="font-size:10px;font-weight:bold;color:#888;text-transform:uppercase;letter-spacing:.07em;margin-bottom:7px">Manage Zones</div>
+      <div id="zcZones" style="display:flex;flex-direction:column;gap:3px;margin-bottom:9px"></div>
+      <div style="display:flex;gap:6px">
+        <input id="newZoneName" placeholder="New zone name..."
+          style="flex:1;padding:7px 9px;border-radius:7px;border:1px solid var(--border);background:var(--bg);color:var(--text);font-size:12px">
+        <button onclick="addZone()" class="btn btn-success" style="font-size:12px;padding:6px 12px">+ Add</button>
+      </div>
     </div>
   </div>
 </div>
@@ -698,39 +700,85 @@ async function permDelete(f){
   await db.ref('flights/'+f).remove();loadRecycleBin();
 }
 
-// ── Zones ─────────────────────────────────────────────────────────
-function openZoneMgmt(){document.getElementById('zoneOv').style.display='block';renderZoneMgmt();}
+// ── Zone Controller ────────────────────────────────────────────────
+function openZoneMgmt(){
+  document.getElementById('zoneOv').style.display='block';
+  document.getElementById('zcSearch').value='';
+  renderZoneMgmt();
+}
 function renderZoneMgmt(){
-  const container=document.getElementById('zoneList');container.innerHTML='';
-  if(!zones.length){container.innerHTML='<p style="color:#888;font-size:13px">No zones yet.</p>';return;}
-  const activeKeys=Object.keys(allF).filter(f=>!allF[f]._deleted);
-  zones.forEach((z,idx)=>{
-    const div=document.createElement('div');div.className='gitem';
-    div.innerHTML=`<div style="display:flex;flex-direction:column;gap:5px;flex:1;min-width:0">
-      <input type="text" value="${z.name}" id="zname-${z.id}">
-      <label style="font-size:11px;color:#888">Assign flights (Ctrl+click):</label>
-      <select multiple id="zfl-${z.id}" style="font-size:11px;padding:3px;border-radius:5px;border:1px solid var(--border);background:var(--bg);color:var(--text);min-width:160px;max-height:70px">
-        ${activeKeys.map(f=>`<option value="${f}" ${(z.flights||[]).includes(f)?'selected':''}>${f}</option>`).join('')}
-      </select></div>
-      <div style="display:flex;flex-direction:column;gap:4px;flex-shrink:0">
-        <button onclick="saveZone('${z.id}')" class="btn btn-success" style="font-size:11px;padding:3px 8px">💾</button>
-        <button onclick="moveZone('${z.id}',-1)" class="btn btn-ghost" style="font-size:11px;padding:3px 8px" ${idx===0?'disabled':''}>▲</button>
-        <button onclick="moveZone('${z.id}',1)" class="btn btn-ghost" style="font-size:11px;padding:3px 8px" ${idx===zones.length-1?'disabled':''}>▼</button>
-        <button onclick="deleteZone('${z.id}')" class="btn btn-danger" style="font-size:11px;padding:3px 8px">🗑️</button>
+  const q=(document.getElementById('zcSearch')?.value||'').toLowerCase().trim();
+  const activeFlights=Object.entries(allF).filter(([,d])=>!d._deleted);
+  const filtered=q?activeFlights.filter(([f])=>f.toLowerCase().includes(q)):activeFlights;
+
+  // Zone options HTML
+  const zoneOpts='<option value="unassigned">— unassigned —</option>'
+    +zones.map(z=>`<option value="${z.id}">${z.name}</option>`).join('');
+
+  // ── Flight rows ──
+  const fc=document.getElementById('zcFlights');if(!fc)return;
+  if(!filtered.length){
+    fc.innerHTML='<p style="color:#888;font-size:12px;text-align:center;padding:14px 0">No flights found.</p>';
+  } else {
+    fc.innerHTML=filtered.map(([f])=>{
+      const curZone=zones.find(z=>(z.flights||[]).includes(f));
+      const curLabel=curZone?curZone.name:'—';
+      const curClr=curZone?'#58a6ff':'#555';
+      return `<div style="display:flex;align-items:center;gap:7px;padding:6px 9px;background:var(--card);border:1px solid var(--border);border-radius:8px">
+        <span style="font-weight:bold;font-size:13px;min-width:72px;letter-spacing:.02em">${f}</span>
+        <span style="font-size:11px;color:${curClr};flex:1;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${curLabel}</span>
+        <select id="zc-sel-${f}" style="font-size:11px;padding:3px 5px;border-radius:6px;border:1px solid var(--border);background:var(--bg);color:var(--text);max-width:130px">
+          ${zoneOpts}
+        </select>
+        <button onclick="zcMove('${f}')" class="btn btn-primary" style="font-size:11px;padding:3px 9px;white-space:nowrap">→ Move</button>
       </div>`;
-    container.appendChild(div);
-  });
+    }).join('');
+    // Pre-select current zone
+    filtered.forEach(([f])=>{
+      const curZone=zones.find(z=>(z.flights||[]).includes(f));
+      const sel=document.getElementById('zc-sel-'+f);
+      if(sel)sel.value=curZone?curZone.id:'unassigned';
+    });
+  }
+
+  // ── Zone CRUD rows ──
+  const zc=document.getElementById('zcZones');if(!zc)return;
+  if(!zones.length){zc.innerHTML='<p style="color:#888;font-size:12px">No zones yet.</p>';return;}
+  zc.innerHTML=zones.map((z,idx)=>`
+    <div style="display:flex;align-items:center;gap:5px;padding:4px 2px;border-bottom:1px solid rgba(128,128,128,.12)">
+      <span style="flex:1;font-size:12px;font-weight:bold;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${z.name}</span>
+      <span style="font-size:10px;color:#666;margin-right:2px">${(z.flights||[]).length}✈</span>
+      <button onclick="renameZonePrompt('${z.id}')" class="btn btn-ghost" style="font-size:10px;padding:2px 6px" title="Rename">✏️</button>
+      <button onclick="moveZone('${z.id}',-1)" class="btn btn-ghost" style="font-size:10px;padding:2px 5px" ${idx===0?'disabled':''}>▲</button>
+      <button onclick="moveZone('${z.id}',1)" class="btn btn-ghost" style="font-size:10px;padding:2px 5px" ${idx===zones.length-1?'disabled':''}>▼</button>
+      <button onclick="deleteZone('${z.id}')" class="btn btn-danger" style="font-size:10px;padding:2px 6px">🗑</button>
+    </div>`).join('');
 }
-function saveZone(id){
-  const name=document.getElementById('zname-'+id).value.trim();if(!name)return;
-  const sel=document.getElementById('zfl-'+id);
-  const flights=[...sel.options].filter(o=>o.selected).map(o=>o.value);
-  db.ref('zones/'+id).update({name,flights}).then(()=>renderZoneMgmt());
+
+async function zcMove(f){
+  const sel=document.getElementById('zc-sel-'+f);if(!sel)return;
+  const newZoneId=sel.value;
+  const curZone=zones.find(z=>(z.flights||[]).includes(f));
+  if((curZone?.id||'unassigned')===newZoneId)return; // no change
+  const u={};
+  if(curZone) u['zones/'+curZone.id+'/flights']=(curZone.flights||[]).filter(x=>x!==f);
+  if(newZoneId!=='unassigned'){
+    const dstZone=zones.find(z=>z.id===newZoneId);
+    u['zones/'+newZoneId+'/flights']=[...(dstZone?.flights||[]).filter(x=>x!==f),f];
+  }
+  await db.ref().update(u);
 }
+
+function renameZonePrompt(id){
+  const z=zones.find(z=>z.id===id);if(!z)return;
+  const name=prompt('Rename zone:',z.name);
+  if(name&&name.trim()&&name.trim()!==z.name)db.ref('zones/'+id+'/name').set(name.trim());
+}
+
 function addZone(){
   const name=document.getElementById('newZoneName').value.trim();if(!name)return;
   const newId='z'+Date.now(),order=zones.length?Math.max(...zones.map(g=>g.order||0))+1:0;
-  db.ref('zones/'+newId).set({name,flights:[],order}).then(()=>document.getElementById('newZoneName').value='');
+  db.ref('zones/'+newId).set({name,flights:[],order}).then(()=>{document.getElementById('newZoneName').value='';});
 }
 function deleteZone(id){if(!confirm('Delete this zone?'))return;db.ref('zones/'+id).remove();}
 function moveZone(id,dir){

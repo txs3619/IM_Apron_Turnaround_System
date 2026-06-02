@@ -608,6 +608,8 @@ function wheelMoveCard(card,zoneId,dir){
     if(Object.keys(u).length)db.ref().update(u);
   }
 }
+
+function enableDragDrop(container,zoneId){
   // Clear all highlights globally on dragend
   function clearAllHighlights(){
     document.querySelectorAll('.fcard').forEach(c=>c.classList.remove('drag-over'));
